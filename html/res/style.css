@@ -1,0 +1,148 @@
+body {
+	margin: 1ex;
+	margin-left: 61px;
+	margin-top: 44px;
+	background-color: #888;
+}
+
+table {
+	border-spacing: 0 0;
+	empty-cells: show;
+}
+
+table, table td, table tr {
+	margin: 0;
+	padding: 0;
+}
+
+
+/***************** Grid map **********************/
+
+#map {
+	background-color: #FFF;
+	border: 4px ridge #888;
+	border-collapse: separate;
+	cursor: crosshair;
+	font-family: monospace;
+}
+
+#map td { /* Default cell */
+	margin: 0;
+	min-height: 20px;
+	height: 20px;
+	max-height: 20px;
+	min-width: 18px;
+	width: 18px;
+	max-width: 18px;
+	overflow: hidden;
+	text-align: center;
+	vertical-align: middle;
+	border: 1px solid black;
+}
+
+/***************** Floating boxes **********************/
+
+#toolbox, #statusbar {
+	position: fixed;
+	background-color: #DDD;
+	opacity: 0.9;
+	border: 2px ridge #DDD;
+}
+
+#toolbox:hover, #statusbar:hover { opacity: 1; border: 2px outset #DDD; }
+
+#toolbox { /* Left toolbox */
+	left: 4px;
+	top: 4px;
+	width: 50px;
+	height: 559px;
+	cursor: default;
+}
+
+#toolbox div {
+	width: 22px;
+	height: 22px;
+	float: left;
+	text-align: center;
+	border: 1px solid #DDD;
+	text-shadow: #444 1px 1px 2px;
+}
+
+#toolbox div:hover {
+	border: 1px solid #444;
+}
+
+#toolbox hr {
+	clear: both;
+	border: 0 none transparent;
+	border-top: 2px ridge #DDD;
+}
+
+#toolbox #cmd_Foreground {
+	width: 20px;
+	height: 20px;
+	background-color: black;
+	border: 2px solid white;
+}
+
+#toolbox #cmd_Background {
+	background-color: white;
+	width: 24px;
+	height: 24px;
+	float: left;
+	border: 0 none transparent;
+}
+#toolbox #cmd_Background:hover {
+	border: 0 none transparent;
+}
+
+#toolbox #mapinput { width: 44px; }
+#toolbox #cmd_setAll { width: 48px; }
+
+#toolbox #palette { width: 100%; clear: both; }
+#toolbox #palette td { height: 18px; width: 25px; }
+
+#toolbox #glyph {
+	height: auto;
+	width: 50px;
+	font-family: monospace;
+	font-size: smaller;
+	border: 0px none transparent;
+}
+#toolbox #glyph:hover { border: 0px none transparent; }
+
+#toolbox #glyph div {
+	width: 14px;
+	height: 14px;
+}
+
+
+#statusbar {
+	top: 4px;
+	left: 61px;
+	min-width: 600px;
+	height: 23px;
+	font-size: smaller;
+}
+
+#statusbar td {
+	padding: 0 5px;
+	vertical-align: middle;
+}
+
+#statusbar #current_foreground {
+  width: 10px;
+  border: 1px solid #DDD;
+}
+
+#statusbar #current_background {
+  width: 12px;
+}
+
+#statusbar #coordinate_status, #statusbar #dimension_status {
+	font-family: monospace;
+	border-right: 2px ridge #DDD;
+	width: 65px;
+	overflow: visible;
+	white-space: nowrap;
+}

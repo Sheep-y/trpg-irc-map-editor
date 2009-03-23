@@ -1,0 +1,76 @@
+<!DOCTYPE HTML>
+<html><head>
+<title>[var.out.title] - Sheepy's Arena</title>
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
+<link rel='stylesheet' type='text/css' href='../html/res/style.css?ver=[var.out.app_version]'>
+</head><body onmousedown='arena.event.documentMouseUpDown(event);' onmouseup='arena.event.documentMouseUpDown(event);'>
+
+<table id='map'><tbody><tr><td style='width: auto; max-width: none; font-size:x-large; padding:2em 4em'>Please wait a few seconds.</td><tr></tbody></table>
+
+<div id='toolbox'>
+  <div onclick='arena.event.newMapOnClick(event)' onmouseover='arena.ui.hint("tool|barhint_NewMap")'>*</div>
+  <div onclick='arena.event.copyIrcOnClick(event)' nmouseover='arena.ui.hint("tool|barhint_CopyIRC")'>IRC</div>
+  <div id='cmd_Foreground' onclick='arena.event.setForegroundOnClick(event)' onmouseover='arena.ui.hint("tool|barhint_Foreground")'></div>
+  <div id='cmd_Background' onclick='arena.event.setBackgroundOnClick(event)' onmouseover='arena.ui.hint("tool|barhint_Background")'></div>
+  <input id='mapinput' type='text' maxlength='2' value='[var.lang.default_mapinput]' onkeydown='arena.event.mapInputKeyDown(event)' onmouseover='arena.ui.hint("tool|barhint_MapInput")'>
+  <div id='cmd_SetText' onclick='arena.event.setTextOnClick(event)' onmouseover='arena.ui.hint("tool|barhint_Text")'>T</div>
+  <div id='cmd_SetAll' onclick='arena.event.setAllOnClick(event)' onmouseover='arena.ui.hint("tool|barhint_Set")'>Set</div>
+  <table id='palette'><tbody></tbody></table>
+  <div id='glyph'></div>
+</div>
+<table id='statusbar' unselectable="on"><tr>
+  <td id='current_foreground'></td>
+  <td id='coordinate_status'>X:-- Y:--</td>
+  <td id='hint' colspan='2'>[var.lang.welcome_hint; htmlconv=no]</td>
+</tr><tr>
+  <td id='current_background'></td>
+  <td id='dimension_status'>W:-- H:--</td>
+  <td id='status'>[var.lang.welcome_status; htmlconv=no]</td>
+  <td id='debug' onclick='this.innerHTML=""'></td>
+</tr></table>
+
+<script type='text/javascript' src='../html/res/lang/[var.out.language].js?ver=[var.out.app_version]'></script>
+<script type='text/javascript' src='../html/res/model.js?ver=[var.out.app_version]'></script>
+<script type='text/javascript' src='../html/res/ui.js?ver=[var.out.app_version]'></script>
+<script type='text/javascript' src='../html/res/tools.js?ver=[var.out.app_version]'></script>
+<script type='text/javascript' src='../html/res/io.js?ver=[var.out.app_version]'></script>
+<script type='text/javascript'>
+  if (!$ || !window.arena || !arena.lang || !arena.ui || !arena.tools || !arena.io) {
+  	document.getElementById('hint').innerHTML = '[var.lang.err_IncompleteLoad]';
+  } else {
+    arena.tools.setTool(arena.tools.Mask);
+    arena.map.recreate(36,25);
+    arena.ui.focusMapInput();
+  }
+</script>
+
+<p>Done, in reverse chronical order:
+<ul>
+ <li> Initial canvas population </li>
+ <li> Show current cell's foreground and background </li>
+ <li> Multi-selection with area select </li>
+</ul>
+</p>
+
+<p>TODO, in order of importance:
+<ul>
+ <li> Add layer (affect too many things, critical structural change) </li>
+ <li> Add more commands (Clear text, Move masked area) </li>
+ <li> Add no colour and inverse-colour, should affect only cell render, status & tool</li>
+ <li> Implement action history + undo and redo. Check memory usage here. Don't need history list</li>
+ <li> Experimental multi-map support </li>
+ <li> Add bold and italic </li>
+</ul>
+</p>
+
+<p>Small TODO, in no order:
+<ul>
+ <li> Make copy box in-frame instead of popup </li>
+ <li> Fix command names - may have to move responsibility to tool </li>
+ <li> I think text mask selection should be an independent command </li>
+ <li> Make command rely more on mask for more sensible redo; state should be perserved on redo not on creation </li>
+</ul>
+</p>
+
+
+</body></html>
