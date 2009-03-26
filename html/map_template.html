@@ -9,12 +9,12 @@
 
 <div id='toolbox'>
   <div onclick='arena.event.newMapOnClick(event)' onmouseover='arena.ui.hint("tool|barhint_NewMap")'>*</div>
-  <div onclick='arena.event.copyIrcOnClick(event)' nmouseover='arena.ui.hint("tool|barhint_CopyIRC")'>IRC</div>
+  <div onclick='arena.event.exportOnClick(event)' onmouseover='arena.ui.hint("tool|barhint_Export")'>=&gt;</div>
   <div id='cmd_Foreground' onclick='arena.event.setForegroundOnClick(event)' onmouseover='arena.ui.hint("tool|barhint_Foreground")'></div>
   <div id='cmd_Background' onclick='arena.event.setBackgroundOnClick(event)' onmouseover='arena.ui.hint("tool|barhint_Background")'></div>
   <input id='mapinput' type='text' maxlength='2' value='[var.lang.default_mapinput]' onkeydown='arena.event.mapInputKeyDown(event)' onmouseover='arena.ui.hint("tool|barhint_MapInput")'>
   <div id='cmd_SetText' onclick='arena.event.setTextOnClick(event)' onmouseover='arena.ui.hint("tool|barhint_Text")'>T</div>
-  <div id='cmd_SetAll' onclick='arena.event.setAllOnClick(event)' onmouseover='arena.ui.hint("tool|barhint_Set")'>Set</div>
+  <div id='cmd_SetAll'  onclick='arena.event.setAllOnClick(event)'  onmouseover='arena.ui.hint("tool|barhint_Set")'>Set</div>
   <table id='palette'><tbody></tbody></table>
   <div id='glyph'></div>
 </div>
@@ -29,7 +29,8 @@
   <td id='debug' onclick='this.innerHTML=""'></td>
 </tr></table>
 
-<script type='text/javascript' src='../html/res/lang/[var.out.language].js?ver=[var.out.app_version]'></script>
+<script type='text/javascript' src='../html/res/lang/en.js?ver=[var.out.app_version]'></script>
+<script type='text/javascript' src='../html/res/lang/[var.out.language;magnet=_].js?ver=[var.out.app_version]'></script>
 <script type='text/javascript' src='../html/res/model.js?ver=[var.out.app_version]'></script>
 <script type='text/javascript' src='../html/res/ui.js?ver=[var.out.app_version]'></script>
 <script type='text/javascript' src='../html/res/tools.js?ver=[var.out.app_version]'></script>
@@ -42,13 +43,22 @@
     arena.map.recreate(36,25);
     arena.ui.focusMapInput();
   }
-</script>
+</script><noscript>
+<p>This tool requires JavaScript. Sorry for the inconvinence.</p>
+</noscript>
 
-<p>Done, in reverse chronical order:
+<p>New features:
 <ul>
- <li> Initial canvas population </li>
- <li> Show current cell's foreground and background </li>
- <li> Multi-selection with area select </li>
+ <li> 03-26 Export to HTML </li>
+ <li> 03-26 Added message for disabled JavaScript </li>
+ <li> 03-25 Arrow keys move mask when not inputting </li>
+ <li> 03-25 Text input no longer get interrupted by map commands (del, esc, etc.) </li>
+ <li> 03-25 Reduced unnecessarey trigger of status bar update script </li>
+ <li> 03-25 BBCode & plain text export format </li>
+ <li> 03-24 Foreground colour export will ignore whitespace </li>
+ <li> 03-23 Initial canvas wait message </li>
+ <li> 03-23 Show current cell's foreground and background </li>
+ <li> 03-23 Multi-selection with area select </li>
 </ul>
 </p>
 
@@ -68,9 +78,23 @@
  <li> Make copy box in-frame instead of popup </li>
  <li> Fix command names - may have to move responsibility to tool </li>
  <li> I think text mask selection should be an independent command </li>
- <li> Make command rely more on mask for more sensible redo; state should be perserved on redo not on creation </li>
+ <li> Make command rely more on mask for more sensible redo </li>
+ <li> Use some control other then a textbox as command focus.  Or make it read-only, as long as Shift-Arrow is not eaten. </li>
 </ul>
 </p>
 
+<div id='mask'></div>
+
+<table id='dialog_container'><tr><td>
+<div id='dialog_export'>
+<h2>Export</h2>
+<label onmouseover='arena.ui.hint("tool|barhint_CopyIRC")'><input type='radio' name='opt_export' id='dlg_ex_txt'> Plain text </label>
+<label onmouseover='arena.ui.hint("tool|barhint_CopyBBC")'><input type='radio' name='opt_export' id='dlg_ex_bbc'> BBCode </label>
+<label onmouseover='arena.ui.hint("tool|barhint_CopyTxt")'><input type='radio' name='opt_export' id='dlg_ex_irc' checked='checked'> mIRC </label><br>
+<label onmouseover='arena.ui.hint("tool|barhint_CopyHtml")'><input type='radio' name='opt_export' id='dlg_ex_html'> HTML </label><br><br>
+<input type='button' value='Export' id='btn_export' onclick='arena.event.dlgExportClick(event)'> &nbsp;
+<input type='button' value='Cancel' onclick='arena.ui.hideDialog("export")'>
+</div>
+</td></tr></table>
 
 </body></html>

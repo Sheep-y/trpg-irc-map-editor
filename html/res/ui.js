@@ -1,16 +1,18 @@
 /********************** JavaScript Arena, user interface code *****************************/
 
 arena.event = {
-  lastEventTime : 0,  // Last repeatable event triggered time, IE event has no details
-  lastEventHash : '', // Last repeatable event's hash, if different then reset
-  lastEventCount: 0,  // Count of same repeatable event
+  lastEventTime  : 0,  // Last repeatable event triggered time, IE event has no details
+  lastEventHash  : '', // Last repeatable event's hash, if different then reset
+  lastEventCount : 0,  // Count of same repeatable event
   lastForeground : arena.foreground, // Last set foreground
 
-  lastMouseX: -1, // Last mouse hover position, x
-  lastMouseY: -1, // Last mouse hover position, y
-  lastMouseEvent: '', // Last mouse event, checked only on map double click handler
-  lastHint  : '', // Last status bar hint
-  lastCursor: '', // Last in use map cursor
+  lastMouseEvent : '', // Last mouse event, checked only on map double click handler
+  lastMouseX : -1, // Last mouse hover position, x
+  lastMouseY : -1, // Last mouse hover position, y
+  lastHint   : '', // Last status bar hint
+  lastCursor : '', // Last in use map cursor
+
+  mapInputMode : false, // True when inputing, false when not inputing
 
   /*********************** Event helpers ***********************/
 
@@ -101,6 +103,7 @@ arena.event = {
   },
 
   /**************************** Toolbox events ****************************/
+
   newMapOnClick : function(evt) {
     var x, y;
     while (x == undefined) {
@@ -116,8 +119,20 @@ arena.event = {
     arena.map.recreate(+x, +y);
   },
 
-  copyIrcOnClick : function(evt) {
-    arena.io.exportToIRC(arena.map, arena.map.masked);
+  exportOnClick : function(evt) {
+    arena.ui.showDialog('export');
+  },
+
+  dlgExportClick : function(evt) {
+    arena.ui.hideDialog('export');
+    if ($('dlg_ex_txt').checked)
+      arena.io.exportToTxt(arena.map, arena.map.masked);
+    else if ($('dlg_ex_bbc').checked)
+      arena.io.exportToBBC(arena.map, arena.map.masked);
+    else if ($('dlg_ex_irc').checked)
+      arena.io.exportToIRC(arena.map, arena.map.masked);
+    else if ($('dlg_ex_html').checked)
+      arena.io.exportToHtml(arena.map, arena.map.masked);
   },
 
   setForegroundOnClick : function(evt) {
@@ -135,27 +150,34 @@ arena.event = {
       case 40: // Down
       case 39: // Right
       case 38: // Up
-      case 37: // Left - TODO: move selected object if in select mode
+      case 37: // Left
+      case 46: // Delete
+        if (!this.mapInputMode && arena.tool && arena.tool.key) {
+          if (evt.preventDefault) evt.preventDefault(); else evt.returnValue = false;
+          arena.tool.key(evt);
+          arena.ui.focusMapInput();
+        }
         break;
 
       case 27: // Escape: send cancel command to tool
-        if (arena.tool && arena.tool.cancel) {
+        if (!this.mapInputMode && arena.tool && arena.tool.cancel) {
           arena.tool.cancel();
           this.updateCursor(evt, this.lastMouseX, this.lastMouseY);
         }
-        return true;
-        break;
-      case 46: // Delete: delete selected mask or object
-        if (evt.preventDefault) evt.preventDefault(); else evt.returnValue = false;
-        arena.commands.run(new arena.commands.SetText(null, arena.map.masked));
+        arena.ui.focusMapInput();
         break;
       case 13: // Enter: set text
         arena.event.setTextOnClick(evt);
+        arena.ui.focusMapInput();
         break;
 
       case 9: // Tab - TODO: Switch to chat input
         if (evt.preventDefault) evt.preventDefault(); else evt.returnValue = false;
+        arena.ui.focusMapInput();
         break;
+
+      default:
+        this.mapInputMode = true; // User input something.
     }
   },
 
@@ -243,6 +265,7 @@ arena.ui = {
   focusMapInput : function() {
     $('mapinput').focus();
     $('mapinput').select();
+    arena.event.mapInputMode = false;
   },
 
   /*********************** Status bar functions ***********************/
@@ -262,6 +285,21 @@ arena.ui = {
     if (y < 10) status += '&nbsp;';
     status += y;
     $(id).innerHTML = status;
+  },
+
+  /*********************** Dialog functions ***********************/
+  showDialog : function (id) {
+    if (!$('dialog_'+id)) return;
+    $('mask').style.display = 'block';
+    $('dialog_'+id).style.display = 'block';
+    $('dialog_container').style.display = 'table';
+  },
+
+  hideDialog : function (id) {
+    if (!$('dialog_'+id)) return;
+    $('dialog_container').style.display = 'none';
+    $('dialog_'+id).style.display = 'none';
+    $('mask').style.display = 'none';
   },
 
   /*********************** Other ui functions ***********************/

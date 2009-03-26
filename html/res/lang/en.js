@@ -10,7 +10,11 @@ arena.lang = {
     usehint_maskmove : '[Mask] Drag to move area. Press Ctrl for copy instead of move.',
 
     barhint_NewMap  : 'Create a new map. Will discard existing map.',
-    barhint_CopyIRC : 'Copy in IRC syntax. Click and press Ctrl+X.',
+    barhint_Export  : 'Export map in various text formats.',
+    barhint_CopyIRC : 'Export in IRC syntax.',
+    barhint_CopyBBC : 'Export in BBCode syntax. Text and foreground colour only.',
+    barhint_CopyTxt : 'Export in plain text.',
+    barhint_CopyHtml : 'Export in HTML.',
     barhint_Foreground : 'Foreground colour. Click to draw in current mask.',
     barhint_Background : 'Background colour. Click to draw in current mask.',
     barhint_MapInput   : 'Brush text. Type and press enter to draw text. Press Delete to clear selected map.',

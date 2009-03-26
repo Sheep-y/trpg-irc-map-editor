@@ -56,6 +56,8 @@ arena.getCell = function(cells, x, y, ifNotFound) {
 /************************* Map object *********************************/
 
 arena.map = { /** Map object. Store background, size, name, etc. */
+  title : 'Map 1',
+
   cells : [],    // Array of array of Cell. Top left is 0, 0. This array is y then x.
   masked : [],   // Array of cells that are masked.
   marked : [],   // Array of cells that are marked by tools, always temporary.
@@ -77,8 +79,7 @@ arena.map = { /** Map object. Store background, size, name, etc. */
 
   /*------------- Highlight methods ----------------*/
   // Set marked/masked properties. mass is arena's state, prop is cell property
-  setMarkedMasked : function(mass, prop, newColList, redraw) {
-    if (redraw == undefined) redraw = true;
+  setMarkedMasked : function(mass, prop, newColList) {
     var markedMasked = this[mass];
     var totalArea = markedMasked.concat(newColList); // Area to redraw, ok to duplicate since redrawMark check dirty flag
     // Kill off all marks
@@ -98,31 +99,29 @@ arena.map = { /** Map object. Store background, size, name, etc. */
       c[prop] = true;
       c.dirty = true;
     }
-    if (totalArea.length > 0 && redraw)
+    if (totalArea.length > 0)
       this.redrawMark(totalArea);
   },
 
   /** Set marked region. Set redraw to false to prevent update of cells */
-  setMarked : function(newMarks, redraw) {
-    this.setMarkedMasked('marked', 'marked', newMarks, redraw);
+  setMarked : function(newMarks) {
+    this.setMarkedMasked('marked', 'marked', newMarks);
   },
 
   /** Set masked region. Set redraw to false to prevent update of cells */
-  setMasked : function(newSelections, redraw) {
-    this.setMarkedMasked('masked', 'masked', newSelections, redraw);
+  setMasked : function(newSelections) {
+    this.setMarkedMasked('masked', 'masked', newSelections);
   },
 
   /** Redraw marked and masked status of given coordinates */
   redrawMark : function (coList) {
-    var bounds = arena.coListBounds(coList);
-    var minX = bounds[0], minY = bounds[1], maxX = bounds[2], maxY = bounds[3];
-    for (var y = minY; y <= maxY; y++) { var row = this.cells[y];
-      for (var x = minX; x <= maxX; x++) { var cell = row[x];
-        if (!cell.dirty) continue;
-        cell.repaintBorder();
-        cell.dirty = false;
-      }
-    }
+    var l = coList.length;
+    for (var i = 0; i < l; i++) { var co = coList[i];
+      var cell = this.cells[co[1]][co[0]];      
+      if (!cell.dirty) continue;
+      cell.repaintBorder();
+      cell.dirty = false;
+    }    
   },
 
   /*------------- Factory methods ----------------*/
@@ -162,7 +161,7 @@ arena.map = { /** Map object. Store background, size, name, etc. */
       // Grid cell
       td = document.createElement('td');
       td.setAttribute('onmousedown', 'arena.event.cellPress(event,'+x+','+y+');');
-      td.setAttribute('onmousemove', 'arena.event.cellHover(event,'+x+','+y+');');
+      td.setAttribute('onmouseover', 'arena.event.cellHover(event,'+x+','+y+');');
       td.setAttribute('onmouseup',  'arena.event.cellRelease(event,'+x+','+y+');');
       //if (background) td.innerHTML = background;
       tr.appendChild(td);

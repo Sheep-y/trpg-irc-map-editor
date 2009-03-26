@@ -7,6 +7,7 @@
  *   down() : called when mouse is pressed.
  *   move() : called when mouse is move.
  *   up()   : called when mouse is released.
+ *   key()  : called when certain keys are pressed (e.g. direction key)
  *   cursor() : return suitable cursor for a grid
  *   hint() : return suitable hint for a grid
  *
@@ -193,6 +194,36 @@ arena.tools = {
         arena.commands.run(new arena.commands.SetMask([]));
       this.cancel();
     },
+    key : function (evt) {
+      var dx = 0, dy = 0;
+      switch (evt.keyCode) {
+        case 40: dy = 1; break; // Down
+        case 39: dx = 1; break; // Right
+        case 38: dy = -1; break; // Up
+        case 37: dx = -1; break; // Left
+        case 46: // Delete
+          if (evt.preventDefault) evt.preventDefault(); else evt.returnValue = false;
+          arena.commands.run(new arena.commands.SetText(null, arena.map.masked));
+          return;
+      }
+      // Movement
+      if (dx != 0 || dy != 0) {
+        if (arena.map.masked.length > 0) {
+          var map = arena.map;
+          var bounds = arena.coListBounds(arena.map.masked);
+          var minX = bounds[0], maxX = bounds[2];
+          var minY = bounds[1], maxY = bounds[3];
+          if (dx < 0 && minX <= 0 || dx > 0 && maxX >= map.width-1 ||
+              dy < 0 && minY <= 0 || dy > 0 && maxY >= map.height-1 )
+            return; // Out of bounds, cannot move further
+          var newMask = [], l = map.masked.length; // Firefox 3.5 doesn't copy on concat, why?
+          for (var i = 0; i < l; i++) { var m = map.masked[i];
+            newMask[i] = [m[0]+dx, m[1]+dy];
+          }
+          arena.commands.run(new arena.commands.SetMask(newMask));
+        }
+      }
+    },
 
     cursor : function (evt, x, y) {
       if (this.isInUse && this.isMoving) return 'move';
@@ -331,7 +362,6 @@ arena.commands = {
   },
 
   SetMask : function(coList) {
-    this.originalMask = arena.map.masked;
     this.newMask = coList;
     this.desc = this.name + ' (x' + coList.length + ')';
   },
@@ -364,7 +394,10 @@ arena.commands = {
 }
 
 arena.commands.SetMask.prototype = {
-  redo : function() { arena.map.setMasked(this.newMask); },
+  redo : function() {
+    if (!this.originalMask) this.originalMask = arena.map.masked.concat([]);
+    arena.map.setMasked(this.newMask);
+  },
   undo : function() { arena.map.setMasked(this.originalMask); }
 }
 
