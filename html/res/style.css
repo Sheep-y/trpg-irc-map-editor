@@ -1,7 +1,7 @@
 body {
 	margin: 1ex;
 	margin-left: 61px;
-	margin-top: 44px;
+	margin-top: 46px;
 	background-color: #888;
 }
 
@@ -29,6 +29,7 @@ noscript p {
 	border: 4px ridge #888;
 	border-collapse: separate;
 	cursor: crosshair;
+	cursor: cell;
 	font-family: monospace;
 }
 
@@ -55,27 +56,35 @@ noscript p {
 	border: 2px ridge #DDD;
 }
 
-#toolbox:hover, #statusbar:hover { opacity: 1; border: 2px outset #DDD; }
+#toolbox:hover, #statusbar:hover {
+	opacity: 1;
+	border: 2px outset #DDD;
+	z-index: 1;
+}
 
 #toolbox { /* Left toolbox */
 	left: 4px;
 	top: 4px;
 	width: 50px;
-	height: 559px;
 	cursor: default;
 }
 
 #toolbox div {
-	width: 22px;
-	height: 22px;
-	float: left;
-	text-align: center;
 	border: 1px solid #DDD;
 	text-shadow: #444 1px 1px 2px;
+	text-align: center;
+	float: left;
 }
 
-#toolbox div:hover {
+#toolbox .tool {
+	border: 1px solid #DDD;
+	width: 22px;
+	height: 22px;
+}
+
+#toolbox .tool:hover {
 	border: 1px solid #444;
+	background-color: #EEE;
 }
 
 #toolbox hr {
@@ -105,8 +114,35 @@ noscript p {
 #toolbox #mapinput { width: 44px; }
 #toolbox #cmd_setAll { width: 48px; }
 
-#toolbox #palette { width: 100%; clear: both; }
-#toolbox #palette td { height: 18px; width: 25px; }
+#toolbox #layer {
+	position: fixed;
+	left: 56px;
+	top: 28px;
+	width: auto;
+	display: none;
+	background-color: #DDD;
+	border: 2px outset #DDD;
+}
+
+#toolbox #target_layer, #toolbox #layer td {
+	min-width: 46px;
+	font-size: small;
+	height: auto;
+}
+
+#toolbox #layer td {
+	min-width: 60px;
+	text-align: left;
+}
+
+#toolbox #palette {
+	position: fixed;
+	left: 54px;
+	top: 46px;
+	width: 50px;
+	display: none;
+}
+#toolbox #palette td, #toolbox #palette img { height: 18px; width: 25px; vertical-align:bottom; }
 
 #toolbox #glyph {
 	height: auto;
@@ -115,7 +151,6 @@ noscript p {
 	font-size: smaller;
 	border: 0px none transparent;
 }
-#toolbox #glyph:hover { border: 0px none transparent; }
 
 #toolbox #glyph div {
 	width: 14px;
@@ -126,7 +161,7 @@ noscript p {
 #statusbar {
 	top: 4px;
 	left: 61px;
-	min-width: 600px;
+	min-width: 700px;
 	height: 23px;
 	font-size: smaller;
 }
@@ -136,22 +171,21 @@ noscript p {
 	vertical-align: middle;
 }
 
-#statusbar #current_foreground {
-  width: 10px;
-  border: 1px solid #DDD;
-}
-
-#statusbar #current_background {
-  width: 12px;
-}
+#statusbar #current_foreground { width: 6px; border: 1px solid #DDD; }
+#statusbar #current_background { width: 8px; }
 
 #statusbar #coordinate_status, #statusbar #dimension_status {
 	font-family: monospace;
-	border-right: 2px ridge #DDD;
 	width: 65px;
 	overflow: visible;
 	white-space: nowrap;
 }
+
+#statusbar #dimension_status, #statusbar #current_background { border-right: 2px ridge #DDD; }
+#statusbar #hint { border-bottom: 2px ridge #DDD; }
+
+#statusbar:hover #dimension_status, #statusbar:hover #current_background { border-right: 2px groove #DDD; }
+#statusbar:hover #hint { border-bottom: 2px groove #DDD; }
 
 
 /********************** Dialog styles **************************************/
@@ -165,6 +199,7 @@ noscript p {
   opacity: 0.5;
   -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=50)";
   display:none;
+	z-index: 100;
 }
 
 #dialog_container {
@@ -174,6 +209,7 @@ noscript p {
   width: 100%;
   height: 100%;
   display:none;
+	z-index: 101;
 }
 #dialog_container td {
   vertical-align: middle;

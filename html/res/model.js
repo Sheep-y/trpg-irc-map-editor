@@ -55,8 +55,89 @@ arena.getCell = function(cells, x, y, ifNotFound) {
 
 /************************* Map object *********************************/
 
+arena.Cell = function() {}
+arena.Cell.prototype = {
+  background: null,
+  foreground: null,
+  text: null,
+}
+
+arena.Layer = function(name) { // Use arena.map.createLayer instead!
+  this.name = name;
+}
+arena.Layer.prototype = {
+  name : null,
+  map  : null,
+  cells : [],
+  has : function(x,y) {
+    var c = this.cells;
+    return c[y] && c[y][x];
+  },
+  get : function(x,y) {
+    var c = this.cells;
+    if (!c[y]) return null;
+    c = c[y];
+    return c[x] ? c[x] : null;
+  },
+  set : function(x,y,value) {
+    var c = this.cells;
+    if (!c[y]) {
+      if (value === null) return;
+      c[y] = [];
+    }
+    c[y][x] = value;
+  },
+  createCell : function (x,y) { // Create cell if not exist, and return the cell
+    var c = this.get(x,y);
+    if (!c) {
+      c = new arena.Cell();
+      this.set(x, y, c);
+    }
+    return c;
+  },
+  trim : function () { // Removes empty cells and rows
+    var cells = this.cells[y];
+    var h = cells.length;
+    if (h <= 0) return;
+    for (var y = 0; y < h; y++)
+      if (cells[y]) {
+        var row = this.cells[y];
+        if (!row.length) delete cells[y];
+        else {
+          var count = 0, w = this.map.width;
+          for (var x = 0; x < w; x++)
+            if (row[x]) {
+              var c = row[x];
+              if (c === null || (c.background === c.foreground === c.text === null) )
+                delete row[x];
+              else
+                count++;
+            }
+          if (count <= 0) delete cells[y];
+        }
+      }
+  },
+  setText : function(x,y,value) {
+    createCell(x,y).text = value;
+  },
+  setForeground : function(x,y,value) {
+    createCell(x,y).foreground = value;
+  },
+  setBackground : function(x,y,value) {
+    createCell(x,y).background = value;
+  }
+}
+
 arena.map = { /** Map object. Store background, size, name, etc. */
   title : 'Map 1',
+  layerOrder : ['Terrain', 'Effect', 'Object', 'Creature', 'Overlay'],
+  layers : [
+    new arena.Layer('Terrain' ),
+    new arena.Layer('Effect'  ),
+    new arena.Layer('Object'  ),
+    new arena.Layer('Creature'),
+    new arena.Layer('Overlay' ),
+  ],
 
   cells : [],    // Array of array of Cell. Top left is 0, 0. This array is y then x.
   masked : [],   // Array of cells that are masked.
@@ -117,11 +198,11 @@ arena.map = { /** Map object. Store background, size, name, etc. */
   redrawMark : function (coList) {
     var l = coList.length;
     for (var i = 0; i < l; i++) { var co = coList[i];
-      var cell = this.cells[co[1]][co[0]];      
+      var cell = this.cells[co[1]][co[0]];
       if (!cell.dirty) continue;
       cell.repaintBorder();
       cell.dirty = false;
-    }    
+    }
   },
 
   /*------------- Factory methods ----------------*/
@@ -152,8 +233,16 @@ arena.map = { /** Map object. Store background, size, name, etc. */
     arena.ui.setStatus(arena.lang.command.name_CreateMap + ' '+width+'x'+height);
   },
 
+  /** Create a layer at top with given name */
+  createLayer : function (name) {
+    var l = new arena.Layer(name);
+    l.map = this;
+    layers.push(l);
+    return l;
+  },
+
   /** Create a cell row with vertical border. Returns tr and cell array. */
-  createCellRow: function(y) {
+  createCellRow : function(y) {
     var tr = document.createElement('tr'), cells = [], td, cell;
     var w = arena.map.width;
     var background = arena.map.background.text;
@@ -202,13 +291,17 @@ arena.Cell.prototype = {
   },
 
   /*------------------------ Grid update functions ---------------------------*/
-  /** Update border and cell. */
-  repaintAll : function() {
-    this.repaintBorder();
-    this.repaintCell();
+  /** Update cell
+  updateCell : function() {
   },
 
-  /** Update border style. */
+  /** Draw border and cell. */
+  repaintAll : function() {
+    this.repaintBorder();
+    this.repaintCellContent();
+  },
+
+  /** Draw border style. */
   repaintBorder : function() {
     var outline = '';
     if (this.marked)
@@ -221,18 +314,19 @@ arena.Cell.prototype = {
     if (this.td.style.outline != outline) this.td.style.outline = outline;
   },
 
-  /** Update cell content. */
-  repaintCell : function() {
+  /** Draw cell content. */
+  repaintCellContent : function() {
     this.repaintCellStyle();
-    this.repaintCellContent();
+    this.repaintCellText();
   },
 
-  repaintCellContent : function() {
+  /** Draw cell text. */
+  repaintCellText : function() {
     var text = this.getText();
     if (this.td.innerHTML != text) this.td.innerHTML = text;
   },
 
-  /** Update cell style. */
+  /** Draw cell style. */
   repaintCellStyle : function() {
     var td = this.td;
     var frgd = this.getForeground();

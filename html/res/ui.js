@@ -12,7 +12,11 @@ arena.event = {
   lastHint   : '', // Last status bar hint
   lastCursor : '', // Last in use map cursor
 
+  lastMapInputValue : '',
   mapInputMode : false, // True when inputing, false when not inputing
+
+  lastSubmenu: null, // last sub-menu id
+  submenuTimer: null, // sub-menu disappear timer
 
   /*********************** Event helpers ***********************/
 
@@ -146,6 +150,7 @@ arena.event = {
   },
 
   mapInputKeyDown : function(evt) {
+    this.lastMapInputValue = $('mapinput').value;
     switch (evt.keyCode) {
       case 40: // Down
       case 39: // Right
@@ -175,10 +180,11 @@ arena.event = {
         if (evt.preventDefault) evt.preventDefault(); else evt.returnValue = false;
         arena.ui.focusMapInput();
         break;
-
-      default:
-        this.mapInputMode = true; // User input something.
     }
+  },
+
+  mapInputKeyUp : function(evt) {
+    this.mapInputMode = this.lastMapInputValue != $('mapinput').value;
   },
 
   setTextOnClick : function(evt) {
@@ -207,6 +213,27 @@ arena.event = {
     arena.ui.focusMapInput();
   },
 
+  hideSubmenu : function() {
+    if (!this.lastSubmenu) return;
+    $(this.lastSubmenu).style.display = 'none';
+    this.lastSubmenu = null;
+  },
+  submenuOnHover : function(evt, menu) {
+    if (this.submenuTimer) {
+      if (this.lastSubmenu != menu) this.hideSubmenu();
+      clearTimeout(this.submenuTimer);
+      this.submenuTimer = null;
+    }
+    if (!$(menu).style.display || $(menu).style.display == 'none') {
+      $(menu).style.display = 'table';
+      this.lastSubmenu = menu;
+    }
+  },
+  submenuOnExit : function(evt) {
+    if (this.submenuTimer) clearTimeout(this.submenuTimer);
+    this.submenuTimer = setTimeout("arena.event.hideSubmenu()", 500);
+  },
+
   glyphOnClick : function(evt, glyph) {
     $("mapinput").value = glyph;
     if (evt.ctrlKey || evt.metaKey) // Quick set text: ctrl+press
@@ -228,7 +255,8 @@ arena.ui = {
       td = document.createElement('td');
       td.setAttribute('onclick', 'arena.event.paletteOnClick(event,"'+colour+'")');
       td.setAttribute('ondblclick', 'if(!event.detail)arena.event.paletteOnClick(event,"'+colour+'")');
-      td.setAttribute('onmouseover', 'arena.ui.hint("tool|barhint_Colour")');
+      td.setAttribute('onmouseover', 'arena.event.submenuOnHover(event,"palette");arena.ui.hint("tool|barhint_Colour")');
+      td.setAttribute('onmouseout', 'arena.event.submenuOnExit(event);');
       td.setAttribute('style', 'background-color:'+colour);
       td.setAttribute('title', c);
       td.setAttribute('class', 'palette');
@@ -244,7 +272,7 @@ arena.ui = {
       btn = document.createElement('div');
       btn.setAttribute('onclick', 'arena.event.glyphOnClick(event,"'+glyph[i]+'")');
       btn.setAttribute('onmouseover', 'arena.ui.hint("tool|barhint_Glyph")');
-      btn.setAttribute('class', 'glyph');
+      btn.setAttribute('class', 'tool glyph');
       btn.innerHTML = glyph[i];
       g.appendChild(btn);
       if (i+1 % 3 == 0) g.appendChild(document.createElement('br'));

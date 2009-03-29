@@ -11,17 +11,22 @@ arena.lang = {
 
     barhint_NewMap  : 'Create a new map. Will discard existing map.',
     barhint_Export  : 'Export map in various text formats.',
-    barhint_CopyIRC : 'Export in IRC syntax.',
-    barhint_CopyBBC : 'Export in BBCode syntax. Text and foreground colour only.',
-    barhint_CopyTxt : 'Export in plain text.',
-    barhint_CopyHtml : 'Export in HTML.',
-    barhint_Foreground : 'Foreground colour. Click to draw in current mask.',
-    barhint_Background : 'Background colour. Click to draw in current mask.',
+    barhint_Layer   : 'Click to select layer to draw. Top layer show first.',
+    barhint_UsingLayer : 'You are drawing on this layer.',
+    barhint_Foreground : 'Drawing in this foreground colour. Click to draw in current mask.',
+    barhint_Background : 'Drawing in this background colour. Click to draw in current mask.',
     barhint_MapInput   : 'Brush text. Type and press enter to draw text. Press Delete to clear selected map.',
     barhint_Text   : 'Set current mask with brush text.',
     barhint_Set    : 'Set current mask with brush text, foreground colour, and background colour.',
     barhint_Colour : 'Click to set foreground, Double click to set background, Ctrl/Alt+Click to draw foreground/background.',
+    barhint_NoColour : 'No colour : Use lower layer\'s colour. See other colour for controls.',
+    barhint_ReverseColour : 'Reverse colour : Reverse lower layer\'s colour. See other colour for controls.',
     barhint_Glyph  : 'Click to set brush text, Ctrl+Click to draw text in current mask.',
+
+    dlghint_CopyIRC : 'Export in IRC syntax.',
+    dlghint_CopyBBC : 'Export in BBCode syntax. Text and foreground colour only.',
+    dlghint_CopyTxt : 'Export in plain text.',
+    dlghint_CopyHtml : 'Export in HTML.',
   },
 
   command : {

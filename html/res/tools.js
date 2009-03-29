@@ -154,12 +154,12 @@ arena.tools = {
                   cell2.text = cell.text;
                   cell2.foreground = cell.foreground;
                   cell2.background = cell.background;
-                  cell2.repaintCell();
+                  cell2.repaintCellContent();
                   if (!evt.ctrlKey) {
                     cell.text = null;
                     cell.background = arena.background;
                     cell.foreground = arena.foreground;
-                    cell.repaintCell();
+                    cell.repaintCellContent();
                   }
                 }
               }
@@ -226,9 +226,9 @@ arena.tools = {
     },
 
     cursor : function (evt, x, y) {
-      if (this.isInUse && this.isMoving) return 'move';
+      if (this.isInUse && this.isMoving) return (evt.ctrlKey) ? 'copy' : 'move';
       var c = arena.map.cells[y][x];
-      return (!c.masked || c.marked || (evt && evt.shiftKey) ) ? 'crosshair' : 'move'
+      return (!c.masked || c.marked || (evt && evt.shiftKey) ) ? 'cell' : 'move'
     },
     hint : function (evt, x, y) {
       return (this.isInUse && this.isMoving) || arena.map.cells[y][x].masked
@@ -409,7 +409,7 @@ arena.commands.SetCell.prototype = {
       var c = arena.map.cells[m[1]][m[0]];
       if (this.text !== undefined) {
         c.text = this.text;
-        c.repaintCellContent();
+        c.repaintCellText();
       }
       if (this.foreground !== undefined) {
         c.foreground = this.foreground;
