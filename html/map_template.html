@@ -1,19 +1,23 @@
 <!DOCTYPE HTML>
 <html><head>
-<title>[var.out.title] - Sheepy's Arena</title>
+<title>Sheepy's Arena</title>
 <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
 <link rel='stylesheet' type='text/css' href='../html/res/style.css?ver=[var.out.app_version]'>
-</head><body onmousedown='arena.event.documentMouseUpDown(event);' onmouseup='arena.event.documentMouseUpDown(event);'>
+</head><body onmousedown='arena.event.documentMouseUpDown(event);' onmouseup='arena.event.documentMouseUpDown(event);' onkeydown='arena.event.mapKeyDown(event)'>
+
+<input id="hideFocus" type="text">
 
 <table id='map'><tbody><tr><td style='width: auto; max-width: none; font-size:x-large; padding:2em 4em'>Please wait a few seconds.</td><tr></tbody></table>
 
 <table id='statusbar' unselectable="on"><tr>
-  <td id='hint' colspan='6'>[var.lang.welcome_hint; htmlconv=no]</td>
+  <td id='hint' colspan='6'>
+  <b>Requires <a href="http://www.microsoft.com/windows/internet-explorer/default.aspx">IE 8</a>, <a href="http://www.mozilla.com/firefox/">Firefox</a> 3, or <a href="http://www.opera.com/">Opera</a> 9</b>. <a href="http://www.apple.com/safari/">Safari</a> 4 and <a href="http://www.google.com/chrome/">Chrome</a> 1 works partially.
+  </td>
 </tr><tr>
   <td id='current_foreground'></td>
   <td id='current_background'></td>
   <td id='coordinate_status'>X:-- Y:--</td>
-  <td id='dimension_status'>W:-- H:--</td>
+  <!--td id='dimension_status'>[--x--]</td-->
   <td id='status'>[var.lang.welcome_status; htmlconv=no]</td>
   <td id='debug' onclick='this.innerHTML=""'></td>
 </tr></table>
@@ -21,69 +25,97 @@
 <div id='toolbox'>
   <div class='tool' onclick='arena.event.newMapOnClick(event)' onmouseover='arena.ui.hint("tool|barhint_NewMap")'>*</div>
   <div class='tool' onclick='arena.event.exportOnClick(event)' onmouseover='arena.ui.hint("tool|barhint_Export")'>=&gt;</div>
-  <!-- <div id='target_layer' onmouseover='arena.event.submenuOnHover(event,"layer");arena.ui.hint("tool|barhint_UsingLayer")' onmouseout='arena.event.submenuOnExit(event);'>Terrain</div>
-  <table id='layer'>
-    <tr><td class='tool' onmouseover='arena.event.submenuOnHover(event,"layer");arena.ui.hint("tool|barhint_Layer")' onmouseout='arena.event.submenuOnExit(event);'>Overlay </td><tr>
-    <tr><td class='tool' onmouseover='arena.event.submenuOnHover(event,"layer");arena.ui.hint("tool|barhint_Layer")' onmouseout='arena.event.submenuOnExit(event);'>Creature</td><tr>
-    <tr><td class='tool' onmouseover='arena.event.submenuOnHover(event,"layer");arena.ui.hint("tool|barhint_Layer")' onmouseout='arena.event.submenuOnExit(event);'>Object  </td><tr>
-    <tr><td class='tool' onmouseover='arena.event.submenuOnHover(event,"layer");arena.ui.hint("tool|barhint_Layer")' onmouseout='arena.event.submenuOnExit(event);'>Effect  </td><tr>
-    <tr><td class='tool' onmouseover='arena.event.submenuOnHover(event,"layer");arena.ui.hint("tool|barhint_Layer")' onmouseout='arena.event.submenuOnExit(event);'>Terrain </td><tr>
-  </table> -->
+  <div class='tool' onclick='' onmouseover=''>&nbsp;</div>
+  <input id='mapinput' type='text' maxlength='2' value='  ' disabled='true' onkeydown='arena.event.mapInputKeyDown(event)' onkeyup='arena.event.mapInputKeyUp(event)' onmouseover='arena.ui.hint("tool|barhint_MapInput")'>
   <div id='cmd_Foreground' onclick='arena.event.setForegroundOnClick(event)' onmouseover='arena.event.submenuOnHover(event,"palette");arena.ui.hint("tool|barhint_Foreground")' onmouseout='arena.event.submenuOnExit(event);'></div>
   <div id='cmd_Background' onclick='arena.event.setBackgroundOnClick(event)' onmouseover='arena.event.submenuOnHover(event,"palette");arena.ui.hint("tool|barhint_Background")' onmouseout='arena.event.submenuOnExit(event);'></div>
-  <table id='palette'><tbody><!-- <tr>
-    <td class="palette" onmouseover='arena.event.submenuOnHover(event,"palette");' onmouseout='arena.event.submenuOnExit(event);'><img
+  <table id='palette'><tbody><tr>
+    <!--td class="palette" onmouseover='arena.event.submenuOnHover(event,"palette");' onmouseout='arena.event.submenuOnExit(event);'><img
       onclick="arena.event.paletteOnClick(event,'reverse')" ondblclick="if(!event.detail)arena.event.paletteOnClick(event,'reverse')" onmouseover="arena.ui.hint('tool|barhint_ReverseColour')"
       src='../html/res/img/colour_reverse.gif'></td>
     <td class="palette" onmouseover='arena.event.submenuOnHover(event,"palette");' onmouseout='arena.event.submenuOnExit(event);'><img
-      onclick="arena.event.paletteOnClick(event,'none')" ondblclick="if(!event.detail)arena.event.paletteOnClick(event,'none')" onmouseover="arena.ui.hint('tool|barhint_NoColour')"
-      src='../html/res/img/colour_none.gif'></td>
-  </tr> --></tbody></table>
-  <input id='mapinput' type='text' maxlength='2' value='[var.lang.default_mapinput]' onkeydown='arena.event.mapInputKeyDown(event)' onkeyup='arena.event.mapInputKeyUp(event)' onmouseover='arena.ui.hint("tool|barhint_MapInput")'>
-  <div class='tool' id='cmd_SetText' onclick='arena.event.setTextOnClick(event)' onmouseover='arena.ui.hint("tool|barhint_Text")'>T</div>
-  <div class='tool' id='cmd_SetAll'  onclick='arena.event.setAllOnClick(event)'  onmouseover='arena.ui.hint("tool|barhint_Set")'>Set</div>
-  <div id='glyph'></div><br>
+      onclick="arena.event.paletteOnClick(event,null)" ondblclick="if(!event.detail)arena.event.paletteOnClick(event,'none')" onmouseover="arena.ui.hint('tool|barhint_NoColour')"
+      src='../html/res/img/colour_none.gif'></td-->
+  </tr></tbody></table>
+  <div class='tool' id='cmd_ToolMask'    onclick='arena.tools.setTool(arena.tools.Mask)'    onmouseover='arena.ui.hint("tool|barhint_toolMask")'   >R</div>
+  <div class='tool' id='cmd_ToolDropper' onclick='arena.tools.setTool(arena.tools.Dropper)' onmouseover='arena.ui.hint("tool|barhint_toolDropper")'>D</div>
+  <div class='tool' id='cmd_ToolDropper' onclick='arena.tools.setTool(arena.tools.Dropper)' onmouseover='arena.ui.hint("tool|barhint_toolDropper")'> </div>
+  <div class='tool' id='cmd_ToolText'    onclick='arena.tools.setTool(arena.tools.Text)'    onmouseover='arena.ui.hint("tool|barhint_toolText")'   >T</div>
+  <div class='tool' id='cmd_ToolPaint'   onclick='arena.tools.setTool(arena.tools.Paint)'   onmouseover='arena.ui.hint("tool|barhint_toolPaint")'  >B</div>
+  <div class='tool' id='cmd_ToolErase'   onclick='arena.tools.setTool(arena.tools.Erase)'   onmouseover='arena.ui.hint("tool|barhint_toolErase")'  >E</div>
+  <div class='tool' id='cmd_ViewLayer'   onclick='arena.event.viewLayerOnClick(event)'      onmouseover='arena.ui.hint("tool|barhint_viewLayer")'  >L</div>
+  <div class='tool' id='cmd_ViewGlyph'   onclick='arena.event.viewGlyphOnClick(event)'      onmouseover='arena.ui.hint("tool|barhint_viewGlyph")'  >G</div>
+  <hr>
+  <div id='layer'>
+    <div class='tool' onclick='arena.event.addLayerOnClick(event)'  onmouseover='arena.ui.hint("tool|barhint_AddLayer")' >+</div>
+    <div class='tool' onclick='arena.event.delLayerOnClick(event)'  onmouseover='arena.ui.hint("tool|barhint_DelLayer")' >-</div>
+    <div class='tool' onclick='arena.event.upLayerOnClick(event)'   onmouseover='arena.ui.hint("tool|barhint_LayerUp")'  >^</div>
+    <div class='tool' onclick='arena.event.downLayerOnClick(event)' onmouseover='arena.ui.hint("tool|barhint_LayerDown")'>v</div>
+  </div>
+  <div id='glyph' style='display:none'></div><br>
 </div>
 
-<script type='text/javascript' src='../html/res/lang/en.js?ver=[var.out.app_version]'></script>
-<script type='text/javascript' src='../html/res/lang/[var.out.language;magnet=_].js?ver=[var.out.app_version]'></script>
-<script type='text/javascript' src='../html/res/model.js?ver=[var.out.app_version]'></script>
-<script type='text/javascript' src='../html/res/ui.js?ver=[var.out.app_version]'></script>
-<script type='text/javascript' src='../html/res/tools.js?ver=[var.out.app_version]'></script>
-<script type='text/javascript' src='../html/res/io.js?ver=[var.out.app_version]'></script>
-<script type='text/javascript'>
-  if (!$ || !window.arena || !arena.lang || !arena.ui || !arena.tools || !arena.io) {
-  	document.getElementById('hint').innerHTML = '[var.lang.err_IncompleteLoad]';
+<script>
+  var str = "[var.lang.welcome_hint; htmlconv=js]";
+  if (str.substring(0,1) != "[")
+    document.getElementById('hint').innerHTML = str;
+  delete str;
+</script>
+<script src='../html/res/lang/en.js?ver=[var.out.app_version]'></script>
+<script src='../html/res/lang/[var.out.language;magnet=_].js?ver=[var.out.app_version]'></script>
+<script src='../html/res/model.js?ver=[var.out.app_version]'></script>
+<script src='../html/res/ui.js?ver=[var.out.app_version]'></script>
+<script src='../html/res/tools.js?ver=[var.out.app_version]'></script>
+<script src='../html/res/io.js?ver=[var.out.app_version]'></script>
+<script>
+  if (!window.arena || !arena.lang || !arena.ui || !arena.map || !arena.io) {
+    var str = "[var.lang.err_IncompleteLoad]";
+    if (str.substring(0,1) == "[")
+      str = "Cannot load. Check that browsers is up to date and refresh.";
+  	document.getElementById('hint').innerHTML = str;
   } else {
-    arena.tools.setTool(arena.tools.Mask);
+    arena.tools.setTool(arena.tools.Paint);
     arena.map.recreate(36,25);
-    arena.ui.focusMapInput();
+    new arena.Layer(arena.map, 'Terrain' ),
+    new arena.Layer(arena.map, 'Effect'  ),
+    new arena.Layer(arena.map, 'Object'  ),
+    new arena.Layer(arena.map, 'Creature'),
+    new arena.Layer(arena.map, 'Overlay' ),
+    arena.ui.createColourPalette();
+    arena.ui.createGlyphs();
+    arena.ui.updateLayers();
+    //sarena.ui.focusMapInput();
+    $('mapinput').value = arena.map.background_fill.text;
+    $('mapinput').disabled = 'disabled';
   }
 </script><noscript>
-<p>This tool requires JavaScript. Sorry for the inconvinence.</p>
+<p>Please enable JavaScript.</p>
 </noscript>
 
 <p>New features:
 <ul>
- <li> 03-28 Better key input / function key detection</li>
- <li> 03-27 Colour submenu to conserve screen estate</li>
- <li> 03-26 Export to HTML </li>
- <li> 03-26 Added message for disabled JavaScript </li>
- <li> 03-25 Arrow keys move mask when not inputting </li>
- <li> 03-25 Text input no longer get interrupted by map commands (del, esc, etc.) </li>
- <li> 03-25 Reduced unnecessarey trigger of status bar update script </li>
- <li> 03-25 BBCode & plain text export format </li>
- <li> 03-24 Foreground colour export will ignore whitespace </li>
- <li> 03-23 Initial canvas wait message </li>
- <li> 03-23 Show current cell's foreground and background </li>
- <li> 03-23 Multi-selection with area select </li>
+ <li> 2010-10-08 Colour & tools keyboard shortcut, mask tool layer update, dropper tool. </li>
+ <li> 2010-10-07 Layers with new text/paint/erase tool, script independent from php</li>
+ <li> 2010-09-15 Focus placeholder for more reliable key detection</li>
+ <li> 2010-03-28 Better key input / function key detection</li>
+ <li> 2010-03-27 Colour submenu to conserve screen estate</li>
+ <li> 2010-03-26 Export to HTML </li>
+ <li> 2010-03-26 Added message for disabled JavaScript </li>
+ <li> 2010-03-25 Arrow keys move mask when not inputting </li>
+ <li> 2010-03-25 Text input no longer get interrupted by map commands (del, esc, etc.) </li>
+ <li> 2010-03-25 Reduced unnecessarey trigger of status bar update script </li>
+ <li> 2010-03-25 BBCode & plain text export format </li>
+ <li> 2010-03-24 Foreground colour export will ignore whitespace </li>
+ <li> 2010-03-23 Initial canvas wait message </li>
+ <li> 2010-03-23 Show current cell's foreground and background </li>
+ <li> 2010-03-23 Multi-selection with area select </li>
 </ul>
 </p>
 
 <p>TODO, in order of importance:
 <ul>
  <li> Export & Impot in native format, then Saving and Loading </li>
- <li> Add more commands (Clear text, Move masked area) </li>
+ <li> Add more commands (Dropper, Mask) </li>
  <li> Implement action history + undo and redo. Check memory usage here. Don't need history list</li>
  <li> Experimental multi-map support </li>
  <li> Add bold and italic </li>
@@ -95,9 +127,7 @@
  <li> Dynamically assign toolbox handler. What an ordered mess. </li>
  <li> Make copy box in-frame instead of popup </li>
  <li> Fix command names - may have to move responsibility to tool </li>
- <li> I think text mask selection should be an independent command </li>
- <li> Make command rely more on mask for more sensible redo </li>
- <li> Use some control other then a textbox as command focus.  Or make it read-only, as long as Shift-Arrow is not eaten. </li>
+ <li> Text mask selection should be an independent command </li>
 </ul>
 </p>
 

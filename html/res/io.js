@@ -54,9 +54,9 @@ arena.io = {
     for (var y = minY; y <= maxY; y++) { var row = cells[y];
       lastForeground = lastBackground = undefined;
       for (var x = minX; x <= maxX; x++) { var cell = row[x];
-        var bkgd = cell.getBackground();
-        var frgd = cell.getForeground();
-        var txt = cell.getText();
+        var bkgd = cell.background;
+        var frgd = cell.foreground;
+        var txt = cell.text;
         if (bkgd != lastBackground) {
           result += '\u0003' + (+cMap[frgd]) + ',' + cMap[bkgd];
           lastForeground = frgd;
@@ -89,8 +89,8 @@ arena.io = {
     var cells = map.cells;
     for (var y = minY; y <= maxY; y++) { var row = cells[y];
       for (var x = minX; x <= maxX; x++) { var cell = row[x];
-        var frgd = cell.getForeground();
-        var txt = cell.getText();
+        var frgd = cell.foreground;
+        var txt = cell.text;
         if (frgd != lastForeground && txt) {
           var trimmed = txt.replace(/^\s+/, '') // kill spaces
           if (trimmed) {
@@ -98,7 +98,7 @@ arena.io = {
             lastForeground = frgd;
           }
         }
-        result += cell.getText();
+        result += cell.text;
       }
       result += '\n';
     }
@@ -116,7 +116,7 @@ arena.io = {
     var result = '', cells = map.cells;
     for (var y = minY; y <= maxY; y++) { var row = cells[y];
       for (var x = minX; x <= maxX; x++)
-        result += row[x].getText();
+        result += row[x].text;
       result += '\n';
     }
     result = result.slice(0, -1); // Kill trailing space
@@ -142,8 +142,8 @@ arena.io = {
     for (var y = minY; y <= maxY; y++) { var row = cells[y];
       result += '<tr>';
       for (var x = minX; x <= maxX; x++) { var cell = row[x]; 
-        result += '<td style="color:'+cell.getForeground()+';background-color:'+cell.getBackground()+'">';
-        result += cell.getText() + '</td>';
+        result += '<td style="color:'+cell.foreground+';background-color:'+cell.background+'">';
+        result += cell.text + '</td>';
       }
       result += '</tr>';
     }

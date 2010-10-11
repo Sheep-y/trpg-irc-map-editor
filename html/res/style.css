@@ -1,6 +1,6 @@
 body {
 	margin: 1ex;
-	margin-left: 61px;
+	margin-left: 85px;
 	margin-top: 46px;
 	background-color: #888;
 }
@@ -22,6 +22,10 @@ noscript p {
 	padding: 1ex;
 }
 
+input {
+    	font-family: monospace;
+}
+
 /***************** Grid map **********************/
 
 #map {
@@ -34,7 +38,7 @@ noscript p {
 }
 
 #map td { /* Default cell */
-	margin: 0;
+	margin: 0;               
 	min-height: 20px;
 	height: 20px;
 	max-height: 20px;
@@ -65,7 +69,7 @@ noscript p {
 #toolbox { /* Left toolbox */
 	left: 4px;
 	top: 4px;
-	width: 50px;
+	width: 75px;
 	cursor: default;
 }
 
@@ -82,9 +86,13 @@ noscript p {
 	height: 22px;
 }
 
-#toolbox .tool:hover {
+#toolbox .tool:hover, #toolbox .layer:hover {
 	border: 1px solid #444;
 	background-color: #EEE;
+}
+
+#toolbox .active {
+	border: 1px solid #444;
 }
 
 #toolbox hr {
@@ -111,9 +119,14 @@ noscript p {
 	border: 0 none transparent;
 }
 
-#toolbox #mapinput { width: 44px; }
+#toolbox #mapinput {
+	margin-top: 1px;
+	height: 17px;
+	width: 22px;
+	float: left;
+}
 #toolbox #cmd_setAll { width: 48px; }
-
+/*
 #toolbox #layer {
 	position: fixed;
 	left: 56px;
@@ -134,7 +147,7 @@ noscript p {
 	min-width: 60px;
 	text-align: left;
 }
-
+*/
 #toolbox #palette {
 	position: fixed;
 	left: 54px;
@@ -143,6 +156,27 @@ noscript p {
 	display: none;
 }
 #toolbox #palette td, #toolbox #palette img { height: 18px; width: 25px; vertical-align:bottom; }
+
+#toolbox #layer {
+	height: auto;
+	font-size: smaller;
+	border: 0px none transparent;
+}
+
+#toolbox #layer .tool {
+	width: 16px;
+	height: 18px;
+}
+
+#toolbox .layer {
+	width: 72px;
+	text-align: left;
+	overflow: hidden;
+}
+
+#toolbox .layer.active {
+	color: blue;
+}
 
 #toolbox #glyph {
 	height: auto;
@@ -160,7 +194,7 @@ noscript p {
 
 #statusbar {
 	top: 4px;
-	left: 61px;
+	left: 85px;
 	min-width: 700px;
 	height: 23px;
 	font-size: smaller;
@@ -176,12 +210,14 @@ noscript p {
 
 #statusbar #coordinate_status, #statusbar #dimension_status {
 	font-family: monospace;
-	width: 65px;
+	width: 60px;
 	overflow: visible;
 	white-space: nowrap;
 }
 
-#statusbar #dimension_status, #statusbar #current_background { border-right: 2px ridge #DDD; }
+#statusbar #coordinate_status, #statusbar #dimension_status, #statusbar #current_background {
+    border-right: 2px ridge #DDD;
+}
 #statusbar #hint { border-bottom: 2px ridge #DDD; }
 
 #statusbar:hover #dimension_status, #statusbar:hover #current_background { border-right: 2px groove #DDD; }
@@ -190,36 +226,44 @@ noscript p {
 
 /********************** Dialog styles **************************************/
 #mask {
-  position: fixed;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background-color:black;
-  opacity: 0.5;
-  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=50)";
-  display:none;
+	position: fixed;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	background-color:black;
+	opacity: 0.5;
+	-ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=50)";
+	display:none;
 	z-index: 100;
 }
 
 #dialog_container {
-  position: fixed;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  display:none;
+	position: fixed;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	display:none;
 	z-index: 101;
 }
 #dialog_container td {
-  vertical-align: middle;
-  text-align: center;
+	vertical-align: middle;
+	text-align: center;
 }
 
 #dialog_container div[id] {
-  margin: 0 auto;
-  padding: 2em;
-  max-width: 400px;
-  background-color: #DDD;
-  border: 2px ridge #DDD;
+	margin: 0 auto;
+	padding: 2em;
+	max-width: 400px;
+	background-color: #DDD;
+	border: 2px ridge #DDD;
+}
+
+/************************ Misc ********************************/
+
+#hideFocus {
+	position: fixed;
+	top: -10000px;
+	left: -10000px;
 }

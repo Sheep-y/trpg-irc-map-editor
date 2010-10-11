@@ -4,11 +4,12 @@ arena.event = {
   lastEventTime  : 0,  // Last repeatable event triggered time, IE event has no details
   lastEventHash  : '', // Last repeatable event's hash, if different then reset
   lastEventCount : 0,  // Count of same repeatable event
-  lastForeground : arena.foreground, // Last set foreground
+  lastForeground : arena.map.foreground, // Last set foreground
 
-  lastMouseEvent : '', // Last mouse event, checked only on map double click handler
-  lastMouseX : -1, // Last mouse hover position, x
-  lastMouseY : -1, // Last mouse hover position, y
+  lastKeyEvent : { keyCode: 0 }, // Last key event (object), used to check double tap
+  lastMouseEvent : '', // Last mouse event (text), checked only on map double click handler
+  lastMouseX : 0, // Last mouse hover position, x
+  lastMouseY : 0, // Last mouse hover position, y
   lastHint   : '', // Last status bar hint
   lastCursor : '', // Last in use map cursor
 
@@ -35,71 +36,79 @@ arena.event = {
     this.lastEventTime = time;
     this.lastEventHash = hash;
   },
+  
+  // Prevent a event from triggering default behaviour
+  eatEvent : function(evt) {
+    if (evt.preventDefault) evt.preventDefault(); else evt.returnValue = false;
+  },
 
   /*********************** Document events ***********************/
   documentMouseUpDown : function(evt) {
     //$('debug').innerHTML += evt.originalTarget+',';
-    //console.log(evt);
     var target = evt.target || evt.srcElement;
-    if (target && target.tagName && target.tagName.toLowerCase() == "body" && arena.tool) {
-      arena.tool.outOfCanvas(evt);
-      arena.ui.focusMapInput();
+    if (target && target.tagName && target.tagName.toLowerCase() == "body" && arena.map.tool) {
+      arena.map.tool.outOfCanvas(evt);
     }
   },
 
   /*********************** Grid map events ***********************/
   /** When cell is mouse pressed **/
   cellPress : function(evt, x, y) {
+    if (!arena.map.layer || !arena.map.layer.visible) return; 
     this.checkRepeat(evt, 'press'+x+','+y);
     this.lastMouseEvent = 'down';
-    if (arena.tool) {
-      arena.tool.down(evt, x, y);
+    if (arena.map.tool) {
+      arena.map.tool.down(evt, x, y);
       this.updateCursor(evt, x, y);
-      arena.ui.setHint(arena.tool.hint(evt, x, y));
+      arena.ui.setHint(arena.map.tool.hint(evt, x, y));
     }
     if (evt.preventDefault) evt.preventDefault(); else evt.returnValue = false;
-    arena.ui.focusMapInput();
   },
 
   /** When cell is mouse released **/
   cellHover : function(evt, x, y) {
-//    arena.ui.clearSelection(); // Clear text selection, already prevented by preventDefault, yes!
     if (x == this.lastMouseX && y == this.lastMouseY) return;
+    if (!arena.map.layer || !arena.map.layer.visible) return; 
     this.lastMouseEvent = 'move';
-    if (arena.tool) {
-      arena.tool.move(evt, x, y);
+    if (arena.map.tool) {
+      arena.map.tool.move(evt, x, y);
       this.updateCursor(evt, x, y);
-      arena.ui.setHint(arena.tool.hint(evt, x, y));
+      arena.ui.setHint(arena.map.tool.hint(evt, x, y));
     }
     this.lastMouseX = x;
     this.lastMouseY = y;
     var cell = arena.map.cells[y][x];
-    $('current_foreground').style.backgroundColor = cell.getForeground();
-    var back = cell.getBackground();
+    $('current_foreground').style.backgroundColor = cell.foreground;
+    var back = cell.background;
     $('current_background').style.backgroundColor = back;
     $('current_foreground').style.border = "1px solid "+back;
     x += arena.map.dx;
     y += arena.map.dy;
     arena.ui.setStatusTwoPoint('coordinate_status', 'X', x, 'Y', y);
-    arena.ui.setStatusTwoPoint('dimension_status', 'W', arena.toolWidth, 'H', arena.toolHeight);
+    //$('dimension_status').innerHTML = '['+arena.toolWidth + 'x' + arena.toolHeight+']';
+    //arena.ui.setStatusTwoPoint('dimension_status', 'W', arena.toolWidth, 'H', arena.toolHeight);
   },
 
   /** When cell is mouse released **/
   cellRelease : function(evt, x, y) {
+    if (!arena.map.layer || !arena.map.layer.visible) return; 
     if (!evt.detail && this.lastMouseEvent == 'up' && this.lastMouseX == x && this.lastMouseY == y)
       this.cellPress(evt, x, y); // Recreate IE's missing mousedown event on double click
     this.lastMouseEvent = 'up';
-    if (arena.tool) {
-      arena.tool.up(evt, x, y);
+    if (arena.map.tool) {
+      arena.map.tool.up(evt, x, y);
       this.updateCursor(evt, x, y);
-      arena.ui.setHint(arena.tool.hint(evt, x, y));
+      arena.ui.setHint(arena.map.tool.hint(evt, x, y));
     }
-    arena.ui.focusMapInput();
   },
 
   /** Set map cursor */
   updateCursor : function(evt, x, y) {
-    cursor = arena.tool.cursor(evt, x, y);
+    if (!arena.map.layer || !arena.map.layer.visible) {
+      cursor = 'no-drop';
+    } else {
+      cursor = arena.map.tool.cursor(evt, x, y);
+    }
     if (cursor != this.lastCursor) {
       this.lastCursor = cursor;
       $('map').style.cursor = cursor;
@@ -140,61 +149,225 @@ arena.event = {
   },
 
   setForegroundOnClick : function(evt) {
-    arena.commands.run(new arena.commands.SetForeground(arena.foreground, arena.map.masked));
-    arena.ui.focusMapInput();
+    arena.commands.run(new arena.commands.SetForeground(arena.map.foreground, arena.map.masked));
   },
 
   setBackgroundOnClick : function(evt) {
-    arena.commands.run(new arena.commands.SetBackground(arena.background, arena.map.masked));
-    arena.ui.focusMapInput();
+    arena.commands.run(new arena.commands.SetBackground(arena.map.background, arena.map.masked));
   },
 
-  mapInputKeyDown : function(evt) {
-    this.lastMapInputValue = $('mapinput').value;
+  mapKeyDown : function(evt) {
+    // Record press count of same key
+    if (this.lastKeyEvent.keyCode == evt.keyCode && evt.timeStamp-this.lastKeyEvent.timeStamp <= 500)
+      evt.pressCount = this.lastKeyEvent.pressCount + 1;
+    else
+      evt.pressCount = 1;
     switch (evt.keyCode) {
+      case 27: // Escape: send cancel command to tool
+        if (!this.mapInputMode) {
+          if (arena.map.tool && arena.map.tool.cancel) {
+            arena.map.tool.cancel();
+            this.updateCursor(evt, this.lastMouseX, this.lastMouseY);
+          }
+        } else {
+          $('mapinput').value = this.lastMapInputValue;
+          arena.ui.focusBody();
+        }
+        arena.event.eatEvent(evt);
+        break;
+      case 13: // Enter: set text
+        if (!this.mapInputMode) {
+          arena.ui.focusMapInput();
+          this.lastMapInputValue = $('mapinput').value;
+        } else {
+//          this.setTextOnClick(evt);
+          arena.map.text = $('mapinput').value;
+          arena.ui.focusBody();
+        }
+        arena.event.eatEvent(evt);
+        break;
+
+      case 9: // Tab
+        arena.event.eatEvent(evt);
+        break;
+        
+      default: 
+        if (!this.mapInputMode)
+          switch (evt.keyCode) {
+        
       case 40: // Down
       case 39: // Right
       case 38: // Up
       case 37: // Left
       case 46: // Delete
-        if (!this.mapInputMode && arena.tool && arena.tool.key) {
+        if (arena.map.tool && arena.map.tool.key) {
           if (evt.preventDefault) evt.preventDefault(); else evt.returnValue = false;
-          arena.tool.key(evt);
-          arena.ui.focusMapInput();
+          arena.map.tool.key(evt);
+        }
+        arena.event.eatEvent(evt);
+        break;
+
+      case 66: // B
+        arena.tools.setTool(arena.tools.Paint);
+        arena.ui.setHint(arena.map.tool.hint(evt, this.lastMouseX, this.lastMouseY));
+        arena.event.eatEvent(evt);
+        break;
+      case 84: // T
+        arena.tools.setTool(arena.tools.Text);
+        arena.ui.setHint(arena.map.tool.hint(evt, this.lastMouseX, this.lastMouseY));
+        arena.event.eatEvent(evt);
+        break;
+      case 69: // E
+        arena.tools.setTool(arena.tools.Erase);
+        arena.ui.setHint(arena.map.tool.hint(evt, this.lastMouseX, this.lastMouseY));
+        arena.event.eatEvent(evt);
+        break;
+      case 82: // R
+        arena.tools.setTool(arena.tools.Mask);
+        arena.ui.setHint(arena.map.tool.hint(evt, this.lastMouseX, this.lastMouseY));
+        arena.event.eatEvent(evt);
+        break;
+      case 68: // D
+        arena.tools.setTool(arena.tools.Dropper);
+        arena.ui.setHint(arena.map.tool.hint(evt, this.lastMouseX, this.lastMouseY));
+        arena.event.eatEvent(evt);
+        break;
+
+      case 48: // 0
+        arena.ui.setForeground( evt.pressCount % 2 != 0 ? "#FFF" : "#CCC");
+        arena.event.eatEvent(evt);
+        break;
+      case 49: // 1
+        arena.ui.setForeground( evt.pressCount % 2 != 0 ? "#000" : "#666");
+        arena.event.eatEvent(evt);
+        break;
+      case 50: // 2
+        arena.ui.setForeground( evt.pressCount % 2 != 0 ? "#00F" : "#006");
+        arena.event.eatEvent(evt);
+        break;
+      case 51: // 3
+        arena.ui.setForeground( evt.pressCount % 2 != 0 ? "#0F0" : "#090");
+        arena.event.eatEvent(evt);
+        break;
+      case 52: // 4
+        arena.ui.setForeground( evt.pressCount % 2 != 0 ? "#F00" : "#600");
+        arena.event.eatEvent(evt);
+        break;
+      case 53: // 5
+        arena.ui.setForeground( evt.pressCount % 2 != 0 ? "#FF0" : "#F60");
+        arena.event.eatEvent(evt);
+        break;
+      case 54: // 6
+        arena.ui.setForeground( evt.pressCount % 2 != 0 ? "#F0F" : "#909");
+        arena.event.eatEvent(evt);
+        break;
+      case 55: // 7
+        arena.ui.setForeground( evt.pressCount % 2 != 0 ? "#0FF" : "#099");
+        arena.event.eatEvent(evt);
+        break;
+      //case 56: // 8
+      //case 57: // 9
+      
+      case 107: // +
+        if (evt.shiftKey) {
+          // Select higher layer
+          var map = arena.map;
+          for (var i = 0; i < map.layers.length; i++)
+            if (map.layers[i] == map.layer) {
+              if (i < map.layers.length-1) {
+                map.layer = map.layers[i+1];
+                arena.ui.updateLayers();
+              }
+              break;
+            }
+          arena.event.eatEvent(evt);
+        }
+        break;
+        
+      
+      case 109: // -
+        if (evt.shiftKey) {
+          // Select lower layer
+          var map = arena.map;
+          for (var i = 0; i < map.layers.length; i++)
+            if (map.layers[i] == map.layer) {
+              if (i > 0) {
+                map.layer = map.layers[i-1];
+                arena.ui.updateLayers();
+              }
+              break;
+            }
+          arena.event.eatEvent(evt);
         }
         break;
 
-      case 27: // Escape: send cancel command to tool
-        if (!this.mapInputMode && arena.tool && arena.tool.cancel) {
-          arena.tool.cancel();
-          this.updateCursor(evt, this.lastMouseX, this.lastMouseY);
-        }
-        arena.ui.focusMapInput();
-        break;
-      case 13: // Enter: set text
-        arena.event.setTextOnClick(evt);
-        arena.ui.focusMapInput();
-        break;
+      default:
+        //alert(evt.keyCode);
+      }
+    }
+    this.lastKeyEvent = evt;
+  },
 
-      case 9: // Tab - TODO: Switch to chat input
-        if (evt.preventDefault) evt.preventDefault(); else evt.returnValue = false;
-        arena.ui.focusMapInput();
-        break;
+  mapInputKeyDown : function(evt) {
+    return;
+    if (evt.keyCode == 27 || evt.keyCode == 13) {
+      switch (evt.keyCode) {
+        case 27: // Escape: cancel text edit
+        case 13: // Enter: accept and return
+      }
     }
   },
 
   mapInputKeyUp : function(evt) {
-    this.mapInputMode = this.lastMapInputValue != $('mapinput').value;
+  },
+  
+  viewLayerOnClick : function(evt) {
+    $('layer').style.display = '';
+    $('glyph').style.display = 'none';
   },
 
-  setTextOnClick : function(evt) {
-    arena.commands.run(new arena.commands.SetText($("mapinput").value, arena.map.masked));
-    arena.ui.focusMapInput();
+  viewGlyphOnClick : function(evt) {
+    $('layer').style.display = 'none';
+    $('glyph').style.display = '';
+  },
+  
+  addLayerOnClick : function(evt) {
+    var name = prompt("New layer name?", "New Layer");
+    if (name)
+      arena.commands.run(new arena.commands.LayerAdd(name));
   },
 
-  setAllOnClick : function(evt) {
-    arena.commands.run(new arena.commands.SetCell($("mapinput").value, arena.foreground, arena.background, arena.map.masked));
-    arena.ui.focusMapInput();
+  delLayerOnClick : function(evt) {
+    if (arena.map.layers.length > 1)
+      arena.commands.run(new arena.commands.LayerDelete(arena.map.layer));
+  },
+  
+  layerOnClick : function(evt, layer) {
+    arena.map.layer = layer;
+    arena.ui.updateLayers();
+  },
+
+  downLayerOnClick : function(evt) {
+    var map = arena.map;
+    for (var i = 0; i < map.layers.length; i++)
+      if (map.layers[i] == map.layer) {
+        if (i > 0) {
+          arena.commands.run(new arena.commands.LayerMove(i, i-1));
+          break;
+        }
+      }
+  },
+
+  upLayerOnClick : function(evt) {
+    // TODO: Make command?
+    var map = arena.map;
+    for (var i = 0; i < map.layers.length; i++)
+      if (map.layers[i] == map.layer) {
+        if (i < map.layers.length-1) {
+          arena.commands.run(new arena.commands.LayerMove(i, i+1));
+          break;
+        }
+      }
   },
 
   paletteOnClick : function(evt, colour) {
@@ -204,13 +377,12 @@ arena.event = {
     } else if (evt.altKey) { // Quick set background: alt+press
       arena.commands.run(new arena.commands.SetBackground(colour, arena.map.masked));
     } else if (evt.detail % 2 == 1) {
-      this.lastForeground = arena.foreground;
+      this.lastForeground = arena.map.foreground;
       arena.ui.setForeground(colour);
     } else { // Double click: restore foreground and set background instead
       arena.ui.setForeground(this.lastForeground);
       arena.ui.setBackground(colour);
     }
-    arena.ui.focusMapInput();
   },
 
   hideSubmenu : function() {
@@ -238,7 +410,6 @@ arena.event = {
     $("mapinput").value = glyph;
     if (evt.ctrlKey || evt.metaKey) // Quick set text: ctrl+press
       arena.commands.run(new arena.commands.SetText(glyph, arena.map.masked));
-    arena.ui.focusMapInput();
   },
 }
 
@@ -246,7 +417,7 @@ arena.ui = {
   /*********************** Toolbox functions ***********************/
   createColourPalette : function() {
     var p = $('palette');
-    var palette = arena.lang.static.palette;
+    var palette = arena.lang.palette;
     var i = 0, td, tr, tbody = $('palette').firstChild;
     for (var c in palette) { var colour = palette[c];
       if (i % 2 == 0) tr = document.createElement('tr');
@@ -265,9 +436,26 @@ arena.ui = {
     }
   },
 
-  createGlyph : function() {
-    var glyph = arena.lang.static.glyph;
-    var i = 0, btn, g = $('glyph');
+  updateLayers : function() {
+    var btn, e = $('layer');
+    var list = e.getElementsByClassName('layer');
+    for (var i = list.length-1; i >= 0; i--) {
+      list[i].parentNode.removeChild(list[i]);
+    }
+    list = arena.map.layers;
+    for (var i = list.length-1; i >= 0; i--) {
+      btn = document.createElement('div');
+      btn.setAttribute('onclick', 'arena.event.layerOnClick(event,arena.map.layers['+i+'])');
+      btn.setAttribute('onmouseover', 'arena.ui.hint("tool|barhint_Layer")');
+      btn.setAttribute('class', (list[i] == arena.map.layer) ? 'layer active' : 'layer');
+      btn.innerHTML = list[i].name;
+      e.appendChild(btn);
+    }
+  },
+
+  createGlyphs : function() {
+    var glyph = arena.lang.glyph;
+    var btn, g = $('glyph');
     for (var i = 0; i < glyph.length; i++) {
       btn = document.createElement('div');
       btn.setAttribute('onclick', 'arena.event.glyphOnClick(event,"'+glyph[i]+'")');
@@ -280,20 +468,28 @@ arena.ui = {
   },
 
   setForeground : function (colour) {
-    arena.foreground = colour;
+    arena.map.foreground = colour;
     $('cmd_Foreground').style.backgroundColor = colour;
   },
 
   setBackground : function (colour) {
-    arena.background = colour;
+    arena.map.background = colour;
     $('cmd_Background').style.backgroundColor = colour;
     $('cmd_Foreground').style.border = '2px solid '+colour;
   },
 
   focusMapInput : function() {
+    $('mapinput').disabled = false;
     $('mapinput').focus();
     $('mapinput').select();
+    arena.event.mapInputMode = true;
+  },
+  
+  focusBody : function() {
     arena.event.mapInputMode = false;
+    $('hideFocus').focus();
+    $('mapinput').disabled = true;
+    //setTimeout(document.body.focus, 10);
   },
 
   /*********************** Status bar functions ***********************/
@@ -352,6 +548,3 @@ arena.ui = {
     }
   },
 }
-
-arena.ui.createColourPalette();
-arena.ui.createGlyph();

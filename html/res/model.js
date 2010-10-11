@@ -8,14 +8,14 @@
 function $(eid) { return document.getElementById(eid); }
 function sortNumber(a,b) { return a - b; }
 
-arena.tool = null;   // Currently selected map tool
-arena.foreground = '#000'; // Current foreground colour
-arena.background = '#FFF'; // Current background colour
-arena.toolWidth  = '--';   // Displayed tool-related width
-arena.toolHeight = '--';   // Displayed tool-related height
+//arena.toolWidth  = '--';   // Displayed tool-related width
+//arena.toolHeight = '--';   // Displayed tool-related height
 
 
 /************************* General functions ******************************/
+
+// Empty, do nothing functions
+arena.empty = function() {}
 
 // Find a given xy coordinate in coordinate list. Return -1 if not found, index of coordinate if found
 arena.xyInCoList = function(x, y, ary) {
@@ -62,13 +62,37 @@ arena.Cell.prototype = {
   text: null,
 }
 
-arena.Layer = function(name) { // Use arena.map.createLayer instead!
+arena.Layer = function(map, name) { // Use arena.map.createLayer instead!
+  this.map = map;
   this.name = name;
+  this.cells = [];
+  if (map) {
+    map.layers.push(this);
+    if (!map.layer)
+      map.layer = this;
+  }
 }
 arena.Layer.prototype = {
   name : null,
   map  : null,
-  cells : [],
+  visible : true,
+  cells : null,
+  // Remove this layer
+  remove : function() {
+    this.cells = [];
+    if (this.map) {
+       var layers = this.map.layers;
+       for (var i = 0; i < layers.length; i++) {
+         if (layers[i] == this) {
+           layers.splice(i, 1);
+           break;
+         }
+       }
+       if (this.map.layer == this)
+         this.map.layer = layers.length ? layers[0] : null;
+       this.map = null;
+    }                                          
+  },
   has : function(x,y) {
     var c = this.cells;
     return c[y] && c[y][x];
@@ -81,22 +105,26 @@ arena.Layer.prototype = {
   },
   set : function(x,y,value) {
     var c = this.cells;
-    if (!c[y]) {
-      if (value === null) return;
-      c[y] = [];
+    if (value) {
+      if (!c[y])
+        c[y] = [];
+      c[y][x] = value;
+    } else {
+      if (!c[y]) return;
+      delete c[y][x];
+      if (!c[y]) delete c[y];
     }
-    c[y][x] = value;
   },
   createCell : function (x,y) { // Create cell if not exist, and return the cell
     var c = this.get(x,y);
     if (!c) {
-      c = new arena.Cell();
+      c = new arena.Cell(x,y,null);
       this.set(x, y, c);
     }
     return c;
   },
   trim : function () { // Removes empty cells and rows
-    var cells = this.cells[y];
+    var cells = this.cells;
     var h = cells.length;
     if (h <= 0) return;
     for (var y = 0; y < h; y++)
@@ -130,18 +158,17 @@ arena.Layer.prototype = {
 
 arena.map = { /** Map object. Store background, size, name, etc. */
   title : 'Map 1',
-  layerOrder : ['Terrain', 'Effect', 'Object', 'Creature', 'Overlay'],
-  layers : [
-    new arena.Layer('Terrain' ),
-    new arena.Layer('Effect'  ),
-    new arena.Layer('Object'  ),
-    new arena.Layer('Creature'),
-    new arena.Layer('Overlay' ),
-  ],
+  cells : [],    // Canvas, array of array of Cell. Top left is 0, 0. This array is y then x.
+  masked : [],   // Array of cells that are currently masked.
+  marked : [],   // Array of cells that are currently marked by tools, always temporary.
 
-  cells : [],    // Array of array of Cell. Top left is 0, 0. This array is y then x.
-  masked : [],   // Array of cells that are masked.
-  marked : [],   // Array of cells that are marked by tools, always temporary.
+  layer : null,    // Current layer.
+  tool : null,   // Currently selected map tool
+  text : '  ',   // Currently paint text
+  foreground : '#000', // Current paint foreground colour
+  background : '#FFF', // Current paint background colour
+
+  layers : [], // Layers of this map
 
   dx : 1, // displayed coordinate dx
   dy : 1, // displayed coordinate dy
@@ -151,11 +178,63 @@ arena.map = { /** Map object. Store background, size, name, etc. */
 
   table : $('map'), // Map table element
 
-  background : {
-    text : arena.lang.static.background,
+  background_fill : {
+    text : arena.lang.map.background,
     foreground : '#000',
     background : '#FFF',
     borderColour : '#000'
+  },
+
+  /*------------- Render methods ----------------*/
+  
+  // Update specified canvas area from layers
+  repaint : function(coList) {
+    if (coList)
+      for (var p = coList.length-1; p >= 0; p--)
+        this.repaintCell(coList[p][0], coList[p][1]);
+    else
+      for ( var y = 0; y < this.height; y++ )
+        for ( var x = 0; x < this.width; x++ )
+          this.repaintCell(x, y);
+	},
+
+  // Update text, foreground, and background of a cell from layers
+  repaintCell : function(x, y) {
+    var textDrawn = false;
+    var foregroundDrawn = false;
+    var backgroundDrawn = false;
+    var subject = this.cells[y][x];
+    // Then cover with layer
+    var layers = this.layers;
+    var len = layers.length;
+    for (var l = len-1; l >= -1; l--) {
+      var cell = l >= 0 ? layers[l].get(x,y) : this.background_fill;
+      if (cell) {
+        if (!textDrawn && cell.text) {
+          textDrawn = true;
+          if (subject.text != cell.text) {
+            subject.text = cell.text;
+            subject.repaintCellText();
+          }
+        }
+        if (!foregroundDrawn && cell.foreground) {
+          foregroundDrawn = true;
+          if (subject.foreground != cell.foreground) {
+            subject.foreground = cell.foreground;
+            subject.repaintCellForeground();
+          }
+        }
+        if (!backgroundDrawn && cell.background) {
+          backgroundDrawn = true;
+          if (subject.background != cell.background) {
+            subject.background = cell.background;
+            subject.repaintCellBackground();
+          }
+        }
+        if (textDrawn && foregroundDrawn && backgroundDrawn)
+        break;
+      }
+    }
   },
 
   /*------------- Highlight methods ----------------*/
@@ -177,8 +256,10 @@ arena.map = { /** Map object. Store background, size, name, etc. */
     for (var i = 0; i < l; i++) {
       var m = newColList[i];
       var c = this.cells[m[1]][m[0]]
-      c[prop] = true;
-      c.dirty = true;
+      if (c) {
+        c[prop] = true;
+        c.dirty = true;
+      }
     }
     if (totalArea.length > 0)
       this.redrawMark(totalArea);
@@ -207,7 +288,11 @@ arena.map = { /** Map object. Store background, size, name, etc. */
 
   /*------------- Factory methods ----------------*/
   recreate: function(width, height) {
-    var map = this, table = map.table, tbody = table.getElementsByTagName('tbody')[0];
+    var map = this;
+    var table = map.table;
+    var tbody = table.getElementsByTagName('tbody')[0];
+
+    $('mapinput').value = '  ';
 
     // Clear map
     for (var y = 0; y < map.height; y++) { var row = map.cells[y];
@@ -233,19 +318,11 @@ arena.map = { /** Map object. Store background, size, name, etc. */
     arena.ui.setStatus(arena.lang.command.name_CreateMap + ' '+width+'x'+height);
   },
 
-  /** Create a layer at top with given name */
-  createLayer : function (name) {
-    var l = new arena.Layer(name);
-    l.map = this;
-    layers.push(l);
-    return l;
-  },
-
   /** Create a cell row with vertical border. Returns tr and cell array. */
   createCellRow : function(y) {
     var tr = document.createElement('tr'), cells = [], td, cell;
     var w = arena.map.width;
-    var background = arena.map.background.text;
+    var background = arena.map.background_fill;
     for (var x = 0; x < w; x++) {
       // Grid cell
       td = document.createElement('td');
@@ -256,6 +333,9 @@ arena.map = { /** Map object. Store background, size, name, etc. */
       tr.appendChild(td);
       // Model cell
       cell = new arena.Cell(x, y, td);
+      cell.text = background.text;
+      cell.background = background.background;
+      cell.foreground = background.foreground;
       cells[x] = cell;
       cell.repaintAll();
     }
@@ -270,7 +350,7 @@ arena.map = { /** Map object. Store background, size, name, etc. */
 arena.Cell = function(x, y, td) {
   this.x = x;
   this.y = y;
-  this.td = td;
+  if (td) this.td = td;
   this.marked = false;
   this.masked = false;
   this.text = null;
@@ -279,21 +359,7 @@ arena.Cell = function(x, y, td) {
   this.dirty = false;
 }
 arena.Cell.prototype = {
-  /*------------------------ Getter/setter---------------------------*/
-  getText : function() {
-    return this.text === null ? arena.map.background.text : this.text;
-  },
-  getForeground : function() {
-    return this.foreground === null ? arena.map.background.foreground : this.foreground;
-  },
-  getBackground : function() {
-    return this.background === null ? arena.map.background.background : this.background;
-  },
-
   /*------------------------ Grid update functions ---------------------------*/
-  /** Update cell
-  updateCell : function() {
-  },
 
   /** Draw border and cell. */
   repaintAll : function() {
@@ -316,22 +382,26 @@ arena.Cell.prototype = {
 
   /** Draw cell content. */
   repaintCellContent : function() {
-    this.repaintCellStyle();
     this.repaintCellText();
+    this.repaintCellForeground();
+    this.repaintCellBackground();
   },
 
   /** Draw cell text. */
   repaintCellText : function() {
-    var text = this.getText();
+    var text = this.text;
     if (this.td.innerHTML != text) this.td.innerHTML = text;
   },
 
-  /** Draw cell style. */
-  repaintCellStyle : function() {
-    var td = this.td;
-    var frgd = this.getForeground();
-    var bkgd = this.getBackground();
-    if (td.style.backgroundColor != bkgd) td.style.backgroundColor = bkgd;
-    if (td.style.color != frgd) td.style.color = frgd;
+  /** Draw cell foreground */
+  repaintCellForeground : function() {
+    var frgd = this.foreground;
+    if (this.td.style.color != frgd) this.td.style.color = frgd;
+  },
+
+  /** Draw cell background */
+  repaintCellBackground : function() {
+    var bkgd = this.background;
+    if (this.td.style.backgroundColor != bkgd) this.td.style.backgroundColor = bkgd;
   },
 }
