@@ -1,0 +1,24 @@
+Sheepy's Arena, Change log
+
+== 2010-10: Layer support ==
+2010-10-16 Mark/mask draws only border, not every cell.
+2010-10-15 Separate layer and canvas cell classe.
+2010-10-14 Brush size, brush respects mask.
+2010-10-12 Separate command and tool. General bug fix of new tools.
+2010-10-08 Colour & tools keyboard shortcut, mask tool layer update, dropper tool. 
+2010-10-07 Layers with new text/paint/erase tool, script independent from php
+2010-09-15 Focus placeholder for more reliable key detection
+
+== 2010-03: Rapid prototype ==
+2010-03-28 Better key input / function key detection
+2010-03-27 Colour submenu to conserve screen estate
+2010-03-26 Export to HTML 
+2010-03-26 Added message for disabled JavaScript 
+2010-03-25 Arrow keys move mask when not inputting 
+2010-03-25 Text input no longer get interrupted by map commands (del, esc, etc.) 
+2010-03-25 Reduced unnecessarey trigger of status bar update script 
+2010-03-25 BBCode & plain text export format 
+2010-03-24 Foreground colour export will ignore whitespace 
+2010-03-23 Initial canvas wait message 
+2010-03-23 Show current cell's foreground and background 
+2010-03-23 Multi-selection with area select 

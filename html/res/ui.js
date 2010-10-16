@@ -38,7 +38,9 @@ arena.event = {
   },
   
   // Prevent a event from triggering default behaviour
-  eatEvent : function(evt) {
+  eatEvent : function(evt, eatSpecial) {
+    if (eatSpecial === false) // If don't want to consume special key then check for them
+      if (evt.ctrlKey || evt.shiftKey || evt.ctrlKey || evt.metaKey) return;
     if (evt.preventDefault) evt.preventDefault(); else evt.returnValue = false;
   },
 
@@ -149,11 +151,11 @@ arena.event = {
   },
 
   setForegroundOnClick : function(evt) {
-    arena.commands.run(new arena.commands.SetForeground(arena.map.foreground, arena.map.masked));
+    arena.commands.run(new arena.commands.SetForeground(arena.map.foreground, arena.map.masked, arena.map.layer));
   },
 
   setBackgroundOnClick : function(evt) {
-    arena.commands.run(new arena.commands.SetBackground(arena.map.background, arena.map.masked));
+    arena.commands.run(new arena.commands.SetBackground(arena.map.background, arena.map.masked, arena.map.layer));
   },
 
   mapKeyDown : function(evt) {
@@ -194,76 +196,74 @@ arena.event = {
       default: 
         if (!this.mapInputMode)
           switch (evt.keyCode) {
-        
+
+      case 32: // Space
       case 40: // Down
       case 39: // Right
       case 38: // Up
       case 37: // Left
       case 46: // Delete
-        if (arena.map.tool && arena.map.tool.key) {
-          if (evt.preventDefault) evt.preventDefault(); else evt.returnValue = false;
-          arena.map.tool.key(evt);
-        }
+        arena.map.tool.key(evt);
         arena.event.eatEvent(evt);
         break;
 
       case 66: // B
         arena.tools.setTool(arena.tools.Paint);
         arena.ui.setHint(arena.map.tool.hint(evt, this.lastMouseX, this.lastMouseY));
-        arena.event.eatEvent(evt);
+        arena.event.eatEvent(evt, false);
         break;
       case 84: // T
         arena.tools.setTool(arena.tools.Text);
         arena.ui.setHint(arena.map.tool.hint(evt, this.lastMouseX, this.lastMouseY));
-        arena.event.eatEvent(evt);
+        arena.event.eatEvent(evt, false);
         break;
       case 69: // E
         arena.tools.setTool(arena.tools.Erase);
         arena.ui.setHint(arena.map.tool.hint(evt, this.lastMouseX, this.lastMouseY));
-        arena.event.eatEvent(evt);
+        arena.event.eatEvent(evt, false);
         break;
       case 82: // R
         arena.tools.setTool(arena.tools.Mask);
         arena.ui.setHint(arena.map.tool.hint(evt, this.lastMouseX, this.lastMouseY));
-        arena.event.eatEvent(evt);
+        arena.event.eatEvent(evt, false);
         break;
       case 68: // D
         arena.tools.setTool(arena.tools.Dropper);
         arena.ui.setHint(arena.map.tool.hint(evt, this.lastMouseX, this.lastMouseY));
-        arena.event.eatEvent(evt);
+        arena.event.eatEvent(evt, false);
         break;
 
       case 48: // 0
         arena.ui.setForeground( evt.pressCount % 2 != 0 ? "#FFF" : "#CCC");
-        arena.event.eatEvent(evt);
+        arena.event.eatEvent(evt, false);
         break;
       case 49: // 1
         arena.ui.setForeground( evt.pressCount % 2 != 0 ? "#000" : "#666");
-        arena.event.eatEvent(evt);
+        arena.event.eatEvent(evt, false);
         break;
       case 50: // 2
         arena.ui.setForeground( evt.pressCount % 2 != 0 ? "#00F" : "#006");
-        arena.event.eatEvent(evt);
+        arena.event.eatEvent(evt, false);
         break;
       case 51: // 3
         arena.ui.setForeground( evt.pressCount % 2 != 0 ? "#0F0" : "#090");
-        arena.event.eatEvent(evt);
+        arena.event.eatEvent(evt, false);
         break;
       case 52: // 4
         arena.ui.setForeground( evt.pressCount % 2 != 0 ? "#F00" : "#600");
-        arena.event.eatEvent(evt);
+        arena.event.eatEvent(evt, false);
         break;
       case 53: // 5
         arena.ui.setForeground( evt.pressCount % 2 != 0 ? "#FF0" : "#F60");
-        arena.event.eatEvent(evt);
+        arena.event.eatEvent(evt, false);
         break;
       case 54: // 6
         arena.ui.setForeground( evt.pressCount % 2 != 0 ? "#F0F" : "#909");
-        arena.event.eatEvent(evt);
+        arena.event.eatEvent(evt, false);
         break;
       case 55: // 7
         arena.ui.setForeground( evt.pressCount % 2 != 0 ? "#0FF" : "#099");
-        arena.event.eatEvent(evt);
+        arena.event.eatEvent(evt, false);
         break;
       //case 56: // 8
       //case 57: // 9
@@ -281,6 +281,8 @@ arena.event = {
               break;
             }
           arena.event.eatEvent(evt);
+        } else {
+          arena.map.tool.key(evt);
         }
         break;
         
@@ -298,14 +300,24 @@ arena.event = {
               break;
             }
           arena.event.eatEvent(evt);
+        } else {
+          arena.map.tool.key(evt);
         }
         break;
 
       default:
-        //alert(evt.keyCode);
+        arena.map.tool.key(evt);
+        //if (console) console.log(evt.keyCode);
       }
     }
+    if (evt.keyCode < 32) // Update cursor for control characters - Shift, Ctrl, Alt, etc.
+      this.updateCursor(evt, this.lastMouseX, this.lastMouseY);
     this.lastKeyEvent = evt;
+  },
+
+  mapKeyUp : function(evt) {
+    if (evt.keyCode < 32) // Update cursor for control characters - Shift, Ctrl, Alt, etc.
+      this.updateCursor(evt, this.lastMouseX, this.lastMouseY);
   },
 
   mapInputKeyDown : function(evt) {
@@ -373,9 +385,9 @@ arena.event = {
   paletteOnClick : function(evt, colour) {
     this.checkRepeat(evt, 'palette'+colour);
     if (evt.ctrlKey || evt.metaKey) { // Quick set foreground: ctrl+press
-      arena.commands.run(new arena.commands.SetForeground(colour, arena.map.masked));
-    } else if (evt.altKey) { // Quick set background: alt+press
-      arena.commands.run(new arena.commands.SetBackground(colour, arena.map.masked));
+      arena.commands.run(new arena.commands.SetForeground(colour, arena.map.masked, arena.map.layer));
+    } else if (evt.shiftKey) { // Quick set background: alt+press
+      arena.commands.run(new arena.commands.SetBackground(colour, arena.map.masked, arena.map.layer));
     } else if (evt.detail % 2 == 1) {
       this.lastForeground = arena.map.foreground;
       arena.ui.setForeground(colour);
@@ -407,9 +419,12 @@ arena.event = {
   },
 
   glyphOnClick : function(evt, glyph) {
-    $("mapinput").value = glyph;
     if (evt.ctrlKey || evt.metaKey) // Quick set text: ctrl+press
-      arena.commands.run(new arena.commands.SetText(glyph, arena.map.masked));
+      arena.commands.run(new arena.commands.SetText(glyph, arena.map.masked, arena.map.layer));
+    else {
+      arena.map.text = $("mapinput").value = glyph;
+      arena.tools.setTool(arena.tools.Text);
+    }
   },
 }
 

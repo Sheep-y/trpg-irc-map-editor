@@ -7,9 +7,10 @@
  *   down() : called when mouse is pressed.
  *   move() : called when mouse is moved.
  *   up()   : called when mouse is released.
- *   key()  : called when certain keys are pressed (e.g. direction key)
- *   cursor() : return suitable cursor for a grid
- *   hint() : return suitable hint for a grid
+ *   key()  : called when certain keys are pressed (e.g. direction key).
+ *   brush(): set brush, x may be 1, 2, or 3.
+ *   cursor(): return suitable cursor for a grid.
+ *   hint()  : return suitable hint for a grid.
  *
  * For these methods, evt is the event object, and x & y are grid coordinates.
  * Each tool also contains some common methods:
@@ -18,17 +19,6 @@
  *   unset() : called when the tool is unselected from use to another.
  *   cancel() : called when a cancel command is issued.
  *   outOfCanvas() : called when mouse is clicked (not moved) outside canvas.
- *
- *
- * arena.commmands contain a set of (redoable) commands
- * Each commands contains the following properties and methods:
- *
- *   name   : Name of this command.
- *   desc   : More detailed description of this command.
- *   redo() : Call to redo this action.
- *   undo() : Call to undo this action.
- *   repeat() : Call to repeat this action. (Optional, only if it make sense to repeat)
- *   consolidate() : Consolidate next action in queue. Return true if consolidated, return false to leave it untouched.  
  *
  */
 
@@ -56,9 +46,10 @@ arena.tools = {
   }
 }
 
-// Text tool, used to draw text.  Most functions shared by Paint and Erase tool. 
+// Text tool, used to draw text.  Most functions shared by Paint and Erase tool.
 arena.tools.Text = {
   	drawing : false,
+  	brushSize : 1,
     down : function(evt, x, y) {
       if (evt.button < 2) {
         this.drawing = true;
@@ -66,19 +57,27 @@ arena.tools.Text = {
       }
     },
     move : function(evt, x, y) {
-      arena.map.setMarked([[x,y]]);
+      arena.map.setMarked(this.getBrushCoList(x,y));
       if (this.drawing)
         this.draw(evt, x, y);
     },
     up   : function(evt, x, y) {
       if (evt.button < 2)
         this.drawing = false;
-    },                        
+    },
     draw : function(evt, x, y) {
       if (arena.map.layer) {
       	var coList = !evt.ctrlKey
-      	  ? [[x,y]] // No ctrl key, just paint cell
+      	  ? this.getBrushCoList(x,y) // No ctrl key, just paint cell
       	  : [[x,y]]; // Ctrl key, fill mode
+        if (arena.map.masked.length) {
+          var mask = arena.map.masked;
+          for (var i = coList.length-1; i >= 0; i--) {
+            if (arena.xyInCoList(coList[i][0], coList[i][1], mask) < 0)
+              coList.splice(i, 1);
+          }
+          if (coList.length < 0) return;
+        }
         var cmd = this.getCommand(evt, coList);
         arena.commands.run(cmd);
       }
@@ -88,7 +87,35 @@ arena.tools.Text = {
         ? new arena.commands.SetCell(arena.map.text, arena.map.foreground, null, coList, arena.map.layer)
         : new arena.commands.SetCell(arena.map.text, null, arena.map.foreground, coList, arena.map.layer);
     },
-    key  : function(evt, x, y) { }, // Do nothing
+    key  : function(evt) {
+      if (evt.keyCode == 107 && this.brushSize < 100) { // +
+        ++this.brushSize;
+        this.move(evt, arena.event.lastMouseX, arena.event.lastMouseY);
+        arena.event.eatEvent(evt);
+      } else if (evt.keyCode == 109 && this.brushSize > 1) { // -
+        --this.brushSize;
+        this.move(evt, arena.event.lastMouseX, arena.event.lastMouseY);
+        arena.event.eatEvent(evt);
+      }
+    },
+    brush  : function(evt, size) {
+      if (size < 1) size = 1;
+      this.brushSize = size*2-1;
+      this.move(evt, arena.event.lastMouseX, arena.event.lastMouseY);
+    },
+    getBrushCoList : function(x, y) {
+      if (this.brushSize == 1) return [[x,y]];
+      var sx = Math.max( Math.ceil(-this.brushSize/2)+x, 0);
+      var ex = Math.min( Math.floor((this.brushSize-1)/2)+x, arena.map.width-1);
+      var sy = Math.max( Math.ceil(-this.brushSize/2)+y, 0);
+      var ey = Math.min( Math.floor((this.brushSize-1)/2)+y, arena.map.height-1);
+      var result = [];
+      for (var dx = sx; dx <= ex; dx++)
+        for (var dy = sy; dy <= ey; dy++) {
+          result.push([dx, dy]);
+        }
+      return result;
+    },
     cursor : function(evt, x, y) {
       return (evt.ctrlKey) ? 'cell' : 'default';
     },
@@ -102,30 +129,58 @@ arena.tools.Text = {
   };
 
 arena.tools.Paint = {
+  	drawing : false,
+  	brushSize : 1,
+    down : arena.tools.Text.down,
+    move : arena.tools.Text.move,
+    up   : arena.tools.Text.up,
+    draw : arena.tools.Text.draw,
     getCommand : function(evt, coList) {
       return !evt.shiftKey
         ? new arena.commands.SetBackground(arena.map.foreground, coList, arena.map.layer)
         : new arena.commands.SetForeground(arena.map.foreground, coList, arena.map.layer);
     },
+    key  : arena.tools.Text.key,
+    brush  : arena.tools.Text.brush,
+    getBrushCoList : arena.tools.Text.getBrushCoList,
+    cursor : function(evt, x, y) {
+      return (evt.ctrlKey) ? 'default' : 'cell';
+    },
     hint : function(evt, x, y) {
       return arena.lang.tool.usehint_paint;
     },
+    set : arena.tools.Text.set,
+    unset : arena.tools.Text.unset,
+    cancel : arena.tools.Text.cancel,
+    outOfCanvas : arena.tools.Text.outOfCanvas,
   };
-for(var i in arena.tools.Text)
-  if (!arena.tools.Paint[i])
-    arena.tools.Paint[i] = arena.tools.Text[i];
+
 
 arena.tools.Erase = {
+  	drawing : false,
+  	brushSize : 1,
+    down : arena.tools.Text.down,
+    move : arena.tools.Text.move,
+    up   : arena.tools.Text.up,
+    draw : arena.tools.Text.draw,
     getCommand : function(evt, coList) {
       return new arena.commands.Erase(coList, arena.map.layer);
+    },
+    key  : arena.tools.Text.key,
+    brush  : arena.tools.Text.brush,
+    getBrushCoList : arena.tools.Text.getBrushCoList,
+    cursor : function(evt, x, y) {
+      return (evt.ctrlKey) ? 'default' : 'cell';
     },
     hint : function(evt, x, y) {
       return arena.lang.tool.usehint_erase;
     },
+    set : arena.tools.Text.set,
+    unset : arena.tools.Text.unset,
+    cancel : arena.tools.Text.cancel,
+    outOfCanvas : arena.tools.Text.outOfCanvas,
   };
-for(var i in arena.tools.Text)
-  if (!arena.tools.Erase[i])
-    arena.tools.Erase[i] = arena.tools.Text[i];
+
 
   /** Grid mask tool */
 arena.tools.Mask = {
@@ -263,7 +318,7 @@ arena.tools.Mask = {
         }
       }
     },
-
+    brush  : arena.empty,
     cursor : function (evt, x, y) {
       if (this.isInUse && this.isMoving) return (evt.ctrlKey) ? 'copy' : 'move';
       var c = arena.map.cells[y][x];
@@ -382,7 +437,7 @@ arena.tools.Mask = {
   };
 
 
-// Text tool, used to draw text.  Most functions shared by Paint and Erase tool. 
+// Text tool, used to draw text.  Most functions shared by Paint and Erase tool.
 arena.tools.Dropper = {
     down : function(evt, x, y) {
       var cell = arena.map.layer.get(x,y);
@@ -397,6 +452,7 @@ arena.tools.Dropper = {
     },
     up     : arena.empty,
     key    : arena.empty,
+    brush  : arena.empty,
     cursor : function(evt, x, y) { return 'cell'; },
     hint   : function(evt, x, y) { return arena.lang.tool.usehint_dropper; },
     set    : arena.empty,
@@ -404,263 +460,3 @@ arena.tools.Dropper = {
     cancel : arena.empty,
     outOfCanvas : arena.empty,
   };
-
-
-arena.commands = {
-  list : ['SetMask', 'SetCell', 'SetText', 'SetForeground', 'SetBackground', 'Erase', 'MoveMasked' 
-         ,'LayerMove', 'LayerDelete', 'LayerAdd'],
-
-  // Setup commands, call once
-  initialise : function() {
-    var l = this.list.length;
-    for (var i = 0; i < l; i++) { var name = this.list[i];
-       var cmd = this[name];
-       cmd.prototype.className = name;
-       cmd.prototype.name = arena.lang.command['name_'+name];
-    }
-  },
-
-  // Run a new command
-  run : function(command) {
-    command.redo();
-    arena.ui.setStatus(command.desc);
-  },
-
-  SetMask : function(coList) {
-    this.desc = "Set Mask";
-    this.newMask = coList;
-  },
-
-  SetCell : function(text, foreground, background, coList, layer) {
-    this.desc = this.name + ' "' + text + '"/' +
-                (foreground ? foreground : ' - ') + '/' +
-                (background ? background : ' - ');
-    this.text = text;
-    this.foreground = foreground;
-    this.background = background;
-    this.coList = coList;0
-    this.layer = layer;
-  },
-
-  SetText : function(text, coList, layer) {
-    this.desc = 'Set text "' + text + '"';
-    this.text = text;
-    this.coList = coList;
-    this.layer = layer;
-  },
-
-  SetForeground : function(foreground, coList, layer) {
-    this.desc = 'Set foreground "' + foreground + '"';
-    this.foreground = foreground;
-    this.coList = coList;
-    this.layer = layer;
-  },
-
-  SetBackground : function(background, coList, layer) {
-    this.desc = 'Set background "' + background + '"';
-    this.background = background;
-    this.coList = coList;
-    this.layer = layer;
-  },
-  
-  Erase : function(coList, layer) {
-    this.desc = "Erase cell";
-    this.coList = coList;
-    this.layer = layer;
-  },
-  
-  MoveMasked : function(coList, dx, dy, layer, isCopy) {
-    this.desc = isCopy ? "Copy masked area" : "Move masked area";
-    this.coList = coList;
-    this.dx = dx;
-    this.dy = dy;
-    this.layer = layer;
-    this.isCopy = isCopy;
-  },
-  
-  LayerMove : function(fromIndex, toIndex) {
-    this.desc = "Move layer " + arena.map.layers[fromIndex];
-    this.fromIndex = fromIndex;
-    this.toIndex = toIndex;
-  },
-  
-  LayerDelete : function(target) {
-    this.desc = "Delete layer " + target.name;
-    this.layer = target;
-  },
-
-  LayerAdd : function(name) {
-    this.desc = "Create layer " + name;
-    this.name = name;
-  },
-}
-
-arena.commands.SetMask.prototype = {
-  redo : function() {
-    if (!this.originalMask) this.originalMask = arena.map.masked.concat([]);
-    arena.map.setMasked(this.newMask);
-  },
-  undo : function() {
-    arena.map.setMasked(this.originalMask);
-  },
-  consoliadte : function(newCmd) { 
-    if (newCmd.className != this.className) return false;
-    this.newMask = newCmd.newMask;
-    return true;
-  },
-}
-
-arena.commands.SetCell.prototype = {
-  redo : function() {
-    var l = this.coList.length;
-    for (var i = 0; i < l; i++) {
-      var m = this.coList[i];
-      var c = this.layer.createCell(m[0], m[1]);
-      if (this.text !== undefined) {
-        c.text = this.text;
-      }
-      if (this.foreground !== undefined) {
-        c.foreground = this.foreground;
-      }
-      if (this.background !== undefined) {
-        c.background = this.background;
-      }
-    }
-    arena.map.repaint(this.coList);
-  },
-  undo : function() { },
-  consoliadte : function(newCmd) { 
-    if (newCmd.className != this.className
-       || newCmd.text != this.text
-       || newCmd.foreground != this.foreground
-       || newCmd.background != this.background )
-      return false;
-    this.coList = this.coList.concat(newCmd.coList);
-    return true;
-  },
-}
-
-arena.commands.SetText.prototype = {
-  redo : arena.commands.SetCell.prototype.redo,
-  undo : arena.commands.SetCell.prototype.undo,
-  consoliadte : arena.commands.SetCell.prototype.consolidate
-}
-
-arena.commands.SetForeground.prototype = {
-  redo : arena.commands.SetCell.prototype.redo,
-  undo : arena.commands.SetCell.prototype.undo,
-  consoliadte : arena.commands.SetCell.prototype.consolidate
-}
-
-arena.commands.SetBackground.prototype = {
-  redo : arena.commands.SetCell.prototype.redo,
-  undo : arena.commands.SetCell.prototype.undo,
-  consoliadte : arena.commands.SetCell.prototype.consolidate
-}
-
-arena.commands.Erase.prototype = {
-  redo : function() {
-    var l = this.coList.length;
-    for (var i = 0; i < l; i++) {
-      var m = this.coList[i];
-      this.layer.set(m[0], m[1], null);
-    }
-    arena.map.repaint(this.coList);
-  },
-  undo : arena.commands.SetCell.prototype.undo,
-  consoliadte : arena.commands.SetCell.prototype.consolidate
-}
-
-arena.commands.MoveMasked.prototype = {
-  redo : function() {
-    var coList = this.coList;
-    var dy = this.dy; 
-    var dx = this.dx; 
-    var layer = this.layer;
-    var isCopy = this.isCopy; 
-    // Determin movement scope and direction
-    var bounds = arena.coListBounds(coList);
-    var map = arena.map;
-    var minX = bounds[0], minY = bounds[1], maxX = bounds[2], maxY = bounds[3];
-    newMask = [];
-    // Get starting x, ending x, and dx from move direction, and the same for y
-    var sx, ex, xd, sy, ey, yd;
-    if (dx <= 0) { // Moved left, copy from left to right
-      sx = minX; ex = maxX+1; xd = +1;
-    } else if (dx > 0) { // Moved right, copy from right to left
-      sx = maxX; ex = minX-1; xd = -1;
-    }
-    if (dy <= 0) { // Moved up, copy from top to bottom
-      sy = minY; ey = maxY+1; yd = +1;
-    } else if (dy > 0) { // Moved down, copy from bottom to top
-      sy = maxY; ey = minY-1; yd = -1;
-    }
-    // Move cells, fill on old space with current foreground/background
-    for (y = sy; y != ey; y += yd) {
-      var cy = y + dy;
-      if (cy >= 0 && cy < map.height) {
-        for (x = sx; x != ex; x += xd) {
-          var cell = layer.get(x,y);
-          if (!cell || !map.cells[y][x].masked) continue;
-          var cx = x + dx;
-          if (cx >= 0 && cx < map.width) {
-            var cell2 = layer.createCell(cx, cy);
-            cell2.text = cell.text;
-            cell2.foreground = cell.foreground;
-            cell2.background = cell.background;
-            if (!this.isCopy)
-              layer.set(x,y,null);
-            newMask.push([cx, cy]);
-          }
-        }
-      }
-    }
-    layer.trim();
-    arena.map.repaint(coList);
-    arena.map.repaint(newMask);
-    arena.commands.run(new arena.commands.SetMask(newMask));
-  },
-  undo : function() { },
-  consoliadte : function(newCmd) {
-    return false; // TODO: Consolidate
-  }
-}
-
-arena.commands.LayerMove.prototype = {
-  redo : function() {
-    var map = arena.map;
-    var layer = map.layers.splice(this.fromIndex, 1)[0];
-    map.layers.splice(this.toIndex, 0, layer);
-    arena.ui.updateLayers();
-    map.repaint();
-  },
-  undo : function() { },
-  consoliadte : function(newCmd) {
-    if (newCmd.className != this.className) return false;
-    if (newCmd.fromIndex != newCmd.toIndex) return false;
-    this.toIndex = newCmd.toIndex;
-    return true;
-  }
-}
-
-arena.commands.LayerDelete.prototype = {
-  redo : function() {
-    this.layer.remove();
-    arena.ui.updateLayers();
-    arena.map.repaint();
-  },
-  undo : function() {},
-  consoliadte : function(newCmd) { return false; }
-}
-
-arena.commands.LayerAdd.prototype = {
-  redo : function() {
-    new arena.Layer(arena.map, this.name);
-    arena.ui.updateLayers();
-    arena.map.repaint();
-  },
-  undo : function() {},
-  consoliadte : function(newCmd) { return false; }
-}
-
-arena.commands.initialise();

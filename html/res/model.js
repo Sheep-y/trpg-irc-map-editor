@@ -118,7 +118,7 @@ arena.Layer.prototype = {
   createCell : function (x,y) { // Create cell if not exist, and return the cell
     var c = this.get(x,y);
     if (!c) {
-      c = new arena.Cell(x,y,null);
+      c = new arena.LayerCell(x,y);
       this.set(x, y, c);
     }
     return c;
@@ -145,15 +145,6 @@ arena.Layer.prototype = {
         }
       }
   },
-  setText : function(x,y,value) {
-    createCell(x,y).text = value;
-  },
-  setForeground : function(x,y,value) {
-    createCell(x,y).foreground = value;
-  },
-  setBackground : function(x,y,value) {
-    createCell(x,y).background = value;
-  }
 }
 
 arena.map = { /** Map object. Store background, size, name, etc. */
@@ -162,11 +153,12 @@ arena.map = { /** Map object. Store background, size, name, etc. */
   masked : [],   // Array of cells that are currently masked.
   marked : [],   // Array of cells that are currently marked by tools, always temporary.
 
-  layer : null,    // Current layer.
+  layer : null,  // Current layer.
   tool : null,   // Currently selected map tool
   text : '  ',   // Currently paint text
   foreground : '#000', // Current paint foreground colour
   background : '#FFF', // Current paint background colour
+  brush : null,
 
   layers : [], // Layers of this map
 
@@ -311,7 +303,7 @@ arena.map = { /** Map object. Store background, size, name, etc. */
 
     // Create cells and borders above cells
     for (y = 0; y < height; y++) {
-      var r = this.createCellRow(y);
+      var r = this.createCellRow(y, y > 0 ? map.cells[y-1] : null);
       tbody.appendChild(r[0]);
       map.cells[y] = r[1];
     }
@@ -319,10 +311,11 @@ arena.map = { /** Map object. Store background, size, name, etc. */
   },
 
   /** Create a cell row with vertical border. Returns tr and cell array. */
-  createCellRow : function(y) {
+  createCellRow : function(y, lastRow) {
     var tr = document.createElement('tr'), cells = [], td, cell;
     var w = arena.map.width;
     var background = arena.map.background_fill;
+    var lastCell = null;
     for (var x = 0; x < w; x++) {
       // Grid cell
       td = document.createElement('td');
@@ -332,33 +325,53 @@ arena.map = { /** Map object. Store background, size, name, etc. */
       //if (background) td.innerHTML = background;
       tr.appendChild(td);
       // Model cell
-      cell = new arena.Cell(x, y, td);
+      cell = new arena.Cell(x, y, lastCell, lastRow ? lastRow[x] : null, td);
       cell.text = background.text;
       cell.background = background.background;
       cell.foreground = background.foreground;
       cells[x] = cell;
       cell.repaintAll();
+      lastCell = cell;
     }
     return [tr, cells];
   },
+}
+
+arena.LayerCell = function(x, y) {
+  this.text = null;
+  this.foreground = null;
+  this.background = null;
 }
 
 /**
  * Cell object.
  * Constructor does not put cell to cell list, the factory should do that.
  */
-arena.Cell = function(x, y, td) {
+arena.Cell = function(x, y, left, top, td) {
   this.x = x;
   this.y = y;
-  if (td) this.td = td;
-  this.marked = false;
-  this.masked = false;
-  this.text = null;
-  this.foreground = null;
-  this.background = null;
-  this.dirty = false;
+  this.td = td;
+  this.leftCell = left;
+  if (left)
+    left.rightCell = this;
+  this.topCell = top;
+  if (top)
+    top.bottomCell = this;
 }
 arena.Cell.prototype = {
+  x : undefined,
+  y : undefined,
+  marked : false,
+  masked : false,
+  lastText : '',
+  lastBorderTop : '',
+  lastBorderLeft : '',
+  lastBorderBottom : '',
+  lastBorderRight : '',
+  topCell : null,
+  leftCell: null,
+  rightCell : null,
+  bottomCell : null,
   /*------------------------ Grid update functions ---------------------------*/
 
   /** Draw border and cell. */
@@ -369,15 +382,71 @@ arena.Cell.prototype = {
 
   /** Draw border style. */
   repaintBorder : function() {
-    var outline = '';
-    if (this.marked)
-      if (this.masked)
-        outline = '2px solid #8F8'; // Masked and marked
+    // FF3.6 with self border, 9x9 cursor random paint: Avg 0.33ms, min 0.04, max 2.5
+    // FF3.6 w/o self border, 9x9 cursor random paint: Avg 1.7ms	min 1, max 4
+    var border = '';
+    border = this.getBorder(this.topCell);
+    if (border != this.lastBorderTop) {
+      this.td.style.borderTop = border;
+      this.lastBorderTop = border;
+    }
+    border = this.getBorder(this.leftCell);
+    if (border != this.lastBorderLeft) {
+      this.td.style.borderLeft = border;
+      this.lastBorderLeft = border;
+    }
+    border = this.getBorder(this.bottomCell);
+    if (border != this.lastBorderBottom) {
+      this.td.style.borderBottom = border;
+      this.lastBorderBottom = border;
+    }
+    border = this.getBorder(this.rightCell);
+    if (border != this.lastBorderRight) {
+      this.td.style.borderRight = border;
+      this.lastBorderRight = border;
+    }
+  },
+
+  /** Get border style of the side between this cell and given cell */
+  getBorder : function(target) {
+    if (target) {
+/*     xx mr ms rs
+    xx -- -- -- --
+    mr mr -- mr --
+    ms ms ms -- --
+    rs rs ms mr -- */
+    
+      // If is empty or if target share same state, draw nothing
+      if ( (!this.marked && !this.masked) || (this.marked == target.marked && this.masked == target.masked) ) {
+        return '';
+
+      // If target is empty, just do our border
+      } else if (!target.marked && !target.masked) {
+        return this.getBorder(null);
+
+      // We have marked / masked, they don't
+      } else if ( this.marked && !target.marked ) {
+        return '1px solid #FF0';
+      } else if ( this.masked && !target.masked ) {
+        return '1px solid #0FF';
+
+      // They got whatever we have
+      } else {
+        return '';
+      }
+
+    } else {
+      // Else we are alone
+      if (this.marked)
+        if (this.masked)
+          return '1px solid #8F8'; // Masked and marked
+        else
+          return '1px solid #FF0'; // Marked
       else
-        outline = '2px solid #FF0'; // Temporary marked
-    else
-      if (this.masked) outline = '2px solid #0FF'; // Masked
-    if (this.td.style.outline != outline) this.td.style.outline = outline;
+        if (this.masked)
+          return '1px solid #0FF'; // Masked
+      return '';
+    }
   },
 
   /** Draw cell content. */
@@ -390,7 +459,10 @@ arena.Cell.prototype = {
   /** Draw cell text. */
   repaintCellText : function() {
     var text = this.text;
-    if (this.td.innerHTML != text) this.td.innerHTML = text;
+    if (this.lastText != text) {
+      this.td.innerHTML = text;
+      this.lastText = text;
+    }
   },
 
   /** Draw cell foreground */

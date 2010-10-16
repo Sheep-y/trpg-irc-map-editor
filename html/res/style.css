@@ -8,6 +8,7 @@ body {
 table {
 	border-spacing: 0 0;
 	empty-cells: show;
+	table-layout: fixed;
 }
 
 table, table td, table tr {
@@ -31,9 +32,9 @@ input {
 #map {
 	background-color: #FFF;
 	border: 4px ridge #888;
-	border-collapse: separate;
+	/* border-collapse: separate;
 	cursor: crosshair;
-	cursor: cell;
+	cursor: cell; */
 	font-family: monospace;
 }
 

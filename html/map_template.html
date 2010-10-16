@@ -3,7 +3,7 @@
 <title>Sheepy's Arena</title>
 <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
 <link rel='stylesheet' type='text/css' href='../html/res/style.css?ver=[var.out.app_version]'>
-</head><body onmousedown='arena.event.documentMouseUpDown(event);' onmouseup='arena.event.documentMouseUpDown(event);' onkeydown='arena.event.mapKeyDown(event)'>
+</head><body onmousedown='arena.event.documentMouseUpDown(event);' onmouseup='arena.event.documentMouseUpDown(event);' onkeydown='arena.event.mapKeyDown(event)' onkeyup='arena.event.mapKeyUp(event)'>
 
 <input id="hideFocus" type="text">
 
@@ -40,9 +40,15 @@
   <div class='tool' id='cmd_ToolMask'    onclick='arena.tools.setTool(arena.tools.Mask)'    onmouseover='arena.ui.hint("tool|barhint_toolMask")'   >R</div>
   <div class='tool' id='cmd_ToolDropper' onclick='arena.tools.setTool(arena.tools.Dropper)' onmouseover='arena.ui.hint("tool|barhint_toolDropper")'>D</div>
   <div class='tool' id='cmd_ToolDropper' onclick='arena.tools.setTool(arena.tools.Dropper)' onmouseover='arena.ui.hint("tool|barhint_toolDropper")'> </div>
+
   <div class='tool' id='cmd_ToolText'    onclick='arena.tools.setTool(arena.tools.Text)'    onmouseover='arena.ui.hint("tool|barhint_toolText")'   >T</div>
   <div class='tool' id='cmd_ToolPaint'   onclick='arena.tools.setTool(arena.tools.Paint)'   onmouseover='arena.ui.hint("tool|barhint_toolPaint")'  >B</div>
   <div class='tool' id='cmd_ToolErase'   onclick='arena.tools.setTool(arena.tools.Erase)'   onmouseover='arena.ui.hint("tool|barhint_toolErase")'  >E</div>
+
+  <div class='tool' id='cmd_ToolBrush1'  onclick='arena.map.tool.brush(event,1)' onmouseover='arena.ui.hint("tool|barhint_brushSize")'>.</div>
+  <div class='tool' id='cmd_ToolBrush2'  onclick='arena.map.tool.brush(event,2)' onmouseover='arena.ui.hint("tool|barhint_brushSize")' >..</div>
+  <div class='tool' id='cmd_ToolBrush3'  onclick='arena.map.tool.brush(event,3)' onmouseover='arena.ui.hint("tool|barhint_brushSize")' >...</div>
+
   <div class='tool' id='cmd_ViewLayer'   onclick='arena.event.viewLayerOnClick(event)'      onmouseover='arena.ui.hint("tool|barhint_viewLayer")'  >L</div>
   <div class='tool' id='cmd_ViewGlyph'   onclick='arena.event.viewGlyphOnClick(event)'      onmouseover='arena.ui.hint("tool|barhint_viewGlyph")'  >G</div>
   <hr>
@@ -55,20 +61,20 @@
   <div id='glyph' style='display:none'></div><br>
 </div>
 
-<script>
-  var str = "[var.lang.welcome_hint; htmlconv=js]";
-  if (str.substring(0,1) != "[")
-    document.getElementById('hint').innerHTML = str;
-  delete str;
-</script>
 <script src='../html/res/lang/en.js?ver=[var.out.app_version]'></script>
-<script src='../html/res/lang/[var.out.language;magnet=_].js?ver=[var.out.app_version]'></script>
+<script>
+  if ("[var.lang.welcome_hint; htmlconv=js]".substring(0,1) != "[") {
+    document.getElementById('hint').innerHTML = "[var.lang.welcome_hint; htmlconv=js]";
+    document.write("<script src='../html/res/lang/[var.out.language; htmlconv=js; magnet=_].js?ver=[var.out.app_version]'></sc"+"ript>");
+  }
+</script>
 <script src='../html/res/model.js?ver=[var.out.app_version]'></script>
 <script src='../html/res/ui.js?ver=[var.out.app_version]'></script>
 <script src='../html/res/tools.js?ver=[var.out.app_version]'></script>
+<script src='../html/res/commands.js?ver=[var.out.app_version]'></script>
 <script src='../html/res/io.js?ver=[var.out.app_version]'></script>
 <script>
-  if (!window.arena || !arena.lang || !arena.ui || !arena.map || !arena.io) {
+  if (!window.arena || !arena.lang || !arena.ui || !arena.map || !arena.tools || !arena.commands || !arena.io) {
     var str = "[var.lang.err_IncompleteLoad]";
     if (str.substring(0,1) == "[")
       str = "Cannot load. Check that browsers is up to date and refresh.";
@@ -84,16 +90,20 @@
     arena.ui.createColourPalette();
     arena.ui.createGlyphs();
     arena.ui.updateLayers();
-    //sarena.ui.focusMapInput();
     $('mapinput').value = arena.map.background_fill.text;
-    $('mapinput').disabled = 'disabled';
+    arena.ui.focusBody();
   }
+  document.close();
 </script><noscript>
 <p>Please enable JavaScript.</p>
 </noscript>
 
 <p>New features:
 <ul>
+ <li> 2010-10-16 Mark/mask draws only border, not every cell.</li>
+ <li> 2010-10-15 Separate layer and canvas cell classe.</li>
+ <li> 2010-10-14 Brush size, brush respects mask.</li>
+ <li> 2010-10-12 Separate command and tool. General bug fix of new tools.</li>
  <li> 2010-10-08 Colour & tools keyboard shortcut, mask tool layer update, dropper tool. </li>
  <li> 2010-10-07 Layers with new text/paint/erase tool, script independent from php</li>
  <li> 2010-09-15 Focus placeholder for more reliable key detection</li>
