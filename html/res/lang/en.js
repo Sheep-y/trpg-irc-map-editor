@@ -14,7 +14,8 @@ arena.lang = {
     usehint_dropper  : '[Dropper] Click: Get text and foreground colour.  Shift: text and background.',
 
     barhint_NewMap  : 'Create a new map. Will discard existing map.',
-    barhint_Export  : 'Export map in various text formats.',
+    barhint_ImportExport  : 'Export map in various text formats, or import from exported Json data.',
+    barhint_SaveLoad: 'Save / load map',
     //barhint_Layer   : 'Click to select layer to draw. Top layer show first.',
     //barhint_UsingLayer : 'You are drawing on this layer.',
     barhint_Foreground : 'Drawing in this foreground colour. Click to fill current mask.',
@@ -43,6 +44,7 @@ arena.lang = {
     dlghint_CopyBBC : 'Export in BBCode syntax. Text and foreground colour only.',
     dlghint_CopyTxt : 'Export in plain text.',
     dlghint_CopyHtml : 'Export in HTML.',
+    dlghint_CopyJson : 'Export in JSON.',
   },
 
   command : {
@@ -95,10 +97,19 @@ arena.lang = {
 
   io : {
     CopyInstruction : 'Press Ctrl+X to copy.',
+    ImportInstruction : 'Paste exported JSON data below.',
+    PleaseWait : 'Please wait.',
   },
 
   error : {
+    // Drawing error
     NoMask : 'Where should I draw? Please select an area first.',
+    
+    // I/O error
     CannotOpenWindow : 'Cannot popup window. Please allow popup first.',
+    CannotRestore : 'Cannot restore map.',
+    NoJSON : 'Browser doesn\'t support native JSON, please upgrade.',
+    MalformedSave : 'Malformed save data.',
+    NoDeflate : 'Cannot load zip library. Please reload.',
   },
 }

@@ -46,14 +46,27 @@ arena.setCell = function(cells, x, y, item) {
   cells[y][x] = item;
 }
 
-// Get two-dimension cell array
+/* Get two-dimension cell array */
 arena.getCell = function(cells, x, y, ifNotFound) {
   if (!cells[y]) return ifNotFound;
   var row = cells[y];
   return row[x] ? row[x] : ifNotFound;
 }
 
-/************************* Map object *********************************/
+/** Reset map */
+arena.reset = function() {
+  arena.tools.setTool(arena.tools.Paint);
+  arena.map.recreate(36,25);
+  new arena.Layer(arena.map, 'Terrain' ),
+  new arena.Layer(arena.map, 'Effect'  ),
+  new arena.Layer(arena.map, 'Object'  ),
+  new arena.Layer(arena.map, 'Creature'),
+  new arena.Layer(arena.map, 'Overlay' ),
+  arena.ui.updateLayers();
+  $('mapinput').value = arena.map.background_fill.text;
+}
+
+/************************* Map objects *********************************/
 
 arena.Cell = function() {}
 arena.Cell.prototype = {
@@ -63,8 +76,9 @@ arena.Cell.prototype = {
 }
 
 arena.Layer = function(map, name) { // Use arena.map.createLayer instead!
-  this.map = map;
+  //this.map = map;
   this.name = name;
+  this.visible = true;
   this.cells = [];
   if (map) {
     map.layers.push(this);
@@ -74,7 +88,7 @@ arena.Layer = function(map, name) { // Use arena.map.createLayer instead!
 }
 arena.Layer.prototype = {
   name : null,
-  map  : null,
+  //map  : null,
   visible : true,
   cells : null,
   // Remove this layer
@@ -148,7 +162,7 @@ arena.Layer.prototype = {
 }
 
 arena.map = { /** Map object. Store background, size, name, etc. */
-  title : 'Map 1',
+  name : 'Map 1',
   cells : [],    // Canvas, array of array of Cell. Top left is 0, 0. This array is y then x.
   masked : [],   // Array of cells that are currently masked.
   marked : [],   // Array of cells that are currently marked by tools, always temporary.

@@ -1,6 +1,6 @@
 body {
 	margin: 1ex;
-	margin-left: 85px;
+	margin-left: 86px;
 	margin-top: 46px;
 	background-color: #888;
 }
@@ -70,7 +70,7 @@ input {
 #toolbox { /* Left toolbox */
 	left: 4px;
 	top: 4px;
-	width: 75px;
+	width: 76px;
 	cursor: default;
 }
 
@@ -195,7 +195,7 @@ input {
 
 #statusbar {
 	top: 4px;
-	left: 85px;
+	left: 86px;
 	min-width: 700px;
 	height: 23px;
 	font-size: smaller;
@@ -253,12 +253,13 @@ input {
 	text-align: center;
 }
 
-#dialog_container div[id] {
+#dialog_container > tbody > tr > td > div[id] {
 	margin: 0 auto;
 	padding: 2em;
 	max-width: 400px;
 	background-color: #DDD;
 	border: 2px ridge #DDD;
+	display: none;
 }
 
 /************************ Misc ********************************/

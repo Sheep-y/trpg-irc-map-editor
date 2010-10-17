@@ -24,8 +24,10 @@
 
 <div id='toolbox'>
   <div class='tool' onclick='arena.event.newMapOnClick(event)' onmouseover='arena.ui.hint("tool|barhint_NewMap")'>*</div>
-  <div class='tool' onclick='arena.event.exportOnClick(event)' onmouseover='arena.ui.hint("tool|barhint_Export")'>=&gt;</div>
-  <div class='tool' onclick='' onmouseover=''>&nbsp;</div>
+  <div class='tool' onclick='arena.event.exportOnClick(event)' onmouseover='arena.ui.hint("tool|barhint_ImportExport")'>&lt;&gt;</div>
+  <div class='tool'>&nbsp;</div>
+  <!--div class='tool' onclick='arena.event.saveLoadOnClick(event)' onmouseover='arena.ui.hint("tool|barhint_SaveLoad")'>SL</div-->
+  
   <input id='mapinput' type='text' maxlength='2' value='  ' disabled='true' onkeydown='arena.event.mapInputKeyDown(event)' onkeyup='arena.event.mapInputKeyUp(event)' onmouseover='arena.ui.hint("tool|barhint_MapInput")'>
   <div id='cmd_Foreground' onclick='arena.event.setForegroundOnClick(event)' onmouseover='arena.event.submenuOnHover(event,"palette");arena.ui.hint("tool|barhint_Foreground")' onmouseout='arena.event.submenuOnExit(event);'></div>
   <div id='cmd_Background' onclick='arena.event.setBackgroundOnClick(event)' onmouseover='arena.event.submenuOnHover(event,"palette");arena.ui.hint("tool|barhint_Background")' onmouseout='arena.event.submenuOnExit(event);'></div>
@@ -37,9 +39,10 @@
       onclick="arena.event.paletteOnClick(event,null)" ondblclick="if(!event.detail)arena.event.paletteOnClick(event,'none')" onmouseover="arena.ui.hint('tool|barhint_NoColour')"
       src='../html/res/img/colour_none.gif'></td-->
   </tr></tbody></table>
+
   <div class='tool' id='cmd_ToolMask'    onclick='arena.tools.setTool(arena.tools.Mask)'    onmouseover='arena.ui.hint("tool|barhint_toolMask")'   >R</div>
   <div class='tool' id='cmd_ToolDropper' onclick='arena.tools.setTool(arena.tools.Dropper)' onmouseover='arena.ui.hint("tool|barhint_toolDropper")'>D</div>
-  <div class='tool' id='cmd_ToolDropper' onclick='arena.tools.setTool(arena.tools.Dropper)' onmouseover='arena.ui.hint("tool|barhint_toolDropper")'> </div>
+  <div class='tool' id='cmd_ToolDropper' onclick='test()' onmouseover='arena.ui.hint("tool|barhint_toolDropper")'> </div>
 
   <div class='tool' id='cmd_ToolText'    onclick='arena.tools.setTool(arena.tools.Text)'    onmouseover='arena.ui.hint("tool|barhint_toolText")'   >T</div>
   <div class='tool' id='cmd_ToolPaint'   onclick='arena.tools.setTool(arena.tools.Paint)'   onmouseover='arena.ui.hint("tool|barhint_toolPaint")'  >B</div>
@@ -80,87 +83,56 @@
       str = "Cannot load. Check that browsers is up to date and refresh.";
   	document.getElementById('hint').innerHTML = str;
   } else {
-    arena.tools.setTool(arena.tools.Paint);
-    arena.map.recreate(36,25);
-    new arena.Layer(arena.map, 'Terrain' ),
-    new arena.Layer(arena.map, 'Effect'  ),
-    new arena.Layer(arena.map, 'Object'  ),
-    new arena.Layer(arena.map, 'Creature'),
-    new arena.Layer(arena.map, 'Overlay' ),
     arena.ui.createColourPalette();
     arena.ui.createGlyphs();
-    arena.ui.updateLayers();
-    $('mapinput').value = arena.map.background_fill.text;
+    arena.reset();
     arena.ui.focusBody();
   }
   document.close();
 </script><noscript>
 <p>Please enable JavaScript.</p>
 </noscript>
-
-<p>New features:
-<ul>
- <li> 2010-10-16 Mark/mask draws only border, not every cell.</li>
- <li> 2010-10-15 Separate layer and canvas cell classe.</li>
- <li> 2010-10-14 Brush size, brush respects mask.</li>
- <li> 2010-10-12 Separate command and tool. General bug fix of new tools.</li>
- <li> 2010-10-08 Colour & tools keyboard shortcut, mask tool layer update, dropper tool. </li>
- <li> 2010-10-07 Layers with new text/paint/erase tool, script independent from php</li>
- <li> 2010-09-15 Focus placeholder for more reliable key detection</li>
- <li> 2010-03-28 Better key input / function key detection</li>
- <li> 2010-03-27 Colour submenu to conserve screen estate</li>
- <li> 2010-03-26 Export to HTML </li>
- <li> 2010-03-26 Added message for disabled JavaScript </li>
- <li> 2010-03-25 Arrow keys move mask when not inputting </li>
- <li> 2010-03-25 Text input no longer get interrupted by map commands (del, esc, etc.) </li>
- <li> 2010-03-25 Reduced unnecessarey trigger of status bar update script </li>
- <li> 2010-03-25 BBCode & plain text export format </li>
- <li> 2010-03-24 Foreground colour export will ignore whitespace </li>
- <li> 2010-03-23 Initial canvas wait message </li>
- <li> 2010-03-23 Show current cell's foreground and background </li>
- <li> 2010-03-23 Multi-selection with area select </li>
-</ul>
-</p>
-
-<p>TODO, in order of importance:
-<ul>
- <li> Export & Impot in native format, then Saving and Loading </li>
- <li> Add more commands (Dropper, Mask) </li>
- <li> Implement action history + undo and redo. Check memory usage here. Don't need history list</li>
- <li> Experimental multi-map support </li>
- <li> Add bold and italic </li>
-</ul>
-</p>
-
-<p>Small TODO, in no order:
-<ul>
- <li> Dynamically assign toolbox handler. What an ordered mess. </li>
- <li> Make copy box in-frame instead of popup </li>
- <li> Fix command names - may have to move responsibility to tool </li>
- <li> Text mask selection should be an independent command </li>
-</ul>
-</p>
-
-<p>Known issues
-<ul>
- <li>Opera: Repeated click only counts to 2.</li>
- <li>Chrome: Alt key does not work. <a href='http://code.google.com/p/chromium/issues/detail?id=2215'>Known issue</a>.</li>
- <li>Middle click works the same as left click in most browsers except IE (when they should be ignored). Blame IE's non-compliance event button code.</li>
-</ul>
-</p>
+<!-- save/load code are loaded after others -->
+<script src='../html/res/rawinflate.js'></script>
+<script src='../html/res/rawdeflate.js'></script>
 
 <div id='mask'></div>
 
 <table id='dialog_container'><tr><td>
+
 <div id='dialog_export'>
-<h2>Export</h2>
-<label onmouseover='arena.ui.hint("tool|dlghint_CopyIRC")'><input type='radio' name='opt_export' id='dlg_ex_txt'> Plain text </label>
+<h2>Import / Export</h2>
+Export:
+<label onmouseover='arena.ui.hint("tool|dlghint_CopyIRC")'><input type='radio' name='opt_export' id='dlg_ex_txt'> Text </label>
 <label onmouseover='arena.ui.hint("tool|dlghint_CopyBBC")'><input type='radio' name='opt_export' id='dlg_ex_bbc'> BBCode </label>
 <label onmouseover='arena.ui.hint("tool|dlghint_CopyTxt")'><input type='radio' name='opt_export' id='dlg_ex_irc' checked='checked'> mIRC </label><br>
-<label onmouseover='arena.ui.hint("tool|dlghint_CopyHtml")'><input type='radio' name='opt_export' id='dlg_ex_html'> HTML </label><br><br>
-<input type='button' value='Export' id='btn_export' onclick='arena.event.dlgExportClick(event)'> &nbsp;
+<label onmouseover='arena.ui.hint("tool|dlghint_CopyHtml")'><input type='radio' name='opt_export' id='dlg_ex_html'> HTML </label>
+<label onmouseover='arena.ui.hint("tool|dlghint_CopyJson")'><input type='radio' name='opt_export' id='dlg_ex_json'> Json </label>
+<hr>
+Import: 
+<label onmouseover='arena.ui.hint("tool|dlghint_ImportJson")'><input type='radio' name='opt_export' id='dlg_in_json'> Json </label>
+<br><br>
+<input type='button' value='Go' id='btn_export' onclick='arena.event.dlgExportClick(event)'> &nbsp;
 <input type='button' value='Cancel' onclick='arena.ui.hideDialog("export")'>
 </div>
+
+<div id='dialog_text'>
+<h2>Data</h2>
+<p id='text_instruction'>arena.lang.io.CopyInstruction</p>
+<textarea id='text_data' rows='10' cols='40' onkeyup='arena.event.dlgTextChanged(event, this.value)'>
+</textarea>
+<br><br>
+<input type='button' value='Cancel' onclick='arena.ui.hideDialog("text")'>
+</div>
+
+<div id='dialog_saveload'>
+<h2>Save / Load</h2>
+<textarea id='text_data' rows='10' cols='40' onkeyup='arena.event.dlgTextChanged(event, this.value)'>
+</textarea>
+<br><br>
+<input type='button' value='Cancel' onclick='arena.ui.hideDialog("text")'>
+</div>
+
 </td></tr></table>
 
 </body></html>

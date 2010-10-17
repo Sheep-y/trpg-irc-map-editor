@@ -255,9 +255,12 @@ arena.tools.Mask = {
         var newMask;
         if (this.isMoving) {
           var dy = y - this.sy, dx = x - this.sx;
-          if (dy == dx && dy == 0) return; // No need to do anything
-          arena.commands.run(
-            new arena.commands.MoveMasked(arena.map.masked, dx, dy, arena.map.layer, evt.ctrlKey));
+          if (dy == dx && dy == 0) {
+            // Never moved. Consider this a single click.
+            map.setMasked([[x,y]]);
+          } else 
+            arena.commands.run(
+              new arena.commands.MoveMasked(arena.map.masked, dx, dy, arena.map.layer, evt.ctrlKey));
         } else {
           // If not moving, a mask has been dragged.
           newMask = arena.tools.genRectagleCoList(x, y, this.sx, this.sy);

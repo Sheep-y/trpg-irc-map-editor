@@ -1,8 +1,9 @@
 Sheepy's Arena, Change log
 
 == 2010-10: Layer support ==
+2010-10-17 Save / load in compressed JSON.  Mask tool single click always select single cell.
 2010-10-16 Mark/mask draws only border, not every cell.
-2010-10-15 Separate layer and canvas cell classe.
+2010-10-15 Separate layer and canvas cell classes.
 2010-10-14 Brush size, brush respects mask.
 2010-10-12 Separate command and tool. General bug fix of new tools.
 2010-10-08 Colour & tools keyboard shortcut, mask tool layer update, dropper tool. 
@@ -22,3 +23,23 @@ Sheepy's Arena, Change log
 2010-03-23 Initial canvas wait message 
 2010-03-23 Show current cell's foreground and background 
 2010-03-23 Multi-selection with area select 
+
+
+== TODO, in order of importance ==
+<ul>
+ <li> Export & Impot in native format, then Saving and Loading </li>
+ <li> Add more commands (Dropper, Mask) </li>
+ <li> Implement action history + undo and redo. Check memory usage here. Don't need history list</li>
+ <li> Experimental multi-map support </li>
+ <li> Add bold and italic </li>
+</ul>
+</p>
+
+<p>Small TODO, in no order:
+<ul>
+ <li> Dynamically assign toolbox handler. What an ordered mess. </li>
+ <li> Make copy box in-frame instead of popup </li>
+ <li> Fix command names - may have to move responsibility to tool </li>
+ <li> Text mask selection should be an independent command </li>
+</ul>
+</p>

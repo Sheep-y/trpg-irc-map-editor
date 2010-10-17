@@ -39,8 +39,9 @@ arena.event = {
   
   // Prevent a event from triggering default behaviour
   eatEvent : function(evt, eatSpecial) {
+    if (evt.altKey) return; // Alt is used for menu access, shortcut bar, etc.
     if (eatSpecial === false) // If don't want to consume special key then check for them
-      if (evt.ctrlKey || evt.shiftKey || evt.ctrlKey || evt.metaKey) return;
+      if (evt.shiftKey || evt.ctrlKey || evt.metaKey) return;
     if (evt.preventDefault) evt.preventDefault(); else evt.returnValue = false;
   },
 
@@ -106,6 +107,7 @@ arena.event = {
 
   /** Set map cursor */
   updateCursor : function(evt, x, y) {
+    var cursor = 'default';
     if (!arena.map.layer || !arena.map.layer.visible) {
       cursor = 'no-drop';
     } else {
@@ -140,14 +142,50 @@ arena.event = {
 
   dlgExportClick : function(evt) {
     arena.ui.hideDialog('export');
+    // Default to export
+    $('text_instruction').innerHTML = arena.lang.io.CopyInstruction;
+    var textarea = $('text_data');
+    textarea.value = arena.lang.io.PleaseWait;
+    arena.ui.showDialog('text');
+        
     if ($('dlg_ex_txt').checked)
-      arena.io.exportToTxt(arena.map, arena.map.masked);
+      textarea.value = arena.io.exportToTxt(arena.map, arena.map.masked);
     else if ($('dlg_ex_bbc').checked)
-      arena.io.exportToBBC(arena.map, arena.map.masked);
+      textarea.value = arena.io.exportToBBC(arena.map, arena.map.masked);
     else if ($('dlg_ex_irc').checked)
-      arena.io.exportToIRC(arena.map, arena.map.masked);
-    else if ($('dlg_ex_html').checked)
+      textarea.value = arena.io.exportToIRC(arena.map, arena.map.masked);
+    else if ($('dlg_ex_json').checked)
+      textarea.value = arena.io.exportToJSON(arena.map, arena.map.masked);
+      
+    else if ($('dlg_ex_html').checked) {
+      // Special export, open in new doc
+      arena.ui.hideDialog('text');
       arena.io.exportToHtml(arena.map, arena.map.masked);
+      
+    } else if ($('dlg_in_json').checked) {
+      // Ok, we are importing
+      $('text_instruction').innerHTML = arena.lang.io.ImportInstruction;
+      textarea.value = '';
+    }
+    
+    textarea.select();
+    textarea.focus();
+  },
+  
+  dlgTextChanged : function(evt, txt) {
+    if ($('dlg_in_json').checked) {
+      // Importing, process data
+      if (txt) {
+        var result = arena.io.importFromJSON(txt);
+        if (result == true)
+          arena.ui.hideDialog('text');
+        else
+          $('text_instruction').innerHTML = result;
+      }      
+    } else {
+      // We're exporting, clear on empty
+      if (!txt) arena.ui.hideDialog('text'); 
+    }
   },
 
   setForegroundOnClick : function(evt) {
