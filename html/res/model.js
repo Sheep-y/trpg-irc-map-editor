@@ -56,7 +56,13 @@ arena.getCell = function(cells, x, y, ifNotFound) {
 /** Reset map */
 arena.reset = function() {
   arena.tools.setTool(arena.tools.Paint);
-  arena.map.recreate(36,25);
+  var w = (arena.map.width <= 0) ? 36 : arena.map.width;
+  var h = (arena.map.height <= 0) ? 24 : arena.map.height;
+  // Clear data
+  arena.map.layers = [];
+  //for (var l = map.layers.length-1; l >= 0; l--)
+  //  map.layers[l].cells = [];
+  arena.map.recreate(w, h);
   new arena.Layer(arena.map, 'Terrain' ),
   new arena.Layer(arena.map, 'Effect'  ),
   new arena.Layer(arena.map, 'Object'  ),
@@ -137,16 +143,31 @@ arena.Layer.prototype = {
     }
     return c;
   },
+  getCoList : function() {
+    var result = [];
+    var cells = this.cells;
+    var h = cells.length;
+    if (h <= 0) return result;
+    for (var y = 0; y < h; y++)
+      if (cells[y] && cells[y].length > 0) {
+        var row = cells[y];
+        var w = row.length;
+        for (var x = 0; x < w; x++)
+          if (row[x])
+            result.push([x,y]);
+      }
+    return result;
+  },
   trim : function () { // Removes empty cells and rows
     var cells = this.cells;
     var h = cells.length;
     if (h <= 0) return;
     for (var y = 0; y < h; y++)
       if (cells[y]) {
-        var row = this.cells[y];
+        var row = cells[y];
         if (!row.length) delete cells[y];
         else {
-          var count = 0, w = this.map.width;
+          var count = 0, w = row.length;
           for (var x = 0; x < w; x++)
             if (row[x]) {
               var c = row[x];
@@ -298,7 +319,10 @@ arena.map = { /** Map object. Store background, size, name, etc. */
     var table = map.table;
     var tbody = table.getElementsByTagName('tbody')[0];
 
-    $('mapinput').value = '  ';
+    //$('mapinput').value = '  ';
+    
+    if (map.width == width && map.height == height)
+      return;
 
     // Clear map
     for (var y = 0; y < map.height; y++) { var row = map.cells[y];

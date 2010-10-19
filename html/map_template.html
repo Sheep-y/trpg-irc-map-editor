@@ -23,14 +23,13 @@
 </tr></table>
 
 <div id='toolbox'>
-  <div class='tool' onclick='arena.event.newMapOnClick(event)' onmouseover='arena.ui.hint("tool|barhint_NewMap")'>*</div>
-  <div class='tool' onclick='arena.event.exportOnClick(event)' onmouseover='arena.ui.hint("tool|barhint_ImportExport")'>&lt;&gt;</div>
-  <div class='tool'>&nbsp;</div>
-  <!--div class='tool' onclick='arena.event.saveLoadOnClick(event)' onmouseover='arena.ui.hint("tool|barhint_SaveLoad")'>SL</div-->
+  <div class='tool' onclick='arena.event.newMapOnClick(event)'   onmouseover='arena.ui.hint("tool|barhint_NewMap")'>*</div>
+  <div class='tool' onclick='arena.event.exportOnClick(event)'   onmouseover='arena.ui.hint("tool|barhint_ImportExport")'>&lt;&gt;</div>
+  <div class='tool' onclick='arena.event.saveLoadOnClick(event)' onmouseover='arena.ui.hint("tool|barhint_SaveLoad")'>SL</div>
   
-  <input id='mapinput' type='text' maxlength='2' value='  ' disabled='true' onkeydown='arena.event.mapInputKeyDown(event)' onkeyup='arena.event.mapInputKeyUp(event)' onmouseover='arena.ui.hint("tool|barhint_MapInput")'>
+  <input id='mapinput' type='text' maxlength='2' value='  ' disabled onmouseover='arena.ui.hint("tool|barhint_MapInput")'>
   <div id='cmd_Foreground' onclick='arena.event.setForegroundOnClick(event)' onmouseover='arena.event.submenuOnHover(event,"palette");arena.ui.hint("tool|barhint_Foreground")' onmouseout='arena.event.submenuOnExit(event);'></div>
-  <div id='cmd_Background' onclick='arena.event.setBackgroundOnClick(event)' onmouseover='arena.event.submenuOnHover(event,"palette");arena.ui.hint("tool|barhint_Background")' onmouseout='arena.event.submenuOnExit(event);'></div>
+  <div id='cmd_Background' onclick='arena.event.setBackgroundOnClick(event)' onmouseover='arena.event.submenuOnHover(event,"palette");arena.ui.hint("tool|barhint_Background")' onmouseout='arena.event.submenuOnExit(event);' style='display:none'></div>
   <table id='palette'><tbody><tr>
     <!--td class="palette" onmouseover='arena.event.submenuOnHover(event,"palette");' onmouseout='arena.event.submenuOnExit(event);'><img
       onclick="arena.event.paletteOnClick(event,'reverse')" ondblclick="if(!event.detail)arena.event.paletteOnClick(event,'reverse')" onmouseover="arena.ui.hint('tool|barhint_ReverseColour')"
@@ -39,10 +38,11 @@
       onclick="arena.event.paletteOnClick(event,null)" ondblclick="if(!event.detail)arena.event.paletteOnClick(event,'none')" onmouseover="arena.ui.hint('tool|barhint_NoColour')"
       src='../html/res/img/colour_none.gif'></td-->
   </tr></tbody></table>
+  <div class='tool'> </div>
 
   <div class='tool' id='cmd_ToolMask'    onclick='arena.tools.setTool(arena.tools.Mask)'    onmouseover='arena.ui.hint("tool|barhint_toolMask")'   >R</div>
   <div class='tool' id='cmd_ToolDropper' onclick='arena.tools.setTool(arena.tools.Dropper)' onmouseover='arena.ui.hint("tool|barhint_toolDropper")'>D</div>
-  <div class='tool' id='cmd_ToolDropper' onclick='test()' onmouseover='arena.ui.hint("tool|barhint_toolDropper")'> </div>
+  <div class='tool' id='cmd_Rotate'      onclick='arena.commands.run(new arena.commands.MapRotate(event.ctrlKey?270:90));' onmouseover='arena.ui.hint("tool|barhint_rotateClock")'> <img src='../html/res/img/right.gif'> </div>
 
   <div class='tool' id='cmd_ToolText'    onclick='arena.tools.setTool(arena.tools.Text)'    onmouseover='arena.ui.hint("tool|barhint_toolText")'   >T</div>
   <div class='tool' id='cmd_ToolPaint'   onclick='arena.tools.setTool(arena.tools.Paint)'   onmouseover='arena.ui.hint("tool|barhint_toolPaint")'  >B</div>
@@ -87,6 +87,7 @@
     arena.ui.createGlyphs();
     arena.reset();
     arena.ui.focusBody();
+    console.log()
   }
   document.close();
 </script><noscript>
@@ -95,6 +96,7 @@
 <!-- save/load code are loaded after others -->
 <script src='../html/res/rawinflate.js'></script>
 <script src='../html/res/rawdeflate.js'></script>
+<script src='../html/res/base64.js'></script>
 
 <div id='mask'></div>
 
@@ -127,10 +129,16 @@ Import:
 
 <div id='dialog_saveload'>
 <h2>Save / Load</h2>
-<textarea id='text_data' rows='10' cols='40' onkeyup='arena.event.dlgTextChanged(event, this.value)'>
-</textarea>
+New Save: <input id='saveInput' type='text' value=''>
+<hr>
+Load
+<div id="saveList">
+</div>
 <br><br>
-<input type='button' value='Cancel' onclick='arena.ui.hideDialog("text")'>
+<input type='button' value='Save' onclick='arena.event.btnSaveMapClick(event)'>
+<input type='button' value='Load' onclick='arena.event.btnLoadMapClick(event)'>
+<input type='button' value='Cancel' onclick='arena.ui.hideDialog("saveload")'>
+<input type='button' value='Delete' onclick='arena.event.btnDeleteSaveClick(event)'>
 </div>
 
 </td></tr></table>

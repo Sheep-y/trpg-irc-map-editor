@@ -4,7 +4,7 @@ arena.event = {
   lastEventTime  : 0,  // Last repeatable event triggered time, IE event has no details
   lastEventHash  : '', // Last repeatable event's hash, if different then reset
   lastEventCount : 0,  // Count of same repeatable event
-  lastForeground : arena.map.foreground, // Last set foreground
+  //lastForeground : arena.map.foreground, // Last set foreground
 
   lastKeyEvent : { keyCode: 0 }, // Last key event (object), used to check double tap
   lastMouseEvent : '', // Last mouse event (text), checked only on map double click handler
@@ -15,6 +15,7 @@ arena.event = {
 
   lastMapInputValue : '',
   mapInputMode : false, // True when inputing, false when not inputing
+  mapDialogMode : false, // True when in dialog, false when not in dialog
 
   lastSubmenu: null, // last sub-menu id
   submenuTimer: null, // sub-menu disappear timer
@@ -119,7 +120,7 @@ arena.event = {
     }
   },
 
-  /**************************** Toolbox events ****************************/
+  /**************************** Dialogs *********************************/
 
   newMapOnClick : function(evt) {
     var x, y;
@@ -134,12 +135,13 @@ arena.event = {
       else if (+y != y || +y <= 0 || +y > 99) y = undefined;
     }
     arena.map.recreate(+x, +y);
+    arena.reset();
   },
 
   exportOnClick : function(evt) {
     arena.ui.showDialog('export');
   },
-
+  
   dlgExportClick : function(evt) {
     arena.ui.hideDialog('export');
     // Default to export
@@ -155,7 +157,7 @@ arena.event = {
     else if ($('dlg_ex_irc').checked)
       textarea.value = arena.io.exportToIRC(arena.map, arena.map.masked);
     else if ($('dlg_ex_json').checked)
-      textarea.value = arena.io.exportToJSON(arena.map, arena.map.masked);
+      textarea.value = arena.io.exportToJSON(arena.map, arena.map.masked, true);
       
     else if ($('dlg_ex_html').checked) {
       // Special export, open in new doc
@@ -188,15 +190,64 @@ arena.event = {
     }
   },
 
+  saveLoadOnClick : function(evt) {
+    /*if (!location.host || location.host.length <= 0) {
+      alert(arena.lang.error.NoHost);
+    } else */
+    if (!localStorage) {
+      alert(arena.lang.error.NoLocalStorage);
+    } else {
+      var html = '';
+      var saves = arena.io.listSaves('local');
+      for (var i = 0; i < saves.length; i++)
+        html += "<label class='save'><input type='radio' id='save"+i+"'>" 
+              + saves[i].replace('<','&lt;') + "</label><br>"; 
+      $('saveList').innerHTML = html;
+      arena.ui.showDialog('saveload');
+      $('saveInput').select();
+      $('saveInput').focus();
+    }
+  },
+  
+  btnSaveMapClick : function(evt) {
+    arena.io.saveMap($('saveInput').value, 'local');
+    arena.ui.hideDialog("saveload");
+  },
+  
+  btnLoadMapClick : function(evt) {
+    var saves = arena.io.listSaves('local');
+    for (var i = 0; i < saves.length; i++)
+      if ($('save'+i).checked) {
+        var result = arena.io.loadMap(saves[i], 'local');
+        if (result !== true)
+          alert(result);
+        break;
+      }
+    arena.ui.hideDialog("saveload");
+  },
+  
+  btnDeleteSaveClick : function(evt) {
+    var saves = arena.io.listSaves('local');
+    for (var i = 0; i < saves.length; i++)
+      if ($('save'+i).checked) {
+        arena.io.deleteSave(saves[i].value, 'local');
+        break;
+      }
+    arena.ui.hideDialog("saveload");
+  },
+  
+  /************************ Toolbox pattle/text *********************************/
+
   setForegroundOnClick : function(evt) {
-    arena.commands.run(new arena.commands.SetForeground(arena.map.foreground, arena.map.masked, arena.map.layer));
+    //arena.commands.run(new arena.commands.SetForeground(arena.map.foreground, arena.map.masked, arena.map.layer));
   },
 
   setBackgroundOnClick : function(evt) {
-    arena.commands.run(new arena.commands.SetBackground(arena.map.background, arena.map.masked, arena.map.layer));
+    //arena.commands.run(new arena.commands.SetBackground(arena.map.background, arena.map.masked, arena.map.layer));
   },
 
   mapKeyDown : function(evt) {
+    if (this.mapDialogMode) return;
     // Record press count of same key
     if (this.lastKeyEvent.keyCode == evt.keyCode && evt.timeStamp-this.lastKeyEvent.timeStamp <= 500)
       evt.pressCount = this.lastKeyEvent.pressCount + 1;
@@ -240,8 +291,13 @@ arena.event = {
       case 39: // Right
       case 38: // Up
       case 37: // Left
-      case 46: // Delete
         arena.map.tool.key(evt);
+        arena.event.eatEvent(evt);
+        break;
+
+      case 46: // Delete
+        if (arena.map.masked.length > 0)
+          arena.commands.run(new arena.commands.Erase(arena.map.masked, arena.map.layer));
         arena.event.eatEvent(evt);
         break;
 
@@ -315,6 +371,7 @@ arena.event = {
               if (i < map.layers.length-1) {
                 map.layer = map.layers[i+1];
                 arena.ui.updateLayers();
+                map.setMarked(map.layer.getCoList());
               }
               break;
             }
@@ -334,6 +391,7 @@ arena.event = {
               if (i > 0) {
                 map.layer = map.layers[i-1];
                 arena.ui.updateLayers();
+                map.setMarked(map.layer.getCoList());
               }
               break;
             }
@@ -354,10 +412,12 @@ arena.event = {
   },
 
   mapKeyUp : function(evt) {
+    if (this.mapDialogMode) return;
     if (evt.keyCode < 32) // Update cursor for control characters - Shift, Ctrl, Alt, etc.
       this.updateCursor(evt, this.lastMouseX, this.lastMouseY);
   },
 
+  /*
   mapInputKeyDown : function(evt) {
     return;
     if (evt.keyCode == 27 || evt.keyCode == 13) {
@@ -370,7 +430,10 @@ arena.event = {
 
   mapInputKeyUp : function(evt) {
   },
+  */
   
+  /************************ Toolbox tab *********************************/
+
   viewLayerOnClick : function(evt) {
     $('layer').style.display = '';
     $('glyph').style.display = 'none';
@@ -403,6 +466,7 @@ arena.event = {
       if (map.layers[i] == map.layer) {
         if (i > 0) {
           arena.commands.run(new arena.commands.LayerMove(i, i-1));
+          map.setMarked(map.layer.getCoList());
           break;
         }
       }
@@ -415,6 +479,7 @@ arena.event = {
       if (map.layers[i] == map.layer) {
         if (i < map.layers.length-1) {
           arena.commands.run(new arena.commands.LayerMove(i, i+1));
+          map.setMarked(map.layer.getCoList());
           break;
         }
       }
@@ -426,13 +491,13 @@ arena.event = {
       arena.commands.run(new arena.commands.SetForeground(colour, arena.map.masked, arena.map.layer));
     } else if (evt.shiftKey) { // Quick set background: alt+press
       arena.commands.run(new arena.commands.SetBackground(colour, arena.map.masked, arena.map.layer));
-    } else if (evt.detail % 2 == 1) {
-      this.lastForeground = arena.map.foreground;
+    } else //if (evt.detail % 2 == 1) {
+      //this.lastForeground = arena.map.foreground;
       arena.ui.setForeground(colour);
-    } else { // Double click: restore foreground and set background instead
+    /*} else { // Double click: restore foreground and set background instead
       arena.ui.setForeground(this.lastForeground);
       arena.ui.setBackground(colour);
-    }
+    }*/
   },
 
   hideSubmenu : function() {
@@ -499,7 +564,7 @@ arena.ui = {
     for (var i = list.length-1; i >= 0; i--) {
       btn = document.createElement('div');
       btn.setAttribute('onclick', 'arena.event.layerOnClick(event,arena.map.layers['+i+'])');
-      btn.setAttribute('onmouseover', 'arena.ui.hint("tool|barhint_Layer")');
+      btn.setAttribute('onmouseover', 'arena.ui.hint("tool|barhint_Layer");arena.map.setMarked(arena.map.layers['+i+'].getCoList());');
       btn.setAttribute('class', (list[i] == arena.map.layer) ? 'layer active' : 'layer');
       btn.innerHTML = list[i].name;
       e.appendChild(btn);
@@ -570,10 +635,12 @@ arena.ui = {
     $('mask').style.display = 'block';
     $('dialog_'+id).style.display = 'block';
     $('dialog_container').style.display = 'table';
+    arena.event.mapDialogMode = true;
   },
 
   hideDialog : function (id) {
     if (!$('dialog_'+id)) return;
+    arena.event.mapDialogMode = false;
     $('dialog_container').style.display = 'none';
     $('dialog_'+id).style.display = 'none';
     $('mask').style.display = 'none';

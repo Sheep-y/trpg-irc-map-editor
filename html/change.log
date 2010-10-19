@@ -1,7 +1,11 @@
 Sheepy's Arena, Change log
 
 == 2010-10: Layer support ==
-2010-10-17 Save / load in compressed JSON.  Mask tool single click always select single cell.
+2010-10-19 Map can rotate by 90 / -90 degrees.
+2010-10-18 Add layer area higlight on mouseover.
+2010-10-18 Fix new map not clearing layer data. Fix non-ascii map save/load.
+2010-10-18 Save / load in browser's localStorage.
+2010-10-17 Export / import in compressed JSON.  Mask tool single click always select single cell.
 2010-10-16 Mark/mask draws only border, not every cell.
 2010-10-15 Separate layer and canvas cell classes.
 2010-10-14 Brush size, brush respects mask.

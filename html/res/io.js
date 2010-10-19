@@ -40,7 +40,7 @@ arena.io = {
   /** Get save data of this map */
   getSaveData : function(map) {
     return {
-      build: 20101017,
+      build: 20101018,
       format: 'json',
       maps: [{
         name: map.name,
@@ -53,6 +53,64 @@ arena.io = {
     };
   },
   
+  /************************ Save / Load ********************************/
+
+  /** List saved map */  
+  listSaves : function(server) {
+    if (server == 'local') {
+      var list = localStorage['sheepy.arena.saveList'];
+      if (!list || !list.length) return [];
+      else return JSON.parse(list);
+    }
+  }, 
+
+  /** Save current map */  
+  saveMap : function(name, server) {
+    if (server == 'local') {
+      var list = this.listSaves(server);
+      // Add name
+      list.push(name);
+      // Remove name if exists
+      for (var i = list.length-2; i >= 0; i--)
+        if (list[i] == name) {
+          list.splice(list.length-1, 1);
+          break;
+        }
+      // Save and update save list
+      localStorage['sheepy.arena.save.'+name] = this.exportToJSON(arena.map, null, false);
+      localStorage['sheepy.arena.saveList'] = JSON.stringify(list);
+    }
+  }, 
+
+  /** Load a map */
+  loadMap : function(name, server) {
+    if (server == 'local') {
+      // Get data
+      var data = localStorage['sheepy.arena.save.'+name];
+      if (!data) {
+        return arena.lang.error.SaveNotFound;
+      }
+      // And import
+      return this.importFromJSON(data);
+    }
+  },
+
+  /** Delete a saved map */  
+  deleteSave : function(name, server) {
+    if (server == 'local') {
+      // Delete item
+      localStorage.deleteItem('sheepy.arena.save.'+name);
+      // And update save list
+      var list = this.listSaves(server);
+      for (var i = list.length; i >= 0; i--)
+        if (list[i] == name) {
+          list.splice(i, 1);
+          localStorage['sheepy.arena.saveList'] = JSON.stringify(list);
+          break;
+        }
+    }
+  },   
+
   /************************** Import **********************************/
 
   /** Import map from json format */  
@@ -76,8 +134,10 @@ arena.io = {
       if (restore.format == 'json.zip' && !RawDeflate.inflate) {
         alert(arena.map.err_NoDeflate);
       } else {
-        if (restore.format == 'json.zip') 
-          maps = JSON.parse(RawDeflate.inflate(atob(restore.maps)));
+        if (restore.format == 'json.zip.base64')
+          maps = JSON.parse(RawDeflate.Base64.decode(RawDeflate.inflate(RawDeflate.Base64.decode(restore.maps))));
+        else if (restore.format == 'json.zip')
+          maps = JSON.parse(RawDeflate.Base64.decode(RawDeflate.inflate(restore.maps)));
         else
           maps = JSON.parse(restore.maps);
       }
@@ -149,14 +209,20 @@ arena.io = {
   /************************** Export **********************************/
   
   /** Export whole map in compressed JSON format */
-  exportToJSON : function(map, area) {
+  exportToJSON : function(map, area, ascii) {
     if (!JSON.stringify)
       return arena.lang.err_NoJSON;
     var data = this.getSaveData(map); 
     // Zip library from http://github.com/dankogai/js-deflate
     if (RawDeflate.deflate) {
-      data.format = 'json.zip'
-      data.maps = btoa(RawDeflate.deflate(JSON.stringify(data.maps))); 
+      // Encode non-ascii, then zip
+      data.maps = RawDeflate.deflate(RawDeflate.Base64.encode(JSON.stringify(data.maps)));
+      if (ascii) {
+        data.format = 'json.zip.base64'
+        data.maps = RawDeflate.Base64.encode(data.maps);
+      } else {
+        data.format = 'json.zip'
+      }
     } 
     var result = JSON.stringify(data);
     //this.exportToClipboard(result);

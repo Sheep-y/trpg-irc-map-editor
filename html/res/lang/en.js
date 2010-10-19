@@ -15,17 +15,18 @@ arena.lang = {
 
     barhint_NewMap  : 'Create a new map. Will discard existing map.',
     barhint_ImportExport  : 'Export map in various text formats, or import from exported Json data.',
-    barhint_SaveLoad: 'Save / load map',
+    barhint_SaveLoad: 'Save / load map locally in browser',
+    barhint_rotateClock : 'Rotate whole map clockwise 90 degree. Ctrl: Anti-clockwise.',
     //barhint_Layer   : 'Click to select layer to draw. Top layer show first.',
     //barhint_UsingLayer : 'You are drawing on this layer.',
     barhint_Foreground : 'Drawing in this foreground colour. Click to fill current mask.',
     barhint_Background : 'Drawing in this background colour. Click to fill current mask.',
-    barhint_MapInput   : 'Brush text. Type and press enter to draw text. Press Delete to clear selected map.',
-    barhint_Colour   : 'Click to set foreground, Double click to set background, Ctrl/Shift+Click to draw foreground/background.',
-    barhint_NoColour : 'No colour : Use lower layer\'s colour.',
-    barhint_ReverseColour : 'Reverse colour : Reverse lower layer\'s colour.',
-    barhint_Layer  : 'Click to work on current layer.',
-    barhint_toolText   : 'Text tool, draw text on current layer. (T)',
+    barhint_MapInput   : 'Brush text for text tool. Press Enter to set text. Press Delete to clear selected area.',
+    barhint_Colour   : 'Click to set foreground, Ctrl/Shift+Click to fill foreground/background of selected area.',
+    //barhint_NoColour : 'No colour : Use lower layer\'s colour.',
+    //barhint_ReverseColour : 'Reverse colour : Reverse lower layer\'s colour.',
+    barhint_Layer  : 'Click to work with this layer. Double-click to toggle visibility.',
+    barhint_toolText   : 'Text tool, draw text on current layer. (T) Press Enter to set text before draw.',
     barhint_toolPaint  : 'Brush tool, paint background on current layer. (B)',
     barhint_toolErase  : 'Erase tool, erase stuff from curent layer. (E)',
     barhint_toolMask   : 'Rectangle mask tool, set mask to limit painting and move masked area of current layer. (R)',
@@ -104,6 +105,12 @@ arena.lang = {
   error : {
     // Drawing error
     NoMask : 'Where should I draw? Please select an area first.',
+    
+    // S/L error
+    NoHost : 'Save/load unavailable (Host not found). Blame HTML5 spec.',
+    NoLocalStorage : 'No LocalStorage facility. Please upgrade browser or enable offline storage.',
+    SaveNotFound : 'Cannot find saved map',
+    
     
     // I/O error
     CannotOpenWindow : 'Cannot popup window. Please allow popup first.',

@@ -16,7 +16,8 @@
 arena.commands = {
   list : ['SetMask', 'SetCell', 'SetText', 'SetForeground', 'SetBackground'
          , 'Erase', 'MoveMasked'
-         , 'LayerMove', 'LayerDelete', 'LayerAdd'],
+         , 'LayerMove', 'LayerDelete', 'LayerAdd'
+         , 'MapRotate'],
 
   // Setup commands, call once
   initialise : function() {
@@ -102,7 +103,13 @@ arena.commands = {
     this.desc = "Create layer " + name;
     this.name = name;
   },
+  
+  MapRotate : function(degree) {
+    this.degree = degree;
+  },
 }
+
+
 
 arena.commands.SetMask.prototype = {
   redo : function() {
@@ -269,6 +276,67 @@ arena.commands.LayerAdd.prototype = {
     arena.map.repaint();
   },
   undo : function() {},
+  consoliadte : function(newCmd) { return false; }
+}
+
+arena.commands.MapRotate.prototype = {
+  redo : function() {
+    this.rotate(this.degree);
+  },
+  undo : function() {
+    this.rotate(360-this.degree);
+  },
+  rotate: function(degree) {
+    if (degree == 0) return;
+    /*
+    var rad = degree * Math.PI/180;
+    var c = Math.cos(rad); // x = x * c + y * s
+    var s = Math.sin(rad); // y = x * s + y * c
+    */
+    var rotate = null;
+    var map = arena.map;
+    var mask = map.masked;
+    if (degree == 90) {
+      // 90 *** [0,0] -> [width, 0] -> [width, height] -> [0, height]
+      rotate = function(x, y, w, h) { return [w-y, x]; };
+      map.recreate(map.height, map.width);
+    } else if (degree == 180) {
+      // 180 *** [0,0] -> [width,height] -> 0,0 *** [width,0] -> [0, height] -> [width, 0]
+      rotate = function(x, y, w, h) { return [w-x, h-y]; };
+    } else if (degree == 270) {
+      // 270 *** [0,0] -> [0, height] -> [width, height] -> [width, 0]
+      rotate = function(x, y, w, h) { return [y, h-x]; };
+      map.recreate(map.height, map.width);
+    } else {
+      // TODO: flexible rotate
+      return;
+    }
+    var newH = map.height-1;
+    var newW = map.width-1;
+    for (var i = map.layers.length-1; i >= 0; i--) {
+      var l = map.layers[i];
+      var c = l.cells;
+      if (c.length > 0) {
+        l.cells = [];
+        var newCells = [];
+        for (var y = c.length-1; y >= 0; y--)
+          if (c[y]) {
+            var row = c[y];
+            for (var x = row.length-1; x >= 0; x--) {
+              var newCo = rotate(x, y, newW, newH);
+              l.set(newCo[0], newCo[1], row[x]);
+            };
+          }
+      }
+    }
+    var newMask = [];
+    for (var i = mask.length-1; i >= 0; i--) {
+      var newCo = rotate(mask[i][0], mask[i][1], newW, newH);
+      newMask.push([newCo[0], newCo[1]]);
+    }
+    map.setMasked(newMask);
+    map.repaint();
+  },
   consoliadte : function(newCmd) { return false; }
 }
 
