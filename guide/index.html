@@ -1,0 +1,256 @@
+<!DOCTYPE HTML>
+<html><head>
+<title>Tutorial - Sheepy's Arena</title>
+<meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
+<style type='text/css'>
+body {
+  background-color: #D8E8E0;
+}
+
+h1, h2, p, ul, ol { margin-top: 0; }
+
+h1, h2 { text-align: center; }
+
+a { text-decoration: none; color:navy; }
+a:visited { color: navy; }
+a:hover { text-decoration: underline; color: navy; } 
+
+.zh, .en {
+  width: 49%;
+  padding: 0;
+  margin: 0;
+}
+
+.en {
+  float:right;
+  clear: both;
+}
+
+img.screen {
+  display: block;
+  clear: both;
+  text-align: center;
+  margin: 1em auto;
+}
+
+.warning, .warning a {
+  color: red;
+}
+
+pre {
+  margin: auto 1em;
+  overflow: scroll;
+  background-color: #D0D0D0;
+}
+
+</style>
+</head><body>
+
+<div class='en'>
+<h1>Tutorial for Sheepy's Arena</h1>
+<h2>Introduction</h2>
+<p>
+Sheepy's Arena is an online text-based map editor, specifically tailored for HTML and IRC maps.
+It is primary designed for roleplaying / strategy games, such as D&D, that are played through forum or IRC.
+</p><p>
+To play with it, point your <b>up to date</b> browser to <a href='http://www.anetcity.com/sheepy/arena/'>http://www.anetcity.com/sheepy/arena/</a>.
+It has the following features:
+</p><ul>
+<li><b>Free</b>: No Ad, cost nothing. </li>
+<li><b>Easy</b>: Use similiar tools with photo editors such as <a href='https://www.photoshop.com/'>Photoshop</a> or <a href='http://www.gimp.org/'>GIMP</a>. </li>
+<li><b>Layers</b>: Useful for managing your map - espcially battle map. </li>
+<li><b>Persistent</b>: You can save and load map, and can export map in Plain Text, HTML, <a href='http://en.wikipedia.org/wiki/BBCode'>BBCode</a>, <a href='http://www.mirc.com/'>mIRC</a>, or <a href='http://www.json.org/'>JSON</a> format. </li>
+</ul><p>
+The main screen is separated into three areas:
+</p>
+</div>
+
+<div class='zh'>
+<h1>羊羊地圖編輯器 教學課程</h1>
+<h2>介紹</h2>
+<p>
+羊羊地圖編輯器是個在線的文字地圖編輯器，特別為制作 HTML / IRC 地圖而設。
+它主要是為透過論壇或 IRC 進行的扮演或戰略遊戲而設計，例如龍與地下城。
+</p><p>
+要試試看的話，請用<b>最新的</b>瀏覽器瀏覽 <a href='http://www.anetcity.com/sheepy/arena/'>http://www.anetcity.com/sheepy/arena/</a> 。
+它有以下亮點：
+</p><ul>
+<li><b>免費</b>: 無廣告，不需付費。 </li>
+<li><b>易用</b>: 使用跟圖片編輯器如 <a href='https://www.photoshop.com/'>Photoshop</a> 或 <a href='http://www.gimp.org/'>GIMP</a> 相近的工具。 </li>
+<li><b>圖層</b>: 便於管理地圖　－　特別是戰鬥地圖。 </li>
+<li><b>儲存</b>: 儲存／載入地圖，可以輸出成 統文字, HTML, <a href='http://en.wikipedia.org/wiki/BBCode'>BBCode</a>, <a href='http://www.mirc.com/'>mIRC</a>, 或 <a href='http://www.json.org/'>JSON</a> 格式。</li>
+</ul><p>
+主畫面大致分成三部分：
+</p></div>
+
+
+<img class='screen' src='img/ch10_map1.jpg'>
+
+
+<div class='en'>
+<ol>
+<li>Toolbox</li>
+<li>Status area</li>
+<li>Map area</li>
+</ol>
+<p>
+If the blank map doesn't load automatically, try refresh. 
+<span class='warning'><b>If the map never loads, or if you have problem drawing, please upgrade browser to IE 9, Firefox 3.6, Chrome 6, or equivent level.</b></span>    
+</p><p>
+We will start by doing a tactical map in a <a href='http://www.wizards.com/dnd/'>Dungeons & Dragons</a> campaign.
+The <a href='http://www.wizards.com/dnd/Article.aspx?x=dnd/duadp/20080711'>adventure</a> we are using says that the battle would take place in a pub, and gives the following map:
+</p>
+</div>
+
+<div class='zh'>
+<ol>
+<li>工具箱</li>
+<li>狀態區</li>
+<li>地圖區</li>
+</ol>
+<p>
+如果沒有自動載入空白地圖，請刷新。 
+<span class='warning'><b>如果地圖總是不載入，或繪畫時出現問題，請升級瀏覽器到 IE 9, 火狐 3.6, Chrome 6, 或等同瀏覽器.</b></span>    
+</p><p>
+一開始，我們會給一場<a href='http://dnd.zongheng.com/'>龍與地下城</a>的戰役繪制戰術地圖。
+我們採用的<a href='http://www.4shared-china.com/file/r5We8g8Q'>冒險</a>說戰鬥會在酒吧進行，並給出以下地圖：
+</p></div>
+
+
+<img class='screen' src='img/ch20_map1.jpg'>
+
+
+<div class='en'>
+<p>
+Because of the limitation of text, we cannot 100% recreate the map.
+But we can do our best.  Let's put down the outter walls first, which is a 15 squares x 14 squares rectangle.
+</p><p>
+After a map is opened, you will be wielding the Brush tool and black colour.
+This is a simple tool: If you move your cursor over the map, the cell under the cursor would be highlighted.
+This is the cell that would be painted if you click or hold your left mouse button. 
+</p><p>
+So, starting from a cell in top-left corner, click and hold, drag horizontally or vertically for a black line.
+You may make mistakes, it is ok.  Keep drawing until you get a rectangle: 
+</p>
+</div>
+
+<div class='zh'>
+<p>
+由於文字的限制，我們不能完美的重現這地圖。
+不過我們可以盡力。讓我們首先畫出外牆吧，那是個 15格 x 14格 的長方型。
+</p><p>
+當一幅地圖被載入後，你使用的繪圖工具會是色刷工具，顏色是黑色。
+這是個簡單的工具：如果你在地圖上移動你的鼠標，鼠標下的格子會亮起。
+如果你按下或壓住滑鼠左鍵，這格就會被繪上顏色。 
+</p><p>
+於是，從左上方選一格壓住左滑鼠鍵，平移或直移畫出一條黑色線。
+不小心畫錯的話也沒有問題，先繼續畫出一個方框： 
+</p>
+</div>
+
+
+<img class='screen' src='img/ch20_map2.jpg'>
+
+
+<div class='en'>
+<p>
+In the above example the last line overshot a bit.
+The eraser tool can be used to erase the unwanted part.
+</p><p>
+Click on the <img src='img/tool_eraser.png'> Eraser tool in tool box, or press E, and click or drag on the parts you want to erase.
+</p><p>
+After you are done, click the <img src='img/tool_brush.png'> Brush tool (B) to continue drawing.
+Fill in inner walls.  
+</p>
+</div>
+
+<div class='zh'>
+<p>
+在上面的範例中，最後一條線多畫了一點。
+我們可以用像皮檫工具去擦走不想要的部分。
+</p><p>
+點選工具箱裡的<img src='img/tool_eraser.png'>像皮檫工具，或按 E 鍵，然後點擊或拖拉你想擦走的部分。
+</p><p>
+事成後點選<img src='img/tool_brush.png'>色刷工具 (B 鍵) 繼續繪畫，填入內牆。 
+</p>
+</div>
+
+
+<img class='screen' src='img/ch20_map3.jpg'>
+
+
+<div class='en'>
+<p>
+The skeleton is comming out, but to continue we need more colour.
+Move the cursor to the black square in toolbox.  A colour pattle would comes out.
+Clicking on a colour would set it as the colour you are painting with.  
+</p><p>
+Fill in tables, windows, doors, and other fixed features.
+Pressing the number key associated with a colour can switch you to that colour.  
+</p>
+</div>
+
+<div class='zh'>
+<p>
+開始成型了，但繼續下去的話我們需要更多顏色。
+將鼠標移到工具箱的黑色方塊。一塊色板會跑出來。
+點擊顏色可以把它設定成你在用來繪畫的顏色。
+</p><p>
+填入桌子，窗戶，門口，和其他固定特徵。
+按下顏色上面的數字會將你切換到那隻顏色。 
+</p>
+</div>
+
+
+<img class='screen' src='img/ch20_map4.jpg'>
+
+
+<div class='en'>
+<p>
+Well done!  Time to save up the hard work.
+Click the <img src='img/cmd_save.png' width='21'> Save command, type a name in the dialog, and click 'Save'.     
+</p><p>
+Currently the saved maps are stored locally.
+This means you don't need to be online to save and load map.
+However, if you clear offline data from your browser, that would includes your maps.  
+</p><p>
+You can restore the above map by importing this data:
+</p>
+</div>
+
+<div class='zh'>
+<p>
+做得好！是時候儲存起辛勞的成果。
+點擊 <img src='img/cmd_save.png' width='21'> 儲存指令，在對話盒中輸入名字，然後點擊"儲存"。
+</p><p>
+目前，儲存的地圖會存在本機。
+這代表了你不需要在線都可以儲存和讀取地圖。
+可是，如果你清除瀏覽器的離線資料的話，你的地圖可能會被一拼清除。
+</p><p>
+你可以載入以下資料重現以上地圖：
+</p>
+</div>
+
+<pre>
+
+{"id":"sheepy.arena.20101025.json-zip-base64","data":"w61aXXfCojAQw71LwoDDrcOuw7HDkWJFchTCj8K4JcKQN0LDrBJMw5BdVMOAX8K/QcK7WsObw71yGzzCqHnDomQgQ8Ouwp3DicOMEGZawoJlw6A/bMOsZMKBwqclWAVQZ3YywqdfYC/Ct8K7wo90YMKCVghdLTTDrU/Dg03CkMOZPGYhJHNSwo3Ck8KxGMKDODDClmnDhMObOsOmYzpKM0osw6/CrsK6b8KvRsKdwq/Cpi3CnkHDq8KIe8KHZ8Kowp0MwrvCncOcwqY5DXgvCQ1Sw6LClsK3QsOVHMOqWMOuLMKow55LcQvDjMKQD8K6w5gow5bDhMK3D8OzUk3DqMOUw6PDiFjCsmoOw5TCq3ERT8KhV0bCpRjCtzLCinlvwokmQh9zWcKUwoI4woR3wpVOI8O0wp1Fw4ALwoFxwqFFwqnDh8KELEHCsMOIwrbDs8KMex1becKGUy/Dg2bCgV/Crisiw64Pw7oHXDt5ThFvwpcIHsOWw75Tw74ew5MwF8OrwqbDj8KTw6LCs8Kdwrpsw5oXHMOww53Cu8OeccKzwpfCv8Ohw7UVdmEnDcO5wrEmMMOsw5ZmAi7CuGLCqAXDlgTDnsOPXsOJaQDCncOvB8O5wpzDmsKbTj40QcK7CXjDhsKaw5PCvSY8w5dmH8KFwqdmPMKewpbCvcKJOVLDsMOJwotbTnfCrA0rw55lw4bDgMOGw4RTJ8KRw6EPwoEMfzDCjsK4wrHCjnxCHl/CjcO3wrdafETDucObw5/DvE3Cji4pw5zDiMOzS8KdDHrDi8Kjw73CpMOyw5gvw7A0wobCm33CrsKRH8KTLHkxT8OqHsKWw4jCvT/CqcOle8Olw7fDucOoDzLClU9rw7PDncKrwozDl8ONw5tTwo3Di8Kxw6fDsDfCmcO+cGvDscOgwrZqIMKZdj0xwrcowps1w5Rmw6p8w6fCv8OqwqfDhsOXfsO1w4VddTZZw69ZworCim8qJ8OdwpzDjcOUw5nDmsKFw5fDphfDtl3CrsO8w600f8K7w4gaw6gjw7lAw63CszPDl3RSwrnCqnsfwqjDv0nDqn9SY8K4wqrCu3ZWw7taw73Cv8Ocw6J7RMOWw4fDvcOtw4Fyw6kVw7XCsQkdw6NSw5lHw6E5w6/DmcKXw6/DqVtMw7t+w5nCmcOHEcO3ElLDtcOtwqZoERnCjGLDq8KJwo5Swrckw7BJwqzDh2HDmCrCtsO9w4LCvsK/XcODwqFnw5gAw58QdMK0wqrCr8KXcMK2CSHDiCrCncKkD3Q0EXwYwoLCl8O+wpDCjsOYwpJsOcOgw7cxwoZCNwVdwoE9Jn3CrxTDj8Kfw77DnhZiUcOVw7/Du09zdcOyLDDDvwA="}
+
+</pre>
+
+
+<div class='en'>
+<p>
+This concludes the quick start guide.
+You can contact me from <a href='mailto:your.sheepy@gmail.com'>your.sheepy@gmail.com</a>.  
+</p>
+</div>
+
+<div class='zh'>
+<p>
+上手指南到此完結。
+你可以用這電郵聯絡我：<a href='mailto:your.sheepy@gmail.com'>your.sheepy@gmail.com</a>.
+</p>  
+</div>
+
+
+</body></html>
