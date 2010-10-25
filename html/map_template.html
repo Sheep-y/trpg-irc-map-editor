@@ -23,11 +23,13 @@
 </tr></table>
 
 <div id='toolbox'>
-  <div class='tool' onclick='arena.event.newMapOnClick(event)'   onmouseover='arena.ui.hint("tool|barhint_NewMap")'>*</div>
-  <div class='tool' onclick='arena.event.exportOnClick(event)'   onmouseover='arena.ui.hint("tool|barhint_ImportExport")'>&lt;&gt;</div>
-  <div class='tool' onclick='arena.event.saveLoadOnClick(event)' onmouseover='arena.ui.hint("tool|barhint_SaveLoad")'>SL</div>
+  <!-- Icons from "Medical Icons Set Icon Pack" by Centigrade (freeware) http://findicons.com/pack/2286/free_medical_icons_set -->
+  <div class='tool' onclick='arena.event.newMapOnClick(event)'   onmouseover='arena.ui.hint("tool|barhint_NewMap")'> <img src='../html/res/img/cmd_new.png' width='21' > </div>
+  <div class='tool' onclick='arena.event.exportOnClick(event)'   onmouseover='arena.ui.hint("tool|barhint_ImportExport")'> <img src='../html/res/img/cmd_export.png' width='21' > </div>
+  <div class='tool' onclick='arena.event.saveLoadOnClick(event)' onmouseover='arena.ui.hint("tool|barhint_SaveLoad")'> <img src='../html/res/img/cmd_save.png' width='21' > </div>
   
-  <input id='mapinput' type='text' maxlength='2' value='  ' disabled onmouseover='arena.ui.hint("tool|barhint_MapInput")'>
+  <!-- Icons from GIMP GPL -->
+  <input id='mapinput' type='text' maxlength='2' value='  ' disabled onclick='arena.ui.focusMapInput()' onmouseover='arena.ui.hint("tool|barhint_MapInput")'>
   <div id='cmd_Foreground' onclick='arena.event.setForegroundOnClick(event)' onmouseover='arena.event.submenuOnHover(event,"palette");arena.ui.hint("tool|barhint_Foreground")' onmouseout='arena.event.submenuOnExit(event);'></div>
   <div id='cmd_Background' onclick='arena.event.setBackgroundOnClick(event)' onmouseover='arena.event.submenuOnHover(event,"palette");arena.ui.hint("tool|barhint_Background")' onmouseout='arena.event.submenuOnExit(event);' style='display:none'></div>
   <table id='palette'><tbody><tr>
@@ -40,20 +42,20 @@
   </tr></tbody></table>
   <div class='tool'> </div>
 
-  <div class='tool' id='cmd_ToolMask'    onclick='arena.tools.setTool(arena.tools.Mask)'    onmouseover='arena.ui.hint("tool|barhint_toolMask")'   >R</div>
-  <div class='tool' id='cmd_ToolDropper' onclick='arena.tools.setTool(arena.tools.Dropper)' onmouseover='arena.ui.hint("tool|barhint_toolDropper")'>D</div>
-  <div class='tool' id='cmd_Rotate'      onclick='arena.commands.run(new arena.commands.MapRotate(event.ctrlKey?270:90));' onmouseover='arena.ui.hint("tool|barhint_rotateClock")'> <img src='../html/res/img/right.gif'> </div>
+  <div class='tool' id='cmd_ToolMask'    onclick='arena.tools.setTool(arena.tools.Mask)'  ondblclick='arena.tools.Mask.dbclick(event)'  onmouseover='arena.ui.hint("tool|barhint_toolMask")'   > <img src='../html/res/img/tool_mask_rect.png'> </div>
+  <div class='tool' id='cmd_ToolDropper' onclick='arena.tools.setTool(arena.tools.Dropper)' onmouseover='arena.ui.hint("tool|barhint_toolDropper")'> <img src='../html/res/img/tool_dropper.png'> </div>
+  <div class='tool' id='cmd_Rotate'      onclick='arena.commands.run(new arena.commands.MapRotate(event.ctrlKey?270:90));' onmouseover='arena.ui.hint("tool|barhint_rotateClock")'> <img src='../html/res/img/rotate_right.png'> </div>
 
-  <div class='tool' id='cmd_ToolText'    onclick='arena.tools.setTool(arena.tools.Text)'    onmouseover='arena.ui.hint("tool|barhint_toolText")'   >T</div>
-  <div class='tool' id='cmd_ToolPaint'   onclick='arena.tools.setTool(arena.tools.Paint)'   onmouseover='arena.ui.hint("tool|barhint_toolPaint")'  >B</div>
-  <div class='tool' id='cmd_ToolErase'   onclick='arena.tools.setTool(arena.tools.Erase)'   onmouseover='arena.ui.hint("tool|barhint_toolErase")'  >E</div>
+  <div class='tool' id='cmd_ToolText'    onclick='arena.tools.setTool(arena.tools.Text)'    onmouseover='arena.ui.hint("tool|barhint_toolText")'   > <img src='../html/res/img/tool_text.png'> </div>
+  <div class='tool' id='cmd_ToolBrush'   onclick='arena.tools.setTool(arena.tools.Brush)'   onmouseover='arena.ui.hint("tool|barhint_toolBrush")'  > <img src='../html/res/img/tool_brush.png'> </div>
+  <div class='tool' id='cmd_ToolEraser'   onclick='arena.tools.setTool(arena.tools.Eraser)'   onmouseover='arena.ui.hint("tool|barhint_toolEraser")'  > <img src='../html/res/img/tool_eraser.png'> </div>
 
   <div class='tool' id='cmd_ToolBrush1'  onclick='arena.map.tool.brush(event,1)' onmouseover='arena.ui.hint("tool|barhint_brushSize")'>.</div>
   <div class='tool' id='cmd_ToolBrush2'  onclick='arena.map.tool.brush(event,2)' onmouseover='arena.ui.hint("tool|barhint_brushSize")' >..</div>
   <div class='tool' id='cmd_ToolBrush3'  onclick='arena.map.tool.brush(event,3)' onmouseover='arena.ui.hint("tool|barhint_brushSize")' >...</div>
 
-  <div class='tool' id='cmd_ViewLayer'   onclick='arena.event.viewLayerOnClick(event)'      onmouseover='arena.ui.hint("tool|barhint_viewLayer")'  >L</div>
-  <div class='tool' id='cmd_ViewGlyph'   onclick='arena.event.viewGlyphOnClick(event)'      onmouseover='arena.ui.hint("tool|barhint_viewGlyph")'  >G</div>
+  <div class='tool' id='cmd_ViewLayer'   onclick='arena.event.viewLayerOnClick(event)'      onmouseover='arena.ui.hint("tool|barhint_viewLayer")'  > <img src='../html/res/img/view_layers.png'> </div>
+  <div class='tool' id='cmd_ViewGlyph'   onclick='arena.event.viewGlyphOnClick(event)'      onmouseover='arena.ui.hint("tool|barhint_viewGlyph")'  > <img src='../html/res/img/view_glyphs.png'> </div>
   <hr>
   <div id='layer'>
     <div class='tool' onclick='arena.event.addLayerOnClick(event)'  onmouseover='arena.ui.hint("tool|barhint_AddLayer")' >+</div>
@@ -87,10 +89,9 @@
     arena.ui.createGlyphs();
     arena.reset();
     arena.ui.focusBody();
-    console.log()
   }
   document.close();
-</script><noscript>
+</script><noscript>-
 <p>Please enable JavaScript.</p>
 </noscript>
 <!-- save/load code are loaded after others -->
@@ -118,15 +119,6 @@ Import:
 <input type='button' value='Cancel' onclick='arena.ui.hideDialog("export")'>
 </div>
 
-<div id='dialog_text'>
-<h2>Data</h2>
-<p id='text_instruction'>arena.lang.io.CopyInstruction</p>
-<textarea id='text_data' rows='10' cols='40' onkeyup='arena.event.dlgTextChanged(event, this.value)'>
-</textarea>
-<br><br>
-<input type='button' value='Cancel' onclick='arena.ui.hideDialog("text")'>
-</div>
-
 <div id='dialog_saveload'>
 <h2>Save / Load</h2>
 New Save: <input id='saveInput' type='text' value=''>
@@ -139,6 +131,15 @@ Load
 <input type='button' value='Load' onclick='arena.event.btnLoadMapClick(event)'>
 <input type='button' value='Cancel' onclick='arena.ui.hideDialog("saveload")'>
 <input type='button' value='Delete' onclick='arena.event.btnDeleteSaveClick(event)'>
+</div>
+
+<div id='dialog_text'>
+<h2>Data</h2>
+<p id='text_instruction'>arena.lang.io.CopyInstruction</p>
+<textarea id='text_data' rows='10' cols='40' onkeyup='arena.event.dlgTextChanged(event, this.value)'>
+</textarea>
+<br><br>
+<input type='button' value='Cancel' onclick='arena.ui.hideDialog("text")'>
 </div>
 
 </td></tr></table>

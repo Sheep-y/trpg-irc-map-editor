@@ -24,6 +24,19 @@ arena.xyInCoList = function(x, y, ary) {
   return -1;
 }
 
+// Given a coordinate list, return one with no duplicate coordinates
+arena.uniqueCoList = function(ary) {
+  var map = [], l = ary.length, result = [];
+  for (var i = 0; i < l; i++) {
+    var a = ary[i];
+    var x = a[0], y = a[1];
+    if (!map[y]) map[y] = [];
+    if (!map[y][x]) result.push(a);
+    map[y][x] = true;
+  }
+  return result;
+}
+
 // Find the four boundareis in coordinate list. Return [minX, minY, maxX, maxY]. Return null if empty.
 // The four corners are [0,0] (top left), [0,3] (bottom left), [2,1] (top right) and [2,3] (bottom right)
 // var minX = bounds[0], minY = bounds[1], maxX = bounds[2], maxY = bounds[3];
@@ -55,11 +68,12 @@ arena.getCell = function(cells, x, y, ifNotFound) {
 
 /** Reset map */
 arena.reset = function() {
-  arena.tools.setTool(arena.tools.Paint);
+  arena.tools.setTool(arena.tools.Brush);
   var w = (arena.map.width <= 0) ? 36 : arena.map.width;
   var h = (arena.map.height <= 0) ? 24 : arena.map.height;
   // Clear data
   arena.map.layers = [];
+  arena.map.layer = null;
   //for (var l = map.layers.length-1; l >= 0; l--)
   //  map.layers[l].cells = [];
   arena.map.recreate(w, h);
@@ -69,7 +83,9 @@ arena.reset = function() {
   new arena.Layer(arena.map, 'Creature'),
   new arena.Layer(arena.map, 'Overlay' ),
   arena.ui.updateLayers();
-  $('mapinput').value = arena.map.background_fill.text;
+  arena.ui.setText(arena.map.background_fill.text);
+  arena.ui.setForeground(arena.map.background_fill.foreground);
+  arena.ui.setBackground(arena.map.background_fill.background);
 }
 
 /************************* Map objects *********************************/
@@ -235,6 +251,7 @@ arena.map = { /** Map object. Store background, size, name, etc. */
     var layers = this.layers;
     var len = layers.length;
     for (var l = len-1; l >= -1; l--) {
+      if (l >= 0 && !layers[l].visible) continue;
       var cell = l >= 0 ? layers[l].get(x,y) : this.background_fill;
       if (cell) {
         if (!textDrawn && cell.text) {
@@ -321,9 +338,6 @@ arena.map = { /** Map object. Store background, size, name, etc. */
 
     //$('mapinput').value = '  ';
     
-    if (map.width == width && map.height == height)
-      return;
-
     // Clear map
     for (var y = 0; y < map.height; y++) { var row = map.cells[y];
       for (var x = 0; x < map.width; x++)
@@ -346,6 +360,7 @@ arena.map = { /** Map object. Store background, size, name, etc. */
       map.cells[y] = r[1];
     }
     arena.ui.setStatus(arena.lang.command.name_CreateMap + ' '+width+'x'+height);
+    map.repaint();
   },
 
   /** Create a cell row with vertical border. Returns tr and cell array. */

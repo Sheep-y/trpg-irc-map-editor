@@ -14,9 +14,9 @@
  */
 
 arena.commands = {
-  list : ['SetMask', 'SetCell', 'SetText', 'SetForeground', 'SetBackground'
+  list : [ 'SetMask', 'SetCell', 'SetText', 'SetForeground', 'SetBackground'
          , 'Erase', 'MoveMasked'
-         , 'LayerMove', 'LayerDelete', 'LayerAdd'
+         , 'LayerMove', 'LayerDelete', 'LayerAdd', 'LayerShowHide'
          , 'MapRotate'],
 
   // Setup commands, call once
@@ -104,7 +104,14 @@ arena.commands = {
     this.name = name;
   },
   
+  LayerShowHide : function(layer, visibility) {
+    this.desc = "Toogle layer visibility";
+    this.layer = layer;
+    this.visibility = visibility;
+  },
+  
   MapRotate : function(degree) {
+    this.desc = "Rotate " + degree + " degree";
     this.degree = degree;
   },
 }
@@ -279,6 +286,27 @@ arena.commands.LayerAdd.prototype = {
   consoliadte : function(newCmd) { return false; }
 }
 
+arena.commands.LayerShowHide.prototype = {
+  redo : function() {
+    this.lastVisibility = this.layer.visible;
+    this.setVisibility(this.visibility);
+  },
+  undo : function() {
+    this.setVisibility(this.lastVisibility);
+  },
+  setVisibility : function(visibility) {
+    if (visibility == this.layer.visible) return;
+    this.layer.visible = visibility;
+    arena.map.repaint();
+  },
+  consoliadte : function(newCmd) {
+    if (newCmd.className != this.className) return false;
+    if (newCmd.layer != this.layer) return false;
+    this.visibility = newCmd.visibility;
+    return true;
+  }
+}
+
 arena.commands.MapRotate.prototype = {
   redo : function() {
     this.rotate(this.degree);
@@ -296,21 +324,28 @@ arena.commands.MapRotate.prototype = {
     var rotate = null;
     var map = arena.map;
     var mask = map.masked;
+    var glyphMap = [];
     if (degree == 90) {
       // 90 *** [0,0] -> [width, 0] -> [width, height] -> [0, height]
       rotate = function(x, y, w, h) { return [w-y, x]; };
+      glyphMap = arena.lang.mapping.rotateClock;
       map.recreate(map.height, map.width);
     } else if (degree == 180) {
       // 180 *** [0,0] -> [width,height] -> 0,0 *** [width,0] -> [0, height] -> [width, 0]
       rotate = function(x, y, w, h) { return [w-x, h-y]; };
+      glyphMap = arena.lang.mapping.rotateHalf;
     } else if (degree == 270) {
       // 270 *** [0,0] -> [0, height] -> [width, height] -> [width, 0]
       rotate = function(x, y, w, h) { return [y, h-x]; };
+      glyphMap = arena.lang.mapping.rotateAntiClock;
       map.recreate(map.height, map.width);
+    } else if (degree == 0) {
+      // 0 degree = no rotate
+      return;
     } else {
       // TODO: flexible rotate
       return;
-    }
+    } 
     var newH = map.height-1;
     var newW = map.width-1;
     for (var i = map.layers.length-1; i >= 0; i--) {
@@ -322,9 +357,11 @@ arena.commands.MapRotate.prototype = {
         for (var y = c.length-1; y >= 0; y--)
           if (c[y]) {
             var row = c[y];
-            for (var x = row.length-1; x >= 0; x--) {
+            for (var x = row.length-1; x >= 0; x--) if (row[x]) {
+              var cell = row[x];
               var newCo = rotate(x, y, newW, newH);
-              l.set(newCo[0], newCo[1], row[x]);
+              if (cell && cell.text && glyphMap[cell.text]) cell.text = glyphMap[cell.text]; 
+              l.set(newCo[0], newCo[1], cell);
             };
           }
       }
@@ -337,7 +374,11 @@ arena.commands.MapRotate.prototype = {
     map.setMasked(newMask);
     map.repaint();
   },
-  consoliadte : function(newCmd) { return false; }
+  consoliadte : function(newCmd) {
+    if (newCmd.className != this.className) return false;
+    this.degree += newCmd.degree;
+    return true;
+  }
 }
 
 arena.commands.initialise();

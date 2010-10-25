@@ -40,18 +40,43 @@ arena.io = {
   /** Get save data of this map */
   getSaveData : function(map) {
     return {
-      build: 20101018,
-      format: 'json',
-      maps: [{
+      id: 'sheepy.arena.20101025.', // data structure version, shouldn't change unless structure change.
+      data: {
+        maps: [{
+          name: map.name,
+          width: map.width,
+          height: map.height,
+          background : map.background_fill,
+          masked: map.masked,
+          layers: map.layers,
+        }]
+      }
+    };
+  },
+  
+  
+  /************************ Previous builds *****************************
+     
+  { "build" : 20101018,
+    "format" : "json.zip.base64", // Or "json", or "json.zip"
+    "maps" : Base64(Deflate(Base64( [{
         name: map.name,
         width: map.width,
         height: map.height,
         background : map.background_fill,
         masked: map.masked,  
-        layers: map.layers,
-      }],
-    };
-  },
+        layers: map.layers
+      }] ))) }
+      
+  { "id" : "sheepy.arena.20101025.json-zip-base64", // Or "json", or "json-zip"
+    "data" : Base64(Deflate(Base64( { maps : [{
+        name: map.name,
+        width: map.width,
+        height: map.height,
+        background : map.background_fill,
+        masked: map.masked,  
+        layers: map.layers
+      }] } ))) }
   
   /************************ Save / Load ********************************/
 
@@ -109,8 +134,8 @@ arena.io = {
           break;
         }
     }
-  },   
-
+  },
+  
   /************************** Import **********************************/
 
   /** Import map from json format */  
@@ -124,50 +149,66 @@ arena.io = {
     } catch (err) {
     }
     
-    if (!restore || !restore.build || !restore.format || !restore.maps) {
+    // Basic checkings and version normalisation
+    if (restore && !restore.id && restore.build && restore.build <= 20101018 && restore.maps) {
+      restore.id = 'sheepy.arena.'+restore.build+'.'+restore.format.replace(/\./g,'-');
+      restore.data = restore.maps;
+      delete restore.maps;
+    } else if (!restore || !restore.id   || typeof(restore.id)  != "string"
+                        || !restore.data || typeof(restore.data)!= "string") {
+      return arena.lang.error.MalformedSave;
+    }
+
+    var spec = restore.id.match(/^sheepy\.arena\.(\d{8})\.([\w-]+)$/);
     
-      result = arena.lang.error.MalformedSave;
+    if (!spec || spec.length != 3) return arena.lang.error.MalformedSave;
     
+    var build = restore.build = +spec[1];
+    var format = restore.format = spec[2];
+
+    // Parse map data
+    var maps = null;
+    if (format.match(/-zip/) && !RawDeflate.inflate) {
+      alert(arena.map.err_NoDeflate);
     } else {
-    
-      var maps = null;
-      if (restore.format == 'json.zip' && !RawDeflate.inflate) {
-        alert(arena.map.err_NoDeflate);
-      } else {
-        if (restore.format == 'json.zip.base64')
-          maps = JSON.parse(RawDeflate.Base64.decode(RawDeflate.inflate(RawDeflate.Base64.decode(restore.maps))));
-        else if (restore.format == 'json.zip')
-          maps = JSON.parse(RawDeflate.Base64.decode(RawDeflate.inflate(restore.maps)));
-        else
-          maps = JSON.parse(restore.maps);
+      if (format == 'json-zip-base64')
+        //data = JSON.parse(RawDeflate.Base64.decode(RawDeflate.inflate(RawDeflate.Base64.decode(restore.data))));
+        data = JSON.parse(RawDeflate.Base64.decode(RawDeflate.inflate(RawDeflate.Base64.decode(restore.data))));
+      else if (format == 'json-zip')
+        data = JSON.parse(RawDeflate.Base64.decode(RawDeflate.inflate(restore.data)));
+      else if (format == 'json')
+        data = JSON.parse(restore.data);
+      else
+        return arena.lang.error.MalformedSave;
+    }
+    if (build <= 20101018) data = { maps: data };
+    if (data) {
+      try {
+        cleanup = true; // Map is erased below this point, mark cleaup on failure
+        arena.io.restoreMaps(data);
+        // Refresh and reset
+        arena.ui.updateLayers();
+        arena.map.repaint();
+        result = true;
+        cleanup = false;
+      } catch (err) {
+        if (console && console.error) console.error(err);
+        result = arena.lang.error.CannotRestore;
       }
-      if (maps) {
-        try {
-          cleanup = true; // Map is erased below this point, mark cleaup on failure
-          arena.io.restoreMaps(maps);
-          // Refresh and reset
-          arena.ui.updateLayers();
-          arena.map.repaint();
-          result = true;
-          cleanup = false;
-        } catch (err) {
-          result = arena.lang.error.CannotRestore;
-        }
-      } else {
-        result = arena.lang.error.MalformedSave;
-      }
+    } else {
+      result = arena.lang.error.MalformedSave;
     }
     
     // Reset if we got unknown error
     if (cleanup) {
       arena.reset();
-      if (console) console.error ? console.error(err) : console.log(err);
     }
     return result;
   },
 
   /** Given map data, try to restore maps */  
-  restoreMaps : function(maps) {
+  restoreMaps : function(data) {
+    var maps = data.maps;
     arena.map.layer = null;
     arena.map.layers = [];
     var map = maps[0];
@@ -175,7 +216,6 @@ arena.io = {
     if (map.width != arena.map.width || map.height != arena.map.height)
       arena.map.recreate(map.width, map.height);
     arena.map.name = map.name;
-    arena.map.masked = map.masked;
     arena.map.background_fill = map.background;
     
     for (var i = 0; i < map.layers.length; i++) {
@@ -203,6 +243,7 @@ arena.io = {
             }
         } 
     }
+    arena.map.setMasked(map.masked);
   },
 
 
@@ -216,14 +257,16 @@ arena.io = {
     // Zip library from http://github.com/dankogai/js-deflate
     if (RawDeflate.deflate) {
       // Encode non-ascii, then zip
-      data.maps = RawDeflate.deflate(RawDeflate.Base64.encode(JSON.stringify(data.maps)));
+      data.data = RawDeflate.deflate(RawDeflate.Base64.encode(JSON.stringify(data.data)));
       if (ascii) {
-        data.format = 'json.zip.base64'
-        data.maps = RawDeflate.Base64.encode(data.maps);
+        data.id += 'json-zip-base64'
+        data.data = RawDeflate.Base64.encode(data.data);
       } else {
-        data.format = 'json.zip'
+        data.id += 'json-zip'
       }
-    } 
+    } else {
+      data.id += 'json';
+    }
     var result = JSON.stringify(data);
     //this.exportToClipboard(result);
     return result;

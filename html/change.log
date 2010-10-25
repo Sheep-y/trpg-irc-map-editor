@@ -1,6 +1,13 @@
 Sheepy's Arena, Change log
 
 == 2010-10: Layer support ==
+2010-10-25 Brushes are now continuous despite mouse over skipping cells.
+2010-10-25 Mask reduction functionality.
+2010-10-25 Expand glyphs.
+2010-10-25 General bug fix and enhancements.
+2010-10-25 Rotate will rotate basic line glyphs.
+2010-10-21 Use GIMP tool icons.
+2010-10-20 Layer visibility toggle
 2010-10-19 Map can rotate by 90 / -90 degrees.
 2010-10-18 Add layer area higlight on mouseover.
 2010-10-18 Fix new map not clearing layer data. Fix non-ascii map save/load.

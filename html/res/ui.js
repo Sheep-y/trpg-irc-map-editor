@@ -104,6 +104,7 @@ arena.event = {
       this.updateCursor(evt, x, y);
       arena.ui.setHint(arena.map.tool.hint(evt, x, y));
     }
+    arena.ui.focusBody(); // clear selection
   },
 
   /** Set map cursor */
@@ -134,7 +135,8 @@ arena.event = {
       if (y == null) return;
       else if (+y != y || +y <= 0 || +y > 99) y = undefined;
     }
-    arena.map.recreate(+x, +y);
+    arena.map.width = +x;
+    arena.map.height = +y;
     arena.reset();
   },
 
@@ -199,9 +201,11 @@ arena.event = {
     } else {
       var html = '';
       var saves = arena.io.listSaves('local');
-      for (var i = 0; i < saves.length; i++)
-        html += "<label class='save'><input type='radio' id='save"+i+"'>" 
-              + saves[i].replace('<','&lt;') + "</label><br>"; 
+      for (var i = 0; i < saves.length; i++) {
+        var esc = saves[i].replace(/</g,'&lt;').replace(/'/g, '&apos;').replace(/"/g, '&quot;');
+        html += "<label class='save'><input type='radio' id='save"+i+"' onclick='$(\"saveInput\").value=\""+esc+"\"'>" 
+              + esc + "</label><br>";
+      } 
       $('saveList').innerHTML = html;
       arena.ui.showDialog('saveload');
       $('saveInput').select();
@@ -273,6 +277,7 @@ arena.event = {
         } else {
 //          this.setTextOnClick(evt);
           arena.map.text = $('mapinput').value;
+          arena.tools.setTool(arena.tools.Text);
           arena.ui.focusBody();
         }
         arena.event.eatEvent(evt);
@@ -283,7 +288,7 @@ arena.event = {
         break;
         
       default: 
-        if (!this.mapInputMode)
+        if (!this.mapInputMode) {
           switch (evt.keyCode) {
 
       case 32: // Space
@@ -301,8 +306,9 @@ arena.event = {
         arena.event.eatEvent(evt);
         break;
 
+      //case 65: // A
       case 66: // B
-        arena.tools.setTool(arena.tools.Paint);
+        arena.tools.setTool(arena.tools.Brush);
         arena.ui.setHint(arena.map.tool.hint(evt, this.lastMouseX, this.lastMouseY));
         arena.event.eatEvent(evt, false);
         break;
@@ -312,7 +318,7 @@ arena.event = {
         arena.event.eatEvent(evt, false);
         break;
       case 69: // E
-        arena.tools.setTool(arena.tools.Erase);
+        arena.tools.setTool(arena.tools.Eraser);
         arena.ui.setHint(arena.map.tool.hint(evt, this.lastMouseX, this.lastMouseY));
         arena.event.eatEvent(evt, false);
         break;
@@ -405,6 +411,8 @@ arena.event = {
         arena.map.tool.key(evt);
         //if (console) console.log(evt.keyCode);
       }
+      arena.ui.focusBody(); // clear selection
+      }
     }
     if (evt.keyCode < 32) // Update cursor for control characters - Shift, Ctrl, Alt, etc.
       this.updateCursor(evt, this.lastMouseX, this.lastMouseY);
@@ -456,7 +464,11 @@ arena.event = {
   },
   
   layerOnClick : function(evt, layer) {
-    arena.map.layer = layer;
+    if (evt.detail > 1 && evt.detail <= 3) {
+      arena.commands.run(new arena.commands.LayerShowHide(arena.map.layer, !arena.map.layer.visible));
+    } else {
+      arena.map.layer = layer;
+    }
     arena.ui.updateLayers();
   },
 
@@ -538,17 +550,16 @@ arena.ui = {
     var palette = arena.lang.palette;
     var i = 0, td, tr, tbody = $('palette').firstChild;
     for (var c in palette) { var colour = palette[c];
-      if (i % 2 == 0) tr = document.createElement('tr');
-      if (i == 0) this.setForeground(colour);
-      if (i == 1) this.setBackground(colour);
+      if (i % 8 == 0) tr = document.createElement('tr');
       td = document.createElement('td');
       td.setAttribute('onclick', 'arena.event.paletteOnClick(event,"'+colour+'")');
       td.setAttribute('ondblclick', 'if(!event.detail)arena.event.paletteOnClick(event,"'+colour+'")');
       td.setAttribute('onmouseover', 'arena.event.submenuOnHover(event,"palette");arena.ui.hint("tool|barhint_Colour")');
       td.setAttribute('onmouseout', 'arena.event.submenuOnExit(event);');
       td.setAttribute('style', 'background-color:'+colour);
-      td.setAttribute('title', c);
+      //td.setAttribute('title', c);
       td.setAttribute('class', 'palette');
+      td.innerHTML = c;
       tr.appendChild(td);
       if (i++ % 2 != 0) tbody.appendChild(tr);
     }
@@ -565,7 +576,10 @@ arena.ui = {
       btn = document.createElement('div');
       btn.setAttribute('onclick', 'arena.event.layerOnClick(event,arena.map.layers['+i+'])');
       btn.setAttribute('onmouseover', 'arena.ui.hint("tool|barhint_Layer");arena.map.setMarked(arena.map.layers['+i+'].getCoList());');
-      btn.setAttribute('class', (list[i] == arena.map.layer) ? 'layer active' : 'layer');
+      var className = 'layer';
+      if (list[i] == arena.map.layer) className += ' active';
+      if (!list[i].visible) className += ' hidden';
+      btn.setAttribute('class', className);
       btn.innerHTML = list[i].name;
       e.appendChild(btn);
     }
@@ -581,18 +595,20 @@ arena.ui = {
       btn.setAttribute('class', 'tool glyph');
       btn.innerHTML = glyph[i];
       g.appendChild(btn);
-      if (i+1 % 3 == 0) g.appendChild(document.createElement('br'));
+      //if (i+1 % 3 == 0) g.appendChild(document.createElement('br'));
     }
   },
 
+  setText : function (text) {
+    $('mapinput').value = arena.map.text = text;
+  },
+
   setForeground : function (colour) {
-    arena.map.foreground = colour;
-    $('cmd_Foreground').style.backgroundColor = colour;
+    $('cmd_Foreground').style.backgroundColor = arena.map.foreground = colour;
   },
 
   setBackground : function (colour) {
-    arena.map.background = colour;
-    $('cmd_Background').style.backgroundColor = colour;
+    $('cmd_Background').style.backgroundColor = arena.map.background = colour;
     $('cmd_Foreground').style.border = '2px solid '+colour;
   },
 
@@ -606,6 +622,7 @@ arena.ui = {
   focusBody : function() {
     arena.event.mapInputMode = false;
     $('hideFocus').focus();
+    $('hideFocus').select();
     $('mapinput').disabled = true;
     //setTimeout(document.body.focus, 10);
   },

@@ -23,7 +23,7 @@
  */
 
 arena.tools = {
-  list : ['Text','Paint','Erase','Mask','Dropper'], // Tool list
+  list : ['Text','Brush','Eraser','Mask','Dropper'], // Tool list
 
   // Given four corners, genreate a list of all coordinates in the rectangle
   genRectagleCoList : function(x1, y1, x2, y2) {
@@ -46,10 +46,11 @@ arena.tools = {
   }
 }
 
-// Text tool, used to draw text.  Most functions shared by Paint and Erase tool.
+// Text tool, used to draw text.  Most functions shared by Brush and Eraser tool.
 arena.tools.Text = {
   	drawing : false,
   	brushSize : 1,
+  	lastBrushCo : undefined,
     down : function(evt, x, y) {
       if (evt.button < 2) {
         this.drawing = true;
@@ -62,14 +63,31 @@ arena.tools.Text = {
         this.draw(evt, x, y);
     },
     up   : function(evt, x, y) {
-      if (evt.button < 2)
+      if (evt.button < 2) {
         this.drawing = false;
+        this.lastBrushCo = undefined;
+      }
     },
     draw : function(evt, x, y) {
       if (arena.map.layer) {
-      	var coList = !evt.ctrlKey
-      	  ? this.getBrushCoList(x,y) // No ctrl key, just paint cell
-      	  : [[x,y]]; // Ctrl key, fill mode
+        var coList;
+        if (!evt.ctrlKey) {
+          // No ctrl key, just paint cell. First check whether we are adjacent to last paint point
+          if (!this.lastBrushCo || ( Math.abs(this.lastBrushCo[0]-x) <= 1 && Math.abs(this.lastBrushCo[1]-y) <= 1 ) )
+      	    coList = this.getBrushCoList(x,y);
+      	  else {
+      	    // The coordinate jumped; draw a line
+      	    var dx = this.lastBrushCo[0]-x, dy = this.lastBrushCo[1]-y;
+            var d = Math.max(Math.abs(dx), Math.abs(dy)); 
+            coList = [];
+            for (var i = d; i >= 0; i--)
+              coList = coList.concat( this.getBrushCoList( x + Math.round(dx*i/d), y + Math.round(dy*i/d) ) );
+            coList = arena.uniqueCoList(coList);
+          }
+      	} else {
+      	  coList = [[x,y]]; // Ctrl key, fill mode
+      	}
+      	this.lastBrushCo = [x,y];
         if (arena.map.masked.length) {
           var mask = arena.map.masked;
           for (var i = coList.length-1; i >= 0; i--) {
@@ -122,15 +140,16 @@ arena.tools.Text = {
     hint : function(evt, x, y) {
       return arena.lang.tool.usehint_text;
     },
-    set : function(evt) { this.drawing = false; },
-    unset : function(evt) { this.drawing = false; },
-    cancel : function(evt) { this.drawing = false; },
-    outOfCanvas : function(evt) { this.drawing = false; },
+    set : function(evt) { this.drawing = false; this.lastBrushCo = undefined; },
+    unset : function(evt) { this.drawing = false; this.lastBrushCo = undefined; },
+    cancel : function(evt) { this.drawing = false; this.lastBrushCo = undefined; },
+    outOfCanvas : function(evt) { this.drawing = false; this.lastBrushCo = undefined; },
   };
 
-arena.tools.Paint = {
+arena.tools.Brush = {
   	drawing : false,
   	brushSize : 1,
+  	lastBrushCo : undefined,
     down : arena.tools.Text.down,
     move : arena.tools.Text.move,
     up   : arena.tools.Text.up,
@@ -147,7 +166,7 @@ arena.tools.Paint = {
       return (evt.ctrlKey) ? 'default' : 'cell';
     },
     hint : function(evt, x, y) {
-      return arena.lang.tool.usehint_paint;
+      return arena.lang.tool.usehint_brush;
     },
     set : arena.tools.Text.set,
     unset : arena.tools.Text.unset,
@@ -156,9 +175,10 @@ arena.tools.Paint = {
   };
 
 
-arena.tools.Erase = {
+arena.tools.Eraser = {
   	drawing : false,
   	brushSize : 1,
+  	lastBrushCo : undefined,
     down : arena.tools.Text.down,
     move : arena.tools.Text.move,
     up   : arena.tools.Text.up,
@@ -173,7 +193,7 @@ arena.tools.Erase = {
       return (evt.ctrlKey) ? 'default' : 'cell';
     },
     hint : function(evt, x, y) {
-      return arena.lang.tool.usehint_erase;
+      return arena.lang.tool.usehint_eraser;
     },
     set : arena.tools.Text.set,
     unset : arena.tools.Text.unset,
@@ -187,6 +207,7 @@ arena.tools.Mask = {
     isInuse : false, // True if tool is in use.
     isMoving : false, // True is tool's usage is draggons
     sx : 0, sy : 0, // starting x and starting y
+    reduceCount : 0,  // Level of reduction by double click
 
     down : function(evt, x, y) {
       if (evt.button < 2) { // Only care left button. IE not following standards
@@ -285,6 +306,34 @@ arena.tools.Mask = {
           arena.commands.run(new arena.commands.SetMask(newMask));
         }
       }
+      this.reduceCount = 0;
+    },
+    dbclick : function (evt) {
+      // Mask only function: select half of current mask
+      arena.map.setMarked([]);
+      var mask = arena.map.masked, len = mask.length;
+      if (!mask || mask.length <= 0 || this.reduceCount >= 4) {
+        arena.map.setMasked(arena.map.layer.getCoList());
+        this.reduceCount = 0;
+        return;
+      }
+      var newMask = [];
+      var func = null;
+      ++this.reduceCount;
+      switch (this.reduceCount) {
+        case 2:
+          func = function(co) { return co[1] % 2 == 0 && (co[0]+co[1]) %2 == 0; }; break; 
+        case 3:
+          func = function(co) { return (co[0]+co[1]) %4 == 0; }; break; 
+        case 4:
+          func = function(co) { return co[1] % 4 == 0 && (co[0]+co[1]) %8 == 0; }; break; 
+        default:
+          func = function(co) { return (co[0]+co[1]) %2 == 0; }; break;
+      }
+      for (var i = 0; i < len; i++)
+        if (func(mask[i]))
+          newMask.push(mask[i]);
+      arena.map.setMasked(newMask);
     },
     outOfCanvas : function (evt) {
       if (!this.isInUse)
@@ -333,7 +382,7 @@ arena.tools.Mask = {
         : arena.lang.tool.usehint_mask;
     },
 
-    set : function() { this.isInUse = this.isMoving = false; },
+    set : function() { this.isInUse = this.isMoving = false; this.reduceCount = 0; },
     unset : function() { this.cancel(); },
     cancel : function() {
       if (this.isInUse) arena.map.setMarked([]);

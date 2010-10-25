@@ -7,8 +7,8 @@ arena.lang = {
   tool : {
     name_mask    : 'Mask tool. Used to select area for drawing. Double click to select map.',
     usehint_text     : '[Text] Drag: Draw text in colour.  Shift: Draw text and background.',
-    usehint_paint    : '[Brush] Drag: Draw background.  Shift: Draw foreground.',
-    usehint_erase    : '[Erase] Drag: Erase from this layer.',
+    usehint_brush    : '[Brush] Drag: Draw background.  Shift: Draw foreground.',
+    usehint_eraser   : '[Erase] Drag: Erase from this layer.',
     usehint_mask     : '[Mask] Drag: select area. Ctrl: multi-select, Shift: de-select, both: XOR. Double/Triple Click: select similiar.',
     usehint_maskmove : '[Mask] Drag to move area. Press Ctrl for copy instead of move.',
     usehint_dropper  : '[Dropper] Click: Get text and foreground colour.  Shift: text and background.',
@@ -27,14 +27,14 @@ arena.lang = {
     //barhint_ReverseColour : 'Reverse colour : Reverse lower layer\'s colour.',
     barhint_Layer  : 'Click to work with this layer. Double-click to toggle visibility.',
     barhint_toolText   : 'Text tool, draw text on current layer. (T) Press Enter to set text before draw.',
-    barhint_toolPaint  : 'Brush tool, paint background on current layer. (B)',
-    barhint_toolErase  : 'Erase tool, erase stuff from curent layer. (E)',
-    barhint_toolMask   : 'Rectangle mask tool, set mask to limit painting and move masked area of current layer. (R)',
+    barhint_toolBrush  : 'Brush tool, paint background on current layer. (B)',
+    barhint_toolEraser : 'Eraser tool, erase stuff from curent layer. (E)',
+    barhint_toolMask   : 'Rectangle mask tool, limit paint area or move masked area of current layer. (R) Double click: Mask Layer / Reduce mask.',
     barhint_toolDropper: 'Dropper tool, get colours and text of current cell. (D)',
     barhint_brushSize  : 'Brush size.',
     barhint_viewLayer  : 'View layer list. Layers are independent from each other. Shift+Minus/Plus to move between layers.',
     barhint_viewGlyph  : 'View glyph list.',
-    
+
     barhint_AddLayer : 'Add top layer',
     barhint_DelLayer : 'Delete currnet layer',
     barhint_LayerUp  : 'Move currnet layer up',
@@ -61,40 +61,6 @@ arena.lang = {
   map : {
     background : '　',
   },
-  
-  palette : { /** Colour palettle. Same as mIRC. */
-    black : '#000',      white: '#FFF',
-    grey  : '#666',  lightgrey: '#CCC',
-    teal  : '#099',      aqua : '#0FF',
-    green : '#090',      lime : '#0F0',
-    navy  : '#006',      blue : '#00F',
-    purple: '#909',      pink : '#F0F',
-    brown : '#600',      red  : '#F00',
-    orange: '#F60',     yellow: '#FF0'
-  },
-  
-  glyph : [
-    '()', '[]', '<>',
-    '樹', '石', '叢',
-    '水', '木', '岩',
-    '火', '嵐', '漿',
-    '牆', '柵', '欄',
-    '門', '窗', '幕',
-    '箱', '桌', '椅',
-    '臺', '櫃', '床',
-    '坑', '像', '柱',
-    '●', '◆', '★',
-    '○', '◇', '☆',
-    '■', '□', '※',
-    '①', '②', '③',
-    '④', '⑤', '⑥',
-    '⑦', '⑧', '⑨',
-    '─', '╭', '╮',
-    '│', '╰', '╯',
-    '┌', '┬', '┐',
-    '├', '┼', '┤',
-    '└', '┴', '┘'
-  ],
 
   io : {
     CopyInstruction : 'Press Ctrl+X to copy.',
@@ -105,18 +71,115 @@ arena.lang = {
   error : {
     // Drawing error
     NoMask : 'Where should I draw? Please select an area first.',
-    
+
     // S/L error
     NoHost : 'Save/load unavailable (Host not found). Blame HTML5 spec.',
     NoLocalStorage : 'No LocalStorage facility. Please upgrade browser or enable offline storage.',
     SaveNotFound : 'Cannot find saved map',
-    
-    
+
+
     // I/O error
     CannotOpenWindow : 'Cannot popup window. Please allow popup first.',
     CannotRestore : 'Cannot restore map.',
     NoJSON : 'Browser doesn\'t support native JSON, please upgrade.',
     MalformedSave : 'Malformed save data.',
     NoDeflate : 'Cannot load zip library. Please reload.',
+  },
+
+
+
+  palette : { /** Colour palettle. Same as mIRC. */
+  /*
+    '1' : '#000',  '0' : '#FFF',    // Black, white
+    '11': '#666',  '00': '#CCC',    // Grey, lightgrey
+    '88': '#099',  '8' : '#0FF',    // Teal, Aqua
+    '33': '#090',  '3' : '#0F0',    // Green, Lime
+    '22': '#006',  '2' : '#00F',    // Navy, Blue
+    '66': '#909',  '6' : '#F0F',    // Purple, Pink
+    '44': '#600',  '4' : '#F00',    // Brown, Red
+    '55': '#F60',  '5' : '#FF0'     // Orange, Yellow
+    '0' : '#FFF',  '1' : '#000',  '2' : '#00F',  '3' : '#0F0',
+    '00': '#CCC',  '11': '#666',  '22': '#006',  '33': '#090',
+    '4' : '#F00',  '5' : '#FF0',  '6' : '#F0F',  '7' : '#0FF',
+    '44': '#600',  '55': '#F60',  '66': '#909',  '77': '#099',
+    */
+    '0' : '#FFF',  '1' : '#000',  '2' : '#00F',  '3' : '#0F0',  '4' : '#F00',  '5' : '#FF0',  '6' : '#F0F',  '7' : '#0FF',
+    '00': '#CCC',  '11': '#666',  '22': '#006',  '33': '#090',  '44': '#600',  '55': '#F60',  '66': '#909',  '77': '#099',
+  },
+
+  glyph : [
+    '牆', '柵', '欄', '板',
+    '門', '窗', '幕', '布',
+    '箱', '櫃', '壇', '臺',
+    '椅', '桌', '床', '灶',
+    '柱', '坑', '像', '爐',
+    '攤', '篷', '堆', '車',
+    '民', '兵', '闆', '待',
+
+    '☠', '☥', '♐', '♒',
+
+    '樹', '木', '叢', '花',
+    '石', '岩', '磚', '瓦',
+    '風', '力', '旋', '渦',
+    '水', '泉', '沼', '漿',
+    '火', '焰', '光', '暗',
+    '陷', '油', '刃', '魔',
+
+    '←', '↑', '↖', '↗',
+    '↓', '→', '↙', '↘',
+    '●', '◆', '★', '■',
+    '○', '◇', '☆', '□',
+    '①', '②', '③', '④',
+    '⑤', '⑥', '⑦', '⑧', //'⑨',
+    '─', '│', '╭', '╮',
+    '═', '║', '╰', '╯',
+    '╱', '┌', '┬', '┐',
+    '╲', '├', '┼', '┤',
+    '╳', '└', '┴', '┘'
+  ],
+
+  mapping : {
+    rotateClock : {
+      '─' : '│',    '│' : '─',    '═' : '║',    '║' : '═',
+      '╭' : '╮',    '╮' : '╯',    '╯' : '╰',    '╰' : '╭',
+      '┌' : '┐',    '┐' : '┘',    '┘' : '└',    '└' : '┌',
+      '┬' : '┤',    '┤' : '┴',    '┴' : '├',    '├' : '┬',
+      '╔' : '╗',    '╗' : '╝',    '╝' : '╚',    '╚' : '╔',
+      '╦' : '╣',    '╣' : '╩',    '╩' : '╠',    '╠' : '╦',
+      '╱' : '╲',    '╲' : '╱',    '╴' : '╵',    '╵' : '╶',    '╶' : '╷',    '╷' : '╴',
+    },
+
+    rotateHalf : {
+      '╭' : '╯',    '╮' : '╰',    '╯' : '╭',    '╰' : '╮',
+      '┌' : '┘',    '┐' : '└',    '┘' : '┌',    '└' : '┐',
+      '┬' : '┴',    '┤' : '├',    '┴' : '┬',    '├' : '┤',
+      '╔' : '╝',    '╗' : '╚',    '╝' : '╔',    '╚' : '╗',
+      '╦' : '╩',    '╣' : '╠',    '╩' : '╦',    '╠' : '╣',
+      '╴' : '╶',    '╵' : '╷',    '╶' : '╴',    '╷' : '╵',
+    },
+
+    rotateAntiClock : {
+      '─' : '│',    '│' : '─',    '═' : '║',    '║' : '═',
+      '╭' : '╰',    '╮' : '╭',    '╯' : '╮',    '╰' : '╯',
+      '┌' : '└',    '┐' : '┌',    '┘' : '┐',    '└' : '┘',
+      '┬' : '├',    '┤' : '┬',    '┴' : '┤',    '├' : '┴',
+      '╔' : '╚',    '╗' : '╔',    '╝' : '╗',    '╚' : '╝',
+      '╦' : '╠',    '╣' : '╦',    '╩' : '╣',    '╠' : '╩',
+      '╱' : '╲',    '╲' : '╱',    '╴' : '╷',    '╵' : '╴',    '╶' : '╵',    '╷' : '╶',
+    },
+
+    mirrorHorizontal : {
+      '╭' : '╮',    '╮' : '╭',    '╯' : '╰',    '╰' : '╯',
+      '┌' : '┐',    '┐' : '┌',    '┘' : '└',    '└' : '┘',    '┤' : '├',    '├' : '┤',
+      '╔' : '╗',    '╗' : '╔',    '╝' : '╚',    '╚' : '╝',    '╣' : '╠',    '╠' : '╣',
+      '╱' : '╲',    '╲' : '╱',    '╴' : '╴',    '╶' : '╴',
+    },
+
+    mirrorVertical : {
+      '╭' : '╰',    '╮' : '╯',    '╯' : '╮',    '╰' : '╭',
+      '┌' : '└',    '┐' : '┘',    '┘' : '┐',    '└' : '┌',    '┬' : '┴',    '┴' : '┬',
+      '╔' : '╚',    '╗' : '╝',    '╝' : '╗',    '╚' : '╔',    '╦' : '╩',    '╩' : '╦',
+      '╱' : '╲',    '╲' : '╱',    '╵' : '╷',    '╷' : '╵',
+    },
   },
 }

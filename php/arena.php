@@ -1,7 +1,7 @@
 <?php
 
 $out = array(
-  'app_version' => '0326.1',
+  'app_version' => '20101025',
   'language' => 'en',
   'title' => 'Map1',
 );
