@@ -102,7 +102,7 @@ arena.io = {
           break;
         }
       // Save and update save list
-      localStorage['sheepy.arena.save.'+name] = this.exportToJSON(arena.map, null, false);
+      localStorage['sheepy.arena.save.'+name] = this.exportToJSON(arena.map, null, 'zip');
       localStorage['sheepy.arena.saveList'] = JSON.stringify(list);
     }
   }, 
@@ -155,7 +155,7 @@ arena.io = {
       restore.data = restore.maps;
       delete restore.maps;
     } else if (!restore || !restore.id   || typeof(restore.id)  != "string"
-                        || !restore.data || typeof(restore.data)!= "string") {
+                        || !restore.data ) {
       return arena.lang.error.MalformedSave;
     }
 
@@ -177,7 +177,7 @@ arena.io = {
       else if (format == 'json-zip')
         data = JSON.parse(RawDeflate.Base64.decode(RawDeflate.inflate(restore.data)));
       else if (format == 'json')
-        data = JSON.parse(restore.data);
+        data = restore.data;
       else
         return arena.lang.error.MalformedSave;
     }
@@ -209,6 +209,7 @@ arena.io = {
   /** Given map data, try to restore maps */  
   restoreMaps : function(data) {
     var maps = data.maps;
+    arena.commands.resetUndo();
     arena.map.layer = null;
     arena.map.layers = [];
     var map = maps[0];
@@ -250,22 +251,24 @@ arena.io = {
   /************************** Export **********************************/
   
   /** Export whole map in compressed JSON format */
-  exportToJSON : function(map, area, ascii) {
+  exportToJSON : function(map, area, type) {
     if (!JSON.stringify)
       return arena.lang.err_NoJSON;
     var data = this.getSaveData(map); 
+    data.id += 'json';
     // Zip library from http://github.com/dankogai/js-deflate
-    if (RawDeflate.deflate) {
+    if (RawDeflate.deflate && (type=='zip'||type=='zip-base64') ) {
       // Encode non-ascii, then zip
-      data.data = RawDeflate.deflate(RawDeflate.Base64.encode(JSON.stringify(data.data)));
-      if (ascii) {
-        data.id += 'json-zip-base64'
-        data.data = RawDeflate.Base64.encode(data.data);
-      } else {
-        data.id += 'json-zip'
+      var json = JSON.stringify(data.data);
+      var zipped = RawDeflate.deflate(RawDeflate.Base64.encode(json));
+      if (type=='zip-base64')
+         zipped = RawDeflate.Base64.encode(zipped);
+      if (zipped.length < json.length) {
+        data.id += '-zip'
+        if (type=='zip-base64')
+          data.id += '-base64';
+        data.data = zipped;
       }
-    } else {
-      data.id += 'json';
     }
     var result = JSON.stringify(data);
     //this.exportToClipboard(result);

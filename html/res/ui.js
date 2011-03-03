@@ -82,10 +82,10 @@ arena.event = {
     this.lastMouseX = x;
     this.lastMouseY = y;
     var cell = arena.map.cells[y][x];
-    $('current_foreground').style.backgroundColor = cell.foreground;
     var back = cell.background;
-    $('current_background').style.backgroundColor = back;
-    $('current_foreground').style.border = "1px solid "+back;
+    $('#current_foreground').css('background-color', cell.foreground)
+                            .css('border', "1px solid "+back);
+    $('#current_background').css('background-color', back);
     x += arena.map.dx;
     y += arena.map.dy;
     arena.ui.setStatusTwoPoint('coordinate_status', 'X', x, 'Y', y);
@@ -117,7 +117,7 @@ arena.event = {
     }
     if (cursor != this.lastCursor) {
       this.lastCursor = cursor;
-      $('map').style.cursor = cursor;
+      $('#map').css('cursor', cursor);
     }
   },
 
@@ -147,28 +147,30 @@ arena.event = {
   dlgExportClick : function(evt) {
     arena.ui.hideDialog('export');
     // Default to export
-    $('text_instruction').innerHTML = arena.lang.io.CopyInstruction;
-    var textarea = $('text_data');
+    $('#text_instruction').html(arena.lang.io.CopyInstruction);
+    var textarea = $('#text_data')[0];
     textarea.value = arena.lang.io.PleaseWait;
     arena.ui.showDialog('text');
         
-    if ($('dlg_ex_txt').checked)
+    if ($('#dlg_ex_txt')[0].checked)
       textarea.value = arena.io.exportToTxt(arena.map, arena.map.masked);
-    else if ($('dlg_ex_bbc').checked)
+    else if ($('#dlg_ex_bbc')[0].checked)
       textarea.value = arena.io.exportToBBC(arena.map, arena.map.masked);
-    else if ($('dlg_ex_irc').checked)
+    else if ($('#dlg_ex_irc')[0].checked)
       textarea.value = arena.io.exportToIRC(arena.map, arena.map.masked);
-    else if ($('dlg_ex_json').checked)
-      textarea.value = arena.io.exportToJSON(arena.map, arena.map.masked, true);
+    else if ($('#dlg_ex_json_zip')[0].checked)
+      textarea.value = arena.io.exportToJSON(arena.map, arena.map.masked, 'zip-base64');
+    else if ($('#dlg_ex_json')[0].checked)
+      textarea.value = arena.io.exportToJSON(arena.map, arena.map.masked);
       
-    else if ($('dlg_ex_html').checked) {
+    else if ($('#dlg_ex_html')[0].checked) {
       // Special export, open in new doc
       arena.ui.hideDialog('text');
       arena.io.exportToHtml(arena.map, arena.map.masked);
       
-    } else if ($('dlg_in_json').checked) {
+    } else if ($('#dlg_in_json')[0].checked) {
       // Ok, we are importing
-      $('text_instruction').innerHTML = arena.lang.io.ImportInstruction;
+      $('#text_instruction').html(arena.lang.io.ImportInstruction);
       textarea.value = '';
     }
     
@@ -177,14 +179,14 @@ arena.event = {
   },
   
   dlgTextChanged : function(evt, txt) {
-    if ($('dlg_in_json').checked) {
+    if ($('#dlg_in_json')[0].checked) {
       // Importing, process data
       if (txt) {
         var result = arena.io.importFromJSON(txt);
         if (result == true)
           arena.ui.hideDialog('text');
         else
-          $('text_instruction').innerHTML = result;
+          $('#text_instruction').html(result);
       }      
     } else {
       // We're exporting, clear on empty
@@ -203,25 +205,25 @@ arena.event = {
       var saves = arena.io.listSaves('local');
       for (var i = 0; i < saves.length; i++) {
         var esc = saves[i].replace(/</g,'&lt;').replace(/'/g, '&apos;').replace(/"/g, '&quot;');
-        html += "<label class='save'><input type='radio' id='save"+i+"' onclick='$(\"saveInput\").value=\""+esc+"\"'>" 
+        html += "<label class='save'><input type='radio' id='save"+i+"' onclick='$(\"#saveInput\").val(\""+esc+"\")'>"
               + esc + "</label><br>";
       } 
-      $('saveList').innerHTML = html;
+      $('#saveList').html(html);
       arena.ui.showDialog('saveload');
-      $('saveInput').select();
-      $('saveInput').focus();
+      $('#saveInput')[0].select();
+      $('#saveInput')[0].focus();
     }
   },
   
   btnSaveMapClick : function(evt) {
-    arena.io.saveMap($('saveInput').value, 'local');
+    arena.io.saveMap($('#saveInput').val(), 'local');
     arena.ui.hideDialog("saveload");
   },
   
   btnLoadMapClick : function(evt) {
     var saves = arena.io.listSaves('local');
     for (var i = 0; i < saves.length; i++)
-      if ($('save'+i).checked) {
+      if ($('#save'+i)[0].checked) {
         var result = arena.io.loadMap(saves[i], 'local');
         if (result !== true)
           alert(result);
@@ -233,7 +235,7 @@ arena.event = {
   btnDeleteSaveClick : function(evt) {
     var saves = arena.io.listSaves('local');
     for (var i = 0; i < saves.length; i++)
-      if ($('save'+i).checked) {
+      if ($('#save'+i)[0].checked) {
         arena.io.deleteSave(saves[i].value, 'local');
         break;
       }
@@ -265,7 +267,7 @@ arena.event = {
             this.updateCursor(evt, this.lastMouseX, this.lastMouseY);
           }
         } else {
-          $('mapinput').value = this.lastMapInputValue;
+          $('#mapinput').val(this.lastMapInputValue);
           arena.ui.focusBody();
         }
         arena.event.eatEvent(evt);
@@ -273,10 +275,10 @@ arena.event = {
       case 13: // Enter: set text
         if (!this.mapInputMode) {
           arena.ui.focusMapInput();
-          this.lastMapInputValue = $('mapinput').value;
+          this.lastMapInputValue = $('#mapinput').val();
         } else {
 //          this.setTextOnClick(evt);
-          arena.map.text = $('mapinput').value;
+          arena.map.text = $('#mapinput').val();
           arena.tools.setTool(arena.tools.Text);
           arena.ui.focusBody();
         }
@@ -289,6 +291,7 @@ arena.event = {
         
       default: 
         if (!this.mapInputMode) {
+      arena.ui.focusBody(); // clear selection
           switch (evt.keyCode) {
 
       case 32: // Space
@@ -308,29 +311,41 @@ arena.event = {
 
       //case 65: // A
       case 66: // B
-        arena.tools.setTool(arena.tools.Brush);
-        arena.ui.setHint(arena.map.tool.hint(evt, this.lastMouseX, this.lastMouseY));
+        arena.tools.setTool(arena.tools.Brush, evt);
         arena.event.eatEvent(evt, false);
         break;
       case 84: // T
-        arena.tools.setTool(arena.tools.Text);
-        arena.ui.setHint(arena.map.tool.hint(evt, this.lastMouseX, this.lastMouseY));
+        arena.tools.setTool(arena.tools.Text, evt);
         arena.event.eatEvent(evt, false);
+        arena.ui.focusMapInput();
         break;
       case 69: // E
-        arena.tools.setTool(arena.tools.Eraser);
-        arena.ui.setHint(arena.map.tool.hint(evt, this.lastMouseX, this.lastMouseY));
+        arena.tools.setTool(arena.tools.Eraser, evt);
+        arena.event.eatEvent(evt, false);
+        break;
+      case 77: // M
+        arena.tools.setTool(arena.tools.Move, evt);
+        arena.event.eatEvent(evt, false);
+        break;
+      case 79: // O
+        arena.tools.setTool(arena.tools.Dropper, evt);
         arena.event.eatEvent(evt, false);
         break;
       case 82: // R
-        arena.tools.setTool(arena.tools.Mask);
-        arena.ui.setHint(arena.map.tool.hint(evt, this.lastMouseX, this.lastMouseY));
+        arena.tools.setTool(arena.tools.Mask, evt);
         arena.event.eatEvent(evt, false);
         break;
-      case 68: // D
-        arena.tools.setTool(arena.tools.Dropper);
-        arena.ui.setHint(arena.map.tool.hint(evt, this.lastMouseX, this.lastMouseY));
-        arena.event.eatEvent(evt, false);
+      case 89: // Y
+        if (evt.ctrldown) {
+          arena.command.redo();
+          arena.event.eatEvent(evt, false);
+        }
+        break;
+      case 90: // Z
+        if (evt.ctrldown) {
+          arena.command.undo();
+          arena.event.eatEvent(evt, false);
+        }
         break;
 
       case 48: // 0
@@ -411,7 +426,6 @@ arena.event = {
         arena.map.tool.key(evt);
         //if (console) console.log(evt.keyCode);
       }
-      arena.ui.focusBody(); // clear selection
       }
     }
     if (evt.keyCode < 32) // Update cursor for control characters - Shift, Ctrl, Alt, etc.
@@ -442,14 +456,24 @@ arena.event = {
   
   /************************ Toolbox tab *********************************/
 
+  undoOnClick : function(evt) {
+    arena.commands.undo();
+  },
+  
+  redoOnClick : function(evt) {
+    arena.commands.redo();
+  },
+
   viewLayerOnClick : function(evt) {
-    $('layer').style.display = '';
-    $('glyph').style.display = 'none';
+    $('#layer').show();
+    $('#glyph').hide();
+    arena.ui.updateButtons();
   },
 
   viewGlyphOnClick : function(evt) {
-    $('layer').style.display = 'none';
-    $('glyph').style.display = '';
+    $('#layer').hide();
+    $('#glyph').show();
+    arena.ui.updateButtons();
   },
   
   addLayerOnClick : function(evt) {
@@ -514,7 +538,7 @@ arena.event = {
 
   hideSubmenu : function() {
     if (!this.lastSubmenu) return;
-    $(this.lastSubmenu).style.display = 'none';
+    $('#'+this.lastSubmenu).hide();
     this.lastSubmenu = null;
   },
   submenuOnHover : function(evt, menu) {
@@ -523,8 +547,8 @@ arena.event = {
       clearTimeout(this.submenuTimer);
       this.submenuTimer = null;
     }
-    if (!$(menu).style.display || $(menu).style.display == 'none') {
-      $(menu).style.display = 'table';
+    if (!$('#'+menu)[0].style.display || $('#'+menu)[0].style.display == 'none') {
+      $('#'+menu)[0].style.display = 'table';
       this.lastSubmenu = menu;
     }
   },
@@ -537,7 +561,7 @@ arena.event = {
     if (evt.ctrlKey || evt.metaKey) // Quick set text: ctrl+press
       arena.commands.run(new arena.commands.SetText(glyph, arena.map.masked, arena.map.layer));
     else {
-      arena.map.text = $("mapinput").value = glyph;
+      arena.map.text = $("#mapinput")[0].value = glyph;
       arena.tools.setTool(arena.tools.Text);
     }
   },
@@ -546,9 +570,9 @@ arena.event = {
 arena.ui = {
   /*********************** Toolbox functions ***********************/
   createColourPalette : function() {
-    var p = $('palette');
+    var p = $('#palette')[0];
     var palette = arena.lang.palette;
-    var i = 0, td, tr, tbody = $('palette').firstChild;
+    var i = 0, td, tr, tbody = $('#palette')[0].firstChild;
     for (var c in palette) { var colour = palette[c];
       if (i % 8 == 0) tr = document.createElement('tr');
       td = document.createElement('td');
@@ -564,10 +588,35 @@ arena.ui = {
       if (i++ % 2 != 0) tbody.appendChild(tr);
     }
   },
+  
+  updateButtons : function() {
+    $('.tool[id]').removeClass('active');
+    arena.tools.list.forEach(function(name){
+      if (arena.tools[name] == arena.map.tool) {
+        $('#cmd_Tool'+name).addClass('active');
+      }
+    });
+    if ($('#layer').css('display') != 'none')
+      $('#cmd_ViewLayer').addClass('active');
+    else
+      $('#cmd_ViewGlyph').addClass('active');
+    arena.ui.updateUndoRedo();
+  },
+  
+  updateUndoRedo : function() {
+    if (!arena.commands.canUndo())
+      $('#cmd_Undo').addClass('disabled');
+    else
+      $('#cmd_Undo').removeClass('disabled');
+    if (!arena.commands.canRedo())
+      $('#cmd_Redo').addClass('disabled');
+    else
+      $('#cmd_Redo').removeClass('disabled');
+  },
 
   updateLayers : function() {
-    var btn, e = $('layer');
-    var list = e.getElementsByClassName('layer');
+    var btn, e = $('#layer')[0];
+    var list = $('#layer .layer');
     for (var i = list.length-1; i >= 0; i--) {
       list[i].parentNode.removeChild(list[i]);
     }
@@ -587,7 +636,7 @@ arena.ui = {
 
   createGlyphs : function() {
     var glyph = arena.lang.glyph;
-    var btn, g = $('glyph');
+    var btn, g = $('#glyph')[0];
     for (var i = 0; i < glyph.length; i++) {
       btn = document.createElement('div');
       btn.setAttribute('onclick', 'arena.event.glyphOnClick(event,"'+glyph[i]+'")');
@@ -600,41 +649,43 @@ arena.ui = {
   },
 
   setText : function (text) {
-    $('mapinput').value = arena.map.text = text;
+    $('#mapinput').val(arena.map.text = text);
   },
 
   setForeground : function (colour) {
-    $('cmd_Foreground').style.backgroundColor = arena.map.foreground = colour;
+    $('#cmd_Foreground').css('background-color', arena.map.foreground = colour);
   },
 
   setBackground : function (colour) {
-    $('cmd_Background').style.backgroundColor = arena.map.background = colour;
-    $('cmd_Foreground').style.border = '2px solid '+colour;
+    $('#cmd_Background').css('background-color', arena.map.background = colour);
+    $('#cmd_Foreground').css('border', '2px solid '+colour);
   },
 
   focusMapInput : function() {
-    $('mapinput').disabled = false;
-    $('mapinput').focus();
-    $('mapinput').select();
+    var i = $('#mapinput')[0];
+    i.disabled = false;
+    i.focus();
+    i.select();
     arena.event.mapInputMode = true;
   },
   
   focusBody : function() {
     arena.event.mapInputMode = false;
-    $('hideFocus').focus();
-    $('hideFocus').select();
-    $('mapinput').disabled = true;
+    var i = $('#hideFocus')[0]
+    i.focus();
+    i.select();
+    i.disabled = true;
     //setTimeout(document.body.focus, 10);
   },
 
   /*********************** Status bar functions ***********************/
   setHint : function(hint) {
     if (hint == this.lastHint) return;
-    $('hint').innerHTML = hint;
+    $('#hint').html(hint);
     this.lastHint = hint;
   },
   setStatus : function(status) {
-    $('status').innerHTML = status;
+    $('#status').html(status);
   },
 
   setStatusTwoPoint : function(id, xlabel, x, ylabel, y) {
@@ -643,24 +694,22 @@ arena.ui = {
     status += x + ' ' + ylabel + ':';
     if (y < 10) status += '&nbsp;';
     status += y;
-    $(id).innerHTML = status;
+    $('#'+id).html(status);
   },
 
   /*********************** Dialog functions ***********************/
   showDialog : function (id) {
-    if (!$('dialog_'+id)) return;
-    $('mask').style.display = 'block';
-    $('dialog_'+id).style.display = 'block';
-    $('dialog_container').style.display = 'table';
+    if ($('#dialog_'+id).length <= 0) return;
+    $('#masqk').css('display', 'block');
+    $('#dialog_'+id).css('display', 'block');
+    $('#dialog_container').css('display', 'table');
     arena.event.mapDialogMode = true;
   },
 
   hideDialog : function (id) {
-    if (!$('dialog_'+id)) return;
+    if ($('#dialog_'+id).length <= 0) return;
     arena.event.mapDialogMode = false;
-    $('dialog_container').style.display = 'none';
-    $('dialog_'+id).style.display = 'none';
-    $('mask').style.display = 'none';
+    $('#dialog_container, #dialog_'+id+', #mask').hide();
   },
 
   /*********************** Other ui functions ***********************/

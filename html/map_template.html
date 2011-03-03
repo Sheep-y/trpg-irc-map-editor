@@ -3,6 +3,9 @@
 <title>Sheepy's Arena</title>
 <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
 <link rel='stylesheet' type='text/css' href='../html/res/style.css?ver=[var.out.app_version]'>
+<script>
+if (!window.$) document.write('<script src="../html/res/jquery.js"></sc'+'ript>');
+</script>
 </head><body onmousedown='arena.event.documentMouseUpDown(event);' onmouseup='arena.event.documentMouseUpDown(event);' onkeydown='arena.event.mapKeyDown(event)' onkeyup='arena.event.mapKeyUp(event)'>
 
 <input id="hideFocus" type="text">
@@ -42,13 +45,17 @@
   </tr></tbody></table>
   <div class='tool'> </div>
 
+  <div class='tool' id='cmd_Undo'        onclick='arena.event.undoOnClick(event)'   onmouseover='arena.ui.hint("tool|barhint_Undo")'   > <img src='../html/res/img/cmd_undo.gif'> </div>
+  <div class='tool' id='cmd_Redo'        onclick='arena.event.redoOnClick(event)'   onmouseover='arena.ui.hint("tool|barhint_Redo")'   > <img src='../html/res/img/cmd_redo.gif'> </div>
+  <div class='tool' id='cmd_ToolMove'    onclick='arena.tools.setTool(arena.tools.Move)'  ondblclick='arena.tools.Mask.dbclick(event)'  onmouseover='arena.ui.hint("tool|barhint_toolMove")'   > <img src='../html/res/img/tool_move.png'> </div>
+
   <div class='tool' id='cmd_ToolMask'    onclick='arena.tools.setTool(arena.tools.Mask)'  ondblclick='arena.tools.Mask.dbclick(event)'  onmouseover='arena.ui.hint("tool|barhint_toolMask")'   > <img src='../html/res/img/tool_mask_rect.png'> </div>
   <div class='tool' id='cmd_ToolDropper' onclick='arena.tools.setTool(arena.tools.Dropper)' onmouseover='arena.ui.hint("tool|barhint_toolDropper")'> <img src='../html/res/img/tool_dropper.png'> </div>
   <div class='tool' id='cmd_Rotate'      onclick='arena.commands.run(new arena.commands.MapRotate(event.ctrlKey?270:90));' onmouseover='arena.ui.hint("tool|barhint_rotateClock")'> <img src='../html/res/img/rotate_right.png'> </div>
 
   <div class='tool' id='cmd_ToolText'    onclick='arena.tools.setTool(arena.tools.Text)'    onmouseover='arena.ui.hint("tool|barhint_toolText")'   > <img src='../html/res/img/tool_text.png'> </div>
   <div class='tool' id='cmd_ToolBrush'   onclick='arena.tools.setTool(arena.tools.Brush)'   onmouseover='arena.ui.hint("tool|barhint_toolBrush")'  > <img src='../html/res/img/tool_brush.png'> </div>
-  <div class='tool' id='cmd_ToolEraser'   onclick='arena.tools.setTool(arena.tools.Eraser)'   onmouseover='arena.ui.hint("tool|barhint_toolEraser")'  > <img src='../html/res/img/tool_eraser.png'> </div>
+  <div class='tool' id='cmd_ToolEraser'  onclick='arena.tools.setTool(arena.tools.Eraser)'   onmouseover='arena.ui.hint("tool|barhint_toolEraser")'  > <img src='../html/res/img/tool_eraser.png'> </div>
 
   <div class='tool' id='cmd_ToolBrush1'  onclick='arena.map.tool.brush(event,1)' onmouseover='arena.ui.hint("tool|barhint_brushSize")'>.</div>
   <div class='tool' id='cmd_ToolBrush2'  onclick='arena.map.tool.brush(event,2)' onmouseover='arena.ui.hint("tool|barhint_brushSize")' >..</div>
@@ -89,9 +96,10 @@
     arena.ui.createGlyphs();
     arena.reset();
     arena.ui.focusBody();
+    arena.ui.updateButtons();
   }
   document.close();
-</script><noscript>-
+</script><noscript>
 <p>Please enable JavaScript.</p>
 </noscript>
 <!-- save/load code are loaded after others -->
@@ -110,7 +118,8 @@ Export:
 <label onmouseover='arena.ui.hint("tool|dlghint_CopyBBC")'><input type='radio' name='opt_export' id='dlg_ex_bbc'> BBCode </label>
 <label onmouseover='arena.ui.hint("tool|dlghint_CopyTxt")'><input type='radio' name='opt_export' id='dlg_ex_irc' checked='checked'> mIRC </label><br>
 <label onmouseover='arena.ui.hint("tool|dlghint_CopyHtml")'><input type='radio' name='opt_export' id='dlg_ex_html'> HTML </label>
-<label onmouseover='arena.ui.hint("tool|dlghint_CopyJson")'><input type='radio' name='opt_export' id='dlg_ex_json'> Json </label>
+<label onmouseover='arena.ui.hint("tool|dlghint_CopyJsonZip")'><input type='radio' name='opt_export' id='dlg_ex_json_zip'> Json </label>
+<label onmouseover='arena.ui.hint("tool|dlghint_CopyJson")'><input type='radio' name='opt_export' id='dlg_ex_json'> Plain Json </label>
 <hr>
 Import: 
 <label onmouseover='arena.ui.hint("tool|dlghint_ImportJson")'><input type='radio' name='opt_export' id='dlg_in_json'> Json </label>
@@ -143,5 +152,16 @@ Load
 </div>
 
 </td></tr></table>
+
+<script> 
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+//document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js'%3E%3C/script%3E"));
+</script>
+<script>
+try {
+var pageTracker = _gat._getTracker("UA-9070778-1");
+pageTracker._trackPageview();
+} catch(err) {}
+document.close()</script>
 
 </body></html>

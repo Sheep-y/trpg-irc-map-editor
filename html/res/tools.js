@@ -23,7 +23,7 @@
  */
 
 arena.tools = {
-  list : ['Text','Brush','Eraser','Mask','Dropper'], // Tool list
+  list : ['Text','Brush','Eraser','Mask','Move','Dropper'], // Tool list
 
   // Given four corners, genreate a list of all coordinates in the rectangle
   genRectagleCoList : function(x1, y1, x2, y2) {
@@ -38,12 +38,113 @@ arena.tools = {
   },
 
   // Set a tool as currently in use
-  setTool : function(newTool) {
+  setTool : function(newTool, evt) {
     if (arena.map.tool) {
       arena.map.tool.unset();
     }
     arena.map.tool = newTool;
-  }
+    if (evt)
+      arena.ui.setHint(newTool.hint(evt, arena.event.lastMouseX, arena.event.lastMouseY));
+    arena.ui.updateButtons();
+  },
+  
+  /** Select cell with same text that are bordering this cell / all over the map */
+  selectSimiliar : function (x, y, selectAll) {
+    var map = arena.map, cells = map.cells, sx = x, sy = y;
+    // Select similiar
+    var newMask = [], txt = cells[y][x].text;
+    if (!selectAll) { // Select all similiar text
+      // Check left
+      --x;
+      while (x >= 0 && cells[y][x].text == txt) --x;
+      var left = x + 1;
+      // Check right
+      x = sx + 1;
+      while (x < map.width && cells[y][x].text == txt) ++x;
+      var right = x - 1;
+      // Prepare to recur seek bordering text
+      var thisrow = [], flaggedCells = [];
+      var condition = function(cell) { return cell.text == txt; }
+      for (var i = left; i <= right; i++) {
+        thisrow.push(i);
+        newMask.push([i, y]);
+        arena.setCell(flaggedCells, i, y, true);
+      }
+      arena.tools.recurSeek(y-1, map, thisrow, condition, flaggedCells, newMask);
+      arena.tools.recurSeek(y+1, map, thisrow, condition, flaggedCells, newMask);
+    } else { // Select all same text on map
+      for (y = 0; y < map.height; y++) { var row = cells[y];
+        for (x = 0; x < map.width; x++) { var cell = row[x];
+          if (cell.text == txt)
+            newMask.push([x,y]);
+        }
+      }
+    }
+    return newMask;
+  },
+
+  /** Recursively seek bordering grid.
+   * @param y     Cell row index
+   * @param map   Two-dimension cell array
+   * @param lastrow   Array of x index of selected last row
+   * @param condition A condition function that mark a cell (takes a cell as parameter)
+   * @param flaggedCells Two-dimension flag array for quick checking
+   * @param flaggedCo    Result flagged coordinate array
+   */
+  recurSeek : function (y, map, lastrow, condition, flaggedCells, flaggedCo) {
+    if (y < 0 || y >= map.height) return;
+    var thisrow = [], cells = map.cells;
+    var l = lastrow.length;
+    // First, find cells neighbouring last cell that fulfills condition
+    for (var i = 0; i < l; i++) { var x = lastrow[i];
+      if (arena.getCell(flaggedCells, x, y, null) !== null) continue; // Skip checked
+      if (condition(cells[y][x])) {
+        thisrow.push(x);
+        flaggedCo.push([x, y]);
+        arena.setCell(flaggedCells, x, y, true);
+      } else {
+        arena.setCell(flaggedCells, x, y, false);
+      }
+    }
+    l = thisrow.length;
+    if (l <= 0) return;
+    // Then, for each segment, expand to include horizontally bordering cells
+    var done = false, l1 = l-1;
+    i = 0;
+    while (!done) {
+      // Work on next segment. Proceed left first.
+      var left = thisrow[i];
+      for (var x = left-1; x >= 0; x--) {
+        if (arena.getCell(flaggedCells, x, y, null) !== null || !condition(cells[y][x])) break;
+        thisrow.push(x);
+        flaggedCo.push([x, y]);
+        arena.setCell(flaggedCells, x, y, true);
+      }
+      // Find right end
+      if (i < l1) {
+        var next = thisrow[++i];
+        while (i < l1 && next == left + 1) {
+          left = next;
+          next = thisrow[++i];
+        }
+        --i;
+      }
+      done = (i >= l1); // End of all segments
+      // Process right
+      var right = left;
+      for (var x = right+1; x < map.width; x++) {
+        if (arena.getCell(flaggedCells, x, y, null) !== null || !condition(cells[y][x])) break;
+        thisrow.push(x);
+        flaggedCo.push([x, y]);
+        arena.setCell(flaggedCells, x, y, true);
+      }
+      ++i;
+    }
+    // Flag cells and seek up & down
+    thisrow.sort(sortNumber);
+    arena.tools.recurSeek(y-1, map, thisrow, condition, flaggedCells, flaggedCo);
+    arena.tools.recurSeek(y+1, map, thisrow, condition, flaggedCells, flaggedCo);
+  },
 }
 
 // Text tool, used to draw text.  Most functions shared by Brush and Eraser tool.
@@ -105,6 +206,7 @@ arena.tools.Text = {
         ? new arena.commands.SetCell(arena.map.text, arena.map.foreground, null, coList, arena.map.layer)
         : new arena.commands.SetCell(arena.map.text, null, arena.map.foreground, coList, arena.map.layer);
     },
+    dbclick: arena.empty,
     key  : function(evt) {
       if (evt.keyCode == 107 && this.brushSize < 100) { // +
         ++this.brushSize;
@@ -159,6 +261,7 @@ arena.tools.Brush = {
         ? new arena.commands.SetBackground(arena.map.foreground, coList, arena.map.layer)
         : new arena.commands.SetForeground(arena.map.foreground, coList, arena.map.layer);
     },
+    dbclick: arena.empty,
     key  : arena.tools.Text.key,
     brush  : arena.tools.Text.brush,
     getBrushCoList : arena.tools.Text.getBrushCoList,
@@ -186,6 +289,7 @@ arena.tools.Eraser = {
     getCommand : function(evt, coList) {
       return new arena.commands.Erase(coList, arena.map.layer);
     },
+    dbclick: arena.empty,
     key  : arena.tools.Text.key,
     brush  : arena.tools.Text.brush,
     getBrushCoList : arena.tools.Text.getBrushCoList,
@@ -202,7 +306,7 @@ arena.tools.Eraser = {
   };
 
 
-  /** Grid mask tool */
+/** Grid mask tool */
 arena.tools.Mask = {
     isInuse : false, // True if tool is in use.
     isMoving : false, // True is tool's usage is draggons
@@ -216,7 +320,7 @@ arena.tools.Mask = {
         var map = arena.map;
         if (evt.detail > 1 && evt.detail <= 3) {
           // Double / Triple click
-          var newMask = this.selectSimiliar(evt, x, y);
+          var newMask = arena.tools.selectSimiliar(x, y, evt.detail != 2);
           if (evt.ctrlKey) {
             // Ctrl: Add to exsiting selection
             var l = newMask.length, cells = map.cells;
@@ -278,7 +382,10 @@ arena.tools.Mask = {
           var dy = y - this.sy, dx = x - this.sx;
           if (dy == dx && dy == 0) {
             // Never moved. Consider this a single click.
-            map.setMasked([[x,y]]);
+            if (map.masked.length == 1 && map.masked[0][0] == x && map.masked[0][1] == y )
+              arena.commands.run(new arena.commands.SetMask([]));
+            else
+              arena.commands.run(new arena.commands.SetMask([[x,y]]));
           } else 
             arena.commands.run(
               new arena.commands.MoveMasked(arena.map.masked, dx, dy, arena.map.layer, evt.ctrlKey));
@@ -349,7 +456,7 @@ arena.tools.Mask = {
         case 37: dx = -1; break; // Left
         case 46: // Delete
           if (evt.preventDefault) evt.preventDefault(); else evt.returnValue = false;
-          arena.commands.run(new arena.commands.SetText(null, arena.map.masked));
+          arena.commands.run(new arena.commands.Erase(arena.map.masked, arena.map.layer));
           return;
       }
       // Movement
@@ -388,112 +495,92 @@ arena.tools.Mask = {
       if (this.isInUse) arena.map.setMarked([]);
       this.isInUse = this.isMoving = false;
     },
+  };
 
-    /** Select cell with same text that are bordering this cell / all over the map */
-    selectSimiliar : function (evt, x, y) {
-      var map = arena.map, cells = map.cells;
-      // Select similiar
-      var newMask = [], txt = cells[y][x].text;
-      if (evt.detail == 2) { // Select all similiar text
-        // Check left
-        --x;
-        while (x >= 0 && cells[y][x].text == txt) --x;
-        var left = x + 1;
-        // Check right
-        x = this.sx + 1;
-        while (x < map.width && cells[y][x].text == txt) ++x;
-        var right = x - 1;
-        // Prepare to recur seek bordering text
-        var thisrow = [], flaggedCells = [];
-        var condition = function(cell) { return cell.text == txt; }
-        for (var i = left; i <= right; i++) {
-          thisrow.push(i);
-          newMask.push([i, y]);
-          arena.setCell(flaggedCells, i, y, true);
-        }
-        this.recurSeek(y-1, map, thisrow, condition, flaggedCells, newMask);
-        this.recurSeek(y+1, map, thisrow, condition, flaggedCells, newMask);
-      } else if (evt.detail == 3) { // Select all same text on map
-        for (y = 0; y < arena.map.height; y++) { var row = cells[y];
-          for (x = 0; x < arena.map.width; x++) { var cell = row[x];
-            if (cell.text == txt)
-              newMask.push([x,y]);
-          }
-        }
+
+function MoveTool_Reset() {
+  this.movingArea = null;
+  arena.map.setMarked([]);
+  if (this.clearMask)
+    arena.map.setMasked([]);
+}
+
+// Move tool, used to move stuffs.
+arena.tools.Move = {
+    movingArea : null,
+    usingExistingMask : false,
+    clearMask : false,
+    startX : 0,
+    startY : 0,
+    down : function(evt, x, y) {
+      this.movingArea = this.getMoveArea(x, y);
+      if (this.movingArea.length) {
+        this.startX = x;
+        this.startY = y;
+        arena.commands.run(new arena.commands.SetMask(this.movingArea));
+        this.clearMask = !this.usingExistingMask;
+      } else {
+        this.movingArea = null;
       }
-      return newMask;
     },
-
-    /** Recursively seek bordering grid.
-     * @param y     Cell row index
-     * @param map   Two-dimension cell array
-     * @param lastrow   Array of x index of selected last row
-     * @param condition A condition function that mark a cell (takes a cell as parameter)
-     * @param flaggedCells Two-dimension flag array for quick checking
-     * @param flaggedCo    Result flagged coordinate array
-     */
-    recurSeek : function (y, map, lastrow, condition, flaggedCells, flaggedCo) {
-      if (y < 0 || y >= map.height) return;
-      var thisrow = [], cells = map.cells;
-      var l = lastrow.length;
-      // First, find cells neighbouring last cell that fulfills condition
-      for (var i = 0; i < l; i++) { var x = lastrow[i];
-        if (arena.getCell(flaggedCells, x, y, null) !== null) continue; // Skip checked
-        if (condition(cells[y][x])) {
-          thisrow.push(x);
-          flaggedCo.push([x, y]);
-          arena.setCell(flaggedCells, x, y, true);
-        } else {
-          arena.setCell(flaggedCells, x, y, false);
+    move : function(evt, x, y) {
+      if (this.movingArea) {
+        var dx = x - this.startX, dy = y - this.startY;
+        var w = arena.map.width, h = arena.map.height;
+        var mark = this.movingArea.concat([]);
+        for (j = mark.length-1; j >= 0; j--) {
+          mark[j] = [mark[j][0]+dx, mark[j][1]+dy];
+          if (mark[j][0] <= 0 || mark[j][0] > w || mark[j][1] <= 0 || mark[j][1] > h)
+            mark.splice(j, 1);
         }
+        arena.map.setMarked(mark);
+      } else
+        arena.map.setMarked(this.getMoveArea(x, y));
+    },
+    getMoveArea : function(x, y) {1
+      this.usingExistingMask = false;
+      if (arena.map.cells[y][x].masked) {
+        this.usingExistingMask = true;
+        return arena.map.masked;
+      } else if (arena.map.cells[y][x].text == arena.map.background_fill.text)
+        return [];
+      else
+        return arena.tools.selectSimiliar(x, y);
+    },
+    up     : function(evt, x, y) {
+      if (this.movingArea) {
+        if (x != this.startX || y != this.startY) {
+          arena.commands.run(
+            new arena.commands.MoveMasked(arena.map.masked, x-this.startX, y-this.startY, arena.map.layer, evt.ctrlKey));
+        }
+        arena.map.setMarked([]);
+        this.movingArea = null;
       }
-      l = thisrow.length;
-      if (l <= 0) return;
-      // Then, for each segment, expand to include horizontally bordering cells
-      var done = false, l1 = l-1;
-      i = 0;
-      while (!done) {
-        // Work on next segment. Proceed left first.
-        var left = thisrow[i];
-        for (var x = left-1; x >= 0; x--) {
-          if (arena.getCell(flaggedCells, x, y, null) !== null || !condition(cells[y][x])) break;
-          thisrow.push(x);
-          flaggedCo.push([x, y]);
-          arena.setCell(flaggedCells, x, y, true);
-        }
-        // Find right end
-        if (i < l1) {
-          var next = thisrow[++i];
-          while (i < l1 && next == left + 1) {
-            left = next;
-            next = thisrow[++i];
-          }
-          --i;
-        }
-        done = (i >= l1); // End of all segments
-        // Process right
-        var right = left;
-        for (var x = right+1; x < map.width; x++) {
-          if (arena.getCell(flaggedCells, x, y, null) !== null || !condition(cells[y][x])) break;
-          thisrow.push(x);
-          flaggedCo.push([x, y]);
-          arena.setCell(flaggedCells, x, y, true);
-        }
-        ++i;
-      }
-      // Flag cells and seek up & down
-      thisrow.sort(sortNumber);
-      this.recurSeek(y-1, map, thisrow, condition, flaggedCells, flaggedCo);
-      this.recurSeek(y+1, map, thisrow, condition, flaggedCells, flaggedCo);
+    },
+    dbclick: arena.empty,
+    key    : arena.empty,
+    brush  : arena.empty,
+    cursor : function(evt, x, y) {
+      var cell = arena.map.cells[y][x];
+      return (this.movingArea || (cell && ( cell.masked || cell.text != arena.map.background_fill.text ) ))
+      ? (evt.ctrlKey ? 'copy' : 'move') : 'default'; },
+    hint   : function(evt, x, y) { return arena.lang.tool.usehint_move; },
+    set    : MoveTool_Reset,
+    unset  : MoveTool_Reset,
+    cancel : MoveTool_Reset,
+    outOfCanvas : function() {
+      arena.map.setMasked([]);
+      arena.map.setMarked([]);
     },
   };
+
 
 
 // Text tool, used to draw text.  Most functions shared by Paint and Erase tool.
 arena.tools.Dropper = {
     down : function(evt, x, y) {
       var cell = arena.map.layer.get(x,y);
-      arena.map.text = $('mapinput').value = cell && cell.text ? cell.text : arena.map.background_fill.text;
+      arena.map.text = $('#mapinput')[0].value = cell && cell.text ? cell.text : arena.map.background_fill.text;
       var foreground = cell && cell.foreground ? cell.foreground : arena.map.background_fill.foreground ;
       var background = cell && cell.background ? cell.background : arena.map.background_fill.background ;
       arena.ui.setForeground( evt.shiftKey ? background : foreground );

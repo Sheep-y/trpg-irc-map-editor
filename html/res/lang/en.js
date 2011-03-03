@@ -11,6 +11,7 @@ arena.lang = {
     usehint_eraser   : '[Erase] Drag: Erase from this layer.',
     usehint_mask     : '[Mask] Drag: select area. Ctrl: multi-select, Shift: de-select, both: XOR. Double/Triple Click: select similiar.',
     usehint_maskmove : '[Mask] Drag to move area. Press Ctrl for copy instead of move.',
+    usehint_move     : '[Move] Drag: move marked area. Click: select marked area',
     usehint_dropper  : '[Dropper] Click: Get text and foreground colour.  Shift: text and background.',
 
     barhint_NewMap  : 'Create a new map. Will discard existing map.',
@@ -25,14 +26,17 @@ arena.lang = {
     barhint_Colour   : 'Click to set foreground, Ctrl/Shift+Click to fill foreground/background of selected area.',
     //barhint_NoColour : 'No colour : Use lower layer\'s colour.',
     //barhint_ReverseColour : 'Reverse colour : Reverse lower layer\'s colour.',
+    barhint_Undo   : 'Undo last command (Ctrl+Z)',
+    barhint_Redo   : 'Redo next command (Ctrl+Y)',
     barhint_Layer  : 'Click to work with this layer. Double-click to toggle visibility.',
     barhint_toolText   : 'Text tool, draw text on current layer. (T) Press Enter to set text before draw.',
     barhint_toolBrush  : 'Brush tool, paint background on current layer. (B)',
     barhint_toolEraser : 'Eraser tool, erase stuff from curent layer. (E)',
     barhint_toolMask   : 'Rectangle mask tool, limit paint area or move masked area of current layer. (R) Double click: Mask Layer / Reduce mask.',
+    barhint_toolMove   : 'Move tool, move similiar area. (M)',
     barhint_toolDropper: 'Dropper tool, get colours and text of current cell. (D)',
-    barhint_brushSize  : 'Brush size.',
-    barhint_viewLayer  : 'View layer list. Layers are independent from each other. Shift+Minus/Plus to move between layers.',
+    barhint_brushSize  : 'Brush size. (+/-)',
+    barhint_viewLayer  : 'View layer list. Shift+Minus/Plus to move between layers.',
     barhint_viewGlyph  : 'View glyph list.',
 
     barhint_AddLayer : 'Add top layer',
@@ -45,6 +49,7 @@ arena.lang = {
     dlghint_CopyBBC : 'Export in BBCode syntax. Text and foreground colour only.',
     dlghint_CopyTxt : 'Export in plain text.',
     dlghint_CopyHtml : 'Export in HTML.',
+    dlghint_CopyJsonZip : 'Export in compressed JSON.',
     dlghint_CopyJson : 'Export in JSON.',
   },
 
@@ -54,8 +59,9 @@ arena.lang = {
     name_SetText : 'Set Text',
     name_SetForeground : 'Set Foreground',
     name_SetBackground : 'Set Background',
-
     name_CreateMap : 'Create Map',
+    undo : "Undo %s",
+    redo : "Redo %s",
   },
 
   map : {

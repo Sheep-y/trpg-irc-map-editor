@@ -8,7 +8,6 @@
  *   desc   : More detailed description of this command.
  *   redo() : Call to redo this action.
  *   undo() : Call to undo this action.
- *   repeat() : Call to repeat this action. (Optional, only if it make sense to repeat)
  *   consolidate() : Consolidate next action in queue. Return true if consolidated, return false to leave it untouched.  
  *
  */
@@ -18,6 +17,9 @@ arena.commands = {
          , 'Erase', 'MoveMasked'
          , 'LayerMove', 'LayerDelete', 'LayerAdd', 'LayerShowHide'
          , 'MapRotate'],
+         
+  undoStack : [],   // commands are unshifted into it
+  undoPosition : -1, // point to next command
 
   // Setup commands, call once
   initialise : function() {
@@ -30,10 +32,70 @@ arena.commands = {
     }
   },
 
+  maxUndo : 100, // max undo commands
+  consolidateTimespan : 10*1000, // max time to consider same commands, in ms
+
   // Run a new command
   run : function(command) {
+    // Timestamp and prevents double run
+    if (command.time) return false;
+    command.time = new Date();
+    // Clear forward histoy if we're not at latest
+    if (this.undoPosition >= 0) {
+      this.undoStack.splice(0, this.undoPosition+1);
+      this.undoPosition = -1;
+    }
+    // Run command
     command.redo();
     arena.ui.setStatus(command.desc);
+    // Consolidat with last command, failing that then add to command undo stack
+    var conso = this.undoStack.length > 0 && (new Date()-this.undoStack[0].time < this.consolidateTimespan);
+    if (!conso || !this.undoStack[0].consolidate(command)) {
+      this.undoStack.unshift(command);
+      // Cleanup if there are too much undo
+      if (this.undoStack.length > this.maxUndo+10)
+        this.undoStack.splice(this.maxUndo);
+    }
+    arena.ui.updateUndoRedo();
+  },
+  
+  canUndo : function() {
+    return this.undoPosition+1 < this.undoStack.length;
+  },
+  
+  canRedo : function() {
+    return this.undoPosition >= 0;
+  },
+
+  /** Undo last command, return true if success */
+  undo : function() {
+    arena.map.tool.cancel();
+    if (!this.canUndo()) return false;
+    this.undoPosition++;
+    var command = this.undoStack[this.undoPosition];
+    command.undo();
+    arena.map.setMarked([]);
+    arena.ui.setStatus(arena.lang.command.undo.replace("%s", command.desc));
+    arena.ui.updateUndoRedo();
+    return true;
+  },
+
+  /** Redo next command, return true if success */
+  redo : function() {
+    arena.map.tool.cancel();
+    if (!this.canRedo()) return false;
+    var command = this.undoStack[this.undoPosition];
+    command.redo();
+    arena.map.setMarked([]);
+    arena.ui.setStatus(arena.lang.command.redo.replace("%s", command.desc));
+    this.undoPosition--;
+    arena.ui.updateUndoRedo();
+    return true;
+  },
+  
+  resetUndo : function() {
+    this.undoStack = [];
+    this.undoPosition = -1;
   },
 
   SetMask : function(coList) {
@@ -74,7 +136,7 @@ arena.commands = {
   },
   
   Erase : function(coList, layer) {
-    this.desc = "Erase cell";
+    this.desc = "Erase cells";
     this.coList = coList;
     this.layer = layer;
   },
@@ -126,7 +188,7 @@ arena.commands.SetMask.prototype = {
   undo : function() {
     arena.map.setMasked(this.originalMask);
   },
-  consoliadte : function(newCmd) { 
+  consolidate : function(newCmd) {
     if (newCmd.className != this.className) return false;
     this.newMask = newCmd.newMask;
     return true;
@@ -136,29 +198,42 @@ arena.commands.SetMask.prototype = {
 arena.commands.SetCell.prototype = {
   redo : function() {
     var l = this.coList.length;
+    var undoData = this.undoData ? null : [];
     for (var i = 0; i < l; i++) {
       var m = this.coList[i];
-      var c = this.layer.createCell(m[0], m[1]);
-      if (this.text) {
-        c.text = this.text;
-      }
-      if (this.foreground) {
-        c.foreground = this.foreground;
-      }
-      if (this.background) {
-        c.background = this.background;
+      var orig = this.layer.get(m[0], m[1]);
+      if (undoData)
+        undoData.push( orig ? orig.clone({}) : null );
+      var c = orig ? orig : this.layer.createCell(m[0], m[1]);
+      c.setIf(this);
+    }
+    if (undoData) // Don't double set because consolidated coordinate list may overlap
+      this.undoData = undoData;
+    arena.map.repaint(this.coList);
+  },
+  undo : function() {
+    var l = this.coList.length;
+    var undoData = this.undoData;
+    for (var i = l-1; i >= 0; i--) { // Do consolidated coordinate list in reverse
+      var m = this.coList[i];
+      var orig = undoData[i];
+      if (!orig) {
+        this.layer.set(m[0], m[1], null)
+      } else {
+        this.layer.createCell(m[0], m[1]).setIf(orig);
       }
     }
     arena.map.repaint(this.coList);
   },
-  undo : function() { },
-  consoliadte : function(newCmd) { 
+  consolidate : function(newCmd) {
     if (newCmd.className != this.className
+       || newCmd.layer != this.layer
        || newCmd.text != this.text
        || newCmd.foreground != this.foreground
        || newCmd.background != this.background )
       return false;
     this.coList = this.coList.concat(newCmd.coList);
+    this.undoData = this.undoData.concat(newCmd.undoData);
     return true;
   },
 }
@@ -166,32 +241,36 @@ arena.commands.SetCell.prototype = {
 arena.commands.SetText.prototype = {
   redo : arena.commands.SetCell.prototype.redo,
   undo : arena.commands.SetCell.prototype.undo,
-  consoliadte : arena.commands.SetCell.prototype.consolidate
+  consolidate : arena.commands.SetCell.prototype.consolidate
 }
 
 arena.commands.SetForeground.prototype = {
   redo : arena.commands.SetCell.prototype.redo,
   undo : arena.commands.SetCell.prototype.undo,
-  consoliadte : arena.commands.SetCell.prototype.consolidate
+  consolidate : arena.commands.SetCell.prototype.consolidate
 }
 
 arena.commands.SetBackground.prototype = {
   redo : arena.commands.SetCell.prototype.redo,
   undo : arena.commands.SetCell.prototype.undo,
-  consoliadte : arena.commands.SetCell.prototype.consolidate
+  consolidate : arena.commands.SetCell.prototype.consolidate
 }
 
 arena.commands.Erase.prototype = {
   redo : function() {
     var l = this.coList.length;
+    var undoData = [];
     for (var i = 0; i < l; i++) {
       var m = this.coList[i];
+      var orig = this.layer.get(m[0], m[1]);
       this.layer.set(m[0], m[1], null);
+      undoData.push(orig);
     }
+    this.undoData = undoData;
     arena.map.repaint(this.coList);
   },
   undo : arena.commands.SetCell.prototype.undo,
-  consoliadte : arena.commands.SetCell.prototype.consolidate
+  consolidate : arena.commands.SetCell.prototype.consolidate
 }
 
 arena.commands.MoveMasked.prototype = {
@@ -205,7 +284,7 @@ arena.commands.MoveMasked.prototype = {
     var bounds = arena.coListBounds(coList);
     var map = arena.map;
     var minX = bounds[0], minY = bounds[1], maxX = bounds[2], maxY = bounds[3];
-    newMask = [];
+    var newMask = [];
     // Get starting x, ending x, and dx from move direction, and the same for y
     var sx, ex, xd, sy, ey, yd;
     if (dx <= 0) { // Moved left, copy from left to right
@@ -218,6 +297,14 @@ arena.commands.MoveMasked.prototype = {
     } else if (dy > 0) { // Moved down, copy from bottom to top
       sy = maxY; ey = minY-1; yd = -1;
     }
+    var undoData = this.undoData ? null : {
+      sx : sx, sy : sy,
+      ex : ex, ey : ey,
+      xd : xd, yd : yd,
+      mask : map.masked.concat([]),
+      newMask : null,
+      data: []
+    };
     // Move cells, fill on old space with current foreground/background
     for (y = sy; y != ey; y += yd) {
       var cy = y + dy;
@@ -226,12 +313,21 @@ arena.commands.MoveMasked.prototype = {
           var cell = layer.get(x,y);
           var cx = x + dx;
           if (cx >= 0 && cx < map.width) {
+            if (!cell || !map.cells[y][x].masked) {
+              if (undoData) {
+                undoData.data.push(false);
+                undoData.data.push(false);
+              }
+              continue;
+            }
             newMask.push([cx, cy]);
-            if (!cell || !map.cells[y][x].masked) continue;
+            if (undoData) {
+              var tmp = layer.get(cx,cy);
+              undoData.data.push(tmp ? tmp.clone() : null);
+              undoData.data.push(cell.clone());
+            }
             var cell2 = layer.createCell(cx, cy);
-            cell2.text = cell.text;
-            cell2.foreground = cell.foreground;
-            cell2.background = cell.background;
+            cell2.set(cell);
             if (!this.isCopy)
               layer.set(x,y,null);
           }
@@ -241,26 +337,75 @@ arena.commands.MoveMasked.prototype = {
     layer.trim();
     arena.map.repaint(coList);
     arena.map.repaint(newMask);
-    arena.commands.run(new arena.commands.SetMask(newMask));
+    arena.map.setMasked(newMask);
+    if (undoData) {
+      undoData.newMask = newMask;
+      this.undoData = undoData;
+    }
   },
-  undo : function() { },
-  consoliadte : function(newCmd) {
-    return false; // TODO: Consolidate
+  undo : function() {
+    var coList = this.coList;
+    var data = this.undoData;
+    var dy = this.dy;
+    var dx = this.dx;
+    var layer = this.layer;
+    /*
+    var undoData = this.undoData ? null : {
+      sx : sx, sy : sy,
+      ex : ex, ey : ey,
+      xd : xd, yd : yd,
+      mask : map.masked.concat([]),
+    };
+    */
+    var i = data.data.length-1;
+    var map = arena.map;
+    var newMask = [];
+    for (y = data.ey-data.yd; y != data.sy-data.yd; y -= data.yd) {
+      var cy = y + dy;
+      if (cy >= 0 && cy < map.height) {
+        for (x = data.ex-data.xd; x != data.sx-data.xd; x -= data.xd) {
+          var cx = x + dx;
+          if (cx >= 0 && cx < map.width) {
+            var source = data.data[i--];
+            var target = data.data[i--];
+            newMask.push([cx, cy]);
+            if (!source) continue;
+            if (source)
+              layer.createCell(cx, cy).set(target);
+            else
+              layer.set(cx, cy, null);
+            layer.set(x, y, source);
+          }
+        }
+      }
+    }
+    arena.map.repaint(coList);
+    arena.map.repaint(data.newMask);
+    arena.map.repaint(data.mask);
+    arena.map.setMasked(data.mask);
+  },
+  consolidate : function(newCmd) {
+    return false;
   }
 }
 
 arena.commands.LayerMove.prototype = {
   redo : function() {
+    this.move(this.fromIndex, this.toIndex);
+  },
+  undo : function() {
+    this.move(this.toIndex, this.fromIndex);
+  },
+  move : function(fromIndex, toIndex) {
     var map = arena.map;
-    var layer = map.layers.splice(this.fromIndex, 1)[0];
-    map.layers.splice(this.toIndex, 0, layer);
+    var layer = map.layers.splice(fromIndex, 1)[0];
+    map.layers.splice(toIndex, 0, layer);
     arena.ui.updateLayers();
     map.repaint();
   },
-  undo : function() { },
-  consoliadte : function(newCmd) {
+  consolidate : function(newCmd) {
     if (newCmd.className != this.className) return false;
-    if (newCmd.fromIndex != newCmd.toIndex) return false;
+    if (newCmd.fromIndex != this.toIndex) return false;
     this.toIndex = newCmd.toIndex;
     return true;
   }
@@ -268,22 +413,32 @@ arena.commands.LayerMove.prototype = {
 
 arena.commands.LayerDelete.prototype = {
   redo : function() {
-    this.layer.remove();
+    this.layerIndex = arena.map.removeLayer(this.layer);
     arena.ui.updateLayers();
     arena.map.repaint();
   },
-  undo : function() {},
-  consoliadte : function(newCmd) { return false; }
+  undo : function() {
+    arena.map.addLayer(this.layer, this.layerIndex);
+    arena.ui.updateLayers();
+    arena.map.repaint();
+  },
+  consolidate : function(newCmd) { return false; }
 }
 
 arena.commands.LayerAdd.prototype = {
   redo : function() {
-    new arena.Layer(arena.map, this.name);
+    if (!this.layer)
+      this.layer = new arena.Layer(this.name);
+    arena.map.addLayer(this.layer);
     arena.ui.updateLayers();
     arena.map.repaint();
   },
-  undo : function() {},
-  consoliadte : function(newCmd) { return false; }
+  undo : function() {
+    arena.map.removeLayer(this.layer);
+    arena.ui.updateLayers();
+    arena.map.repaint();
+  },
+  consolidate : function(newCmd) { return false; }
 }
 
 arena.commands.LayerShowHide.prototype = {
@@ -297,9 +452,10 @@ arena.commands.LayerShowHide.prototype = {
   setVisibility : function(visibility) {
     if (visibility == this.layer.visible) return;
     this.layer.visible = visibility;
+    arena.ui.updateLayers();
     arena.map.repaint();
   },
-  consoliadte : function(newCmd) {
+  consolidate : function(newCmd) {
     if (newCmd.className != this.className) return false;
     if (newCmd.layer != this.layer) return false;
     this.visibility = newCmd.visibility;
@@ -315,6 +471,8 @@ arena.commands.MapRotate.prototype = {
     this.rotate(360-this.degree);
   },
   rotate: function(degree) {
+    degree = degree % 360;
+    if (degree < 0) degree = 360-degree;
     if (degree == 0) return;
     /*
     var rad = degree * Math.PI/180;
@@ -339,9 +497,6 @@ arena.commands.MapRotate.prototype = {
       rotate = function(x, y, w, h) { return [y, h-x]; };
       glyphMap = arena.lang.mapping.rotateAntiClock;
       map.recreate(map.height, map.width);
-    } else if (degree == 0) {
-      // 0 degree = no rotate
-      return;
     } else {
       // TODO: flexible rotate
       return;
@@ -374,7 +529,7 @@ arena.commands.MapRotate.prototype = {
     map.setMasked(newMask);
     map.repaint();
   },
-  consoliadte : function(newCmd) {
+  consolidate : function(newCmd) {
     if (newCmd.className != this.className) return false;
     this.degree += newCmd.degree;
     return true;

@@ -5,7 +5,7 @@
  */
 
 
-function $(eid) { return document.getElementById(eid); }
+//function $(eid) { return document.getElementById(eid); }
 function sortNumber(a,b) { return a - b; }
 
 //arena.toolWidth  = '--';   // Displayed tool-related width
@@ -77,58 +77,31 @@ arena.reset = function() {
   //for (var l = map.layers.length-1; l >= 0; l--)
   //  map.layers[l].cells = [];
   arena.map.recreate(w, h);
-  new arena.Layer(arena.map, 'Terrain' ),
-  new arena.Layer(arena.map, 'Effect'  ),
-  new arena.Layer(arena.map, 'Object'  ),
-  new arena.Layer(arena.map, 'Creature'),
-  new arena.Layer(arena.map, 'Overlay' ),
+  arena.map.addLayer(new arena.Layer('Terrain' ));
+  arena.map.addLayer(new arena.Layer('Effect'  ));
+  arena.map.addLayer(new arena.Layer('Object'  ));
+  arena.map.addLayer(new arena.Layer('Creature'));
+  arena.map.addLayer(new arena.Layer('Overlay' ));
   arena.ui.updateLayers();
   arena.ui.setText(arena.map.background_fill.text);
   arena.ui.setForeground(arena.map.background_fill.foreground);
   arena.ui.setBackground(arena.map.background_fill.background);
+  arena.commands.resetUndo();
 }
 
 /************************* Map objects *********************************/
 
-arena.Cell = function() {}
-arena.Cell.prototype = {
-  background: null,
-  foreground: null,
-  text: null,
-}
 
-arena.Layer = function(map, name) { // Use arena.map.createLayer instead!
-  //this.map = map;
+arena.Layer = function(name) { // Use arena.map.createLayer instead!
   this.name = name;
   this.visible = true;
   this.cells = [];
-  if (map) {
-    map.layers.push(this);
-    if (!map.layer)
-      map.layer = this;
-  }
 }
 arena.Layer.prototype = {
   name : null,
-  //map  : null,
   visible : true,
   cells : null,
   // Remove this layer
-  remove : function() {
-    this.cells = [];
-    if (this.map) {
-       var layers = this.map.layers;
-       for (var i = 0; i < layers.length; i++) {
-         if (layers[i] == this) {
-           layers.splice(i, 1);
-           break;
-         }
-       }
-       if (this.map.layer == this)
-         this.map.layer = layers.length ? layers[0] : null;
-       this.map = null;
-    }                                          
-  },
   has : function(x,y) {
     var c = this.cells;
     return c[y] && c[y][x];
@@ -154,7 +127,7 @@ arena.Layer.prototype = {
   createCell : function (x,y) { // Create cell if not exist, and return the cell
     var c = this.get(x,y);
     if (!c) {
-      c = new arena.LayerCell(x,y);
+      c = new arena.LayerCell();
       this.set(x, y, c);
     }
     return c;
@@ -219,7 +192,7 @@ arena.map = { /** Map object. Store background, size, name, etc. */
   width  : 0, // width in #grid
   height : 0, // height in #grid
 
-  table : $('map'), // Map table element
+  table : $('#map')[0], // Map table element
 
   background_fill : {
     text : arena.lang.map.background,
@@ -329,6 +302,28 @@ arena.map = { /** Map object. Store background, size, name, etc. */
       cell.dirty = false;
     }
   },
+  
+  /*------------- Layers -----------------------*/
+  addLayer : function (layer, index) {
+    if (index)
+      this.layers.splice(index, 0, layer);
+    else
+      this.layers.push(layer);
+    if (!this.layer)
+      this.layer = layer;
+  },
+  
+  removeLayer : function (layer) {
+    var layers = this.layers;
+    var i = layers.indexOf(layer);
+    if (i >= 0) {
+      layers.splice(i, 1);
+      if (this.layer == layer)
+        this.layer = layers.length ? layers[0] : null;
+    }
+    return i;
+  },
+
 
   /*------------- Factory methods ----------------*/
   recreate: function(width, height) {
@@ -336,14 +331,15 @@ arena.map = { /** Map object. Store background, size, name, etc. */
     var table = map.table;
     var tbody = table.getElementsByTagName('tbody')[0];
 
-    //$('mapinput').value = '  ';
-    
     // Clear map
-    for (var y = 0; y < map.height; y++) { var row = map.cells[y];
+    /*
+    for (var y = 0; y < map.height; y++) {
+      var row = map.cells[y];
       for (var x = 0; x < map.width; x++)
         row[x].td = null;
     }
-    arena.cells = [];
+    */
+    map.cells = [];
     for (y = tbody.getElementsByTagName('tr').length-1; y >= 0; y--)
        table.deleteRow(y);
 
@@ -390,10 +386,45 @@ arena.map = { /** Map object. Store background, size, name, etc. */
   },
 }
 
-arena.LayerCell = function(x, y) {
-  this.text = null;
-  this.foreground = null;
-  this.background = null;
+
+arena.LayerCell = function(text, foreground, background) {
+  this.set(text, foreground, background);
+}
+arena.LayerCell.prototype = {
+  background: null,
+  foreground: null,
+  text: null,
+  set: function(text, foreground, background) {
+    if (text && typeof(text) != "string") {
+      this.background = text.background;
+      this.foreground = text.foreground;
+      this.text = text.text;
+    } else {
+      this.background = background;
+      this.foreground = foreground;
+      this.text = text;
+    }
+  },
+  setIf: function(text, foreground, background) {
+    if (text && typeof(text) != "string") {
+      background = text.background;
+      foreground = text.foreground;
+      text = text.text;
+    }
+    if (background) this.background = background;
+    if (foreground) this.foreground = foreground;
+    if (text) this.text = text;
+  },
+  clone: function(target) {
+    if (target) {
+      target.background = this.background;
+      target.foreground = this.foreground;
+      target.text = this.text;
+    } else {
+      target = new arena.LayerCell(this.text, this.foreground, this.background);
+    }
+    return target;
+  }
 }
 
 /**
@@ -460,6 +491,12 @@ arena.Cell.prototype = {
     }
   },
 
+  border : {
+    mm : '1px solid #808',      // Masked and marked
+    marked : '1px solid #F00', // Marked
+    masked : '1px solid #00F' // Masked
+  },
+  
   /** Get border style of the side between this cell and given cell */
   getBorder : function(target) {
     if (target) {
@@ -479,9 +516,9 @@ arena.Cell.prototype = {
 
       // We have marked / masked, they don't
       } else if ( this.marked && !target.marked ) {
-        return '1px solid #FF0';
+        return this.border.marked;
       } else if ( this.masked && !target.masked ) {
-        return '1px solid #0FF';
+        return this.border.masked;
 
       // They got whatever we have
       } else {
@@ -492,12 +529,12 @@ arena.Cell.prototype = {
       // Else we are alone
       if (this.marked)
         if (this.masked)
-          return '1px solid #8F8'; // Masked and marked
+          return this.border.mm; // Masked and marked
         else
-          return '1px solid #FF0'; // Marked
+          return this.border.marked;
       else
         if (this.masked)
-          return '1px solid #0FF'; // Masked
+          return this.border.masked;
       return '';
     }
   },

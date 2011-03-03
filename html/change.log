@@ -1,6 +1,15 @@
 Sheepy's Arena, Change log
 
-== 2010-10: Layer support ==
+
+
+== 2011-02: Undo, Redo, Move tool ==
+2011-03-01: Migrate to jQuery.
+2011-02-24: Plain JSON export, zipped JSON export may not zip if smaller.
+2011-02-23: Undo/Redo for all commands.
+2011-01-16: Move tool.
+2011-01-??: Layer content highlight on hover.
+
+== 2010-10: Layer support & new tools ==
 2010-10-25 Brushes are now continuous despite mouse over skipping cells.
 2010-10-25 Mask reduction functionality.
 2010-10-25 Expand glyphs.
@@ -38,9 +47,9 @@ Sheepy's Arena, Change log
 
 == TODO, in order of importance ==
 <ul>
- <li> Export & Impot in native format, then Saving and Loading </li>
- <li> Add more commands (Dropper, Mask) </li>
- <li> Implement action history + undo and redo. Check memory usage here. Don't need history list</li>
+ <li> Direct IRC output </li>
+ <li> Auto save </li>
+ <li> Read map from key </li>
  <li> Experimental multi-map support </li>
  <li> Add bold and italic </li>
 </ul>
@@ -48,9 +57,8 @@ Sheepy's Arena, Change log
 
 <p>Small TODO, in no order:
 <ul>
+ <li> Body height </li>
  <li> Dynamically assign toolbox handler. What an ordered mess. </li>
- <li> Make copy box in-frame instead of popup </li>
  <li> Fix command names - may have to move responsibility to tool </li>
- <li> Text mask selection should be an independent command </li>
 </ul>
 </p>
