@@ -1,15 +1,19 @@
 Sheepy's Arena, Change log
 
-
-
-== 2011-02: Undo, Redo, Move tool ==
+== 2011-03: Undo, Redo, Move tool ==
+2011-03-14: Move tool can moves any layer not only current layer.
+2011-03-11: Prompt save on close, move tool don't set mask and works by layer.
+2011-03-10: Most tools erase mask on out of map click.
+2011-03-06: Autosave.
+2011-03-04: URL export and load from url.
 2011-03-01: Migrate to jQuery.
 2011-02-24: Plain JSON export, zipped JSON export may not zip if smaller.
 2011-02-23: Undo/Redo for all commands.
 2011-01-16: Move tool.
 2011-01-??: Layer content highlight on hover.
+2010-12-??: Highlight and mask shows ony border.
 
-== 2010-10: Layer support & new tools ==
+== 2010-10: Layer support ==
 2010-10-25 Brushes are now continuous despite mouse over skipping cells.
 2010-10-25 Mask reduction functionality.
 2010-10-25 Expand glyphs.
@@ -47,18 +51,14 @@ Sheepy's Arena, Change log
 
 == TODO, in order of importance ==
 <ul>
- <li> Direct IRC output </li>
- <li> Auto save </li>
- <li> Read map from key </li>
+ <li> Compatibility test </li>
+ <li> Tool and mask enhancement </li>
+ <li> Set print area and print to IRC </li>
+ <li> Key enhancement </li>
+ <li> Glyph enhancement, and multilingual support </li>
  <li> Experimental multi-map support </li>
  <li> Add bold and italic </li>
-</ul>
-</p>
-
-<p>Small TODO, in no order:
-<ul>
- <li> Body height </li>
- <li> Dynamically assign toolbox handler. What an ordered mess. </li>
- <li> Fix command names - may have to move responsibility to tool </li>
+ <li> Rich text export </li>
+ <li> Dynamically assign toolbox handler. </li>
 </ul>
 </p>

@@ -14,7 +14,7 @@
 
 arena.commands = {
   list : [ 'SetMask', 'SetCell', 'SetText', 'SetForeground', 'SetBackground'
-         , 'Erase', 'MoveMasked'
+         , 'Erase', 'MoveArea'
          , 'LayerMove', 'LayerDelete', 'LayerAdd', 'LayerShowHide'
          , 'MapRotate'],
          
@@ -47,7 +47,6 @@ arena.commands = {
     }
     // Run command
     command.redo();
-    arena.ui.setStatus(command.desc);
     // Consolidat with last command, failing that then add to command undo stack
     var conso = this.undoStack.length > 0 && (new Date()-this.undoStack[0].time < this.consolidateTimespan);
     if (!conso || !this.undoStack[0].consolidate(command)) {
@@ -56,7 +55,7 @@ arena.commands = {
       if (this.undoStack.length > this.maxUndo+10)
         this.undoStack.splice(this.maxUndo);
     }
-    arena.ui.updateUndoRedo();
+    this.setModified(arena.map, command.desc);
   },
   
   canUndo : function() {
@@ -75,8 +74,7 @@ arena.commands = {
     var command = this.undoStack[this.undoPosition];
     command.undo();
     arena.map.setMarked([]);
-    arena.ui.setStatus(arena.lang.command.undo.replace("%s", command.desc));
-    arena.ui.updateUndoRedo();
+    this.setModified(arena.map, arena.lang.command.undo.replace("%s", command.desc));
     return true;
   },
 
@@ -87,10 +85,19 @@ arena.commands = {
     var command = this.undoStack[this.undoPosition];
     command.redo();
     arena.map.setMarked([]);
-    arena.ui.setStatus(arena.lang.command.redo.replace("%s", command.desc));
     this.undoPosition--;
-    arena.ui.updateUndoRedo();
+    this.setModified(arena.map, arena.lang.command.redo.replace("%s", command.desc));
     return true;
+  },
+  
+  setModified : function(map, status) {
+    // If this is new change, set now as auto save compare time
+    if (!map.modified)
+      map.lastSaveTime = new Date();
+    map.modified = true;
+    arena.io.checkAutoSave();
+    arena.ui.setStatus(status);
+    arena.ui.updateUndoRedo();
   },
   
   resetUndo : function() {
@@ -141,13 +148,14 @@ arena.commands = {
     this.layer = layer;
   },
   
-  MoveMasked : function(coList, dx, dy, layer, isCopy) {
+  MoveArea : function(coList, dx, dy, layer, isCopy, setMask) {
     this.desc = isCopy ? "Copy masked area" : "Move masked area";
     this.coList = coList;
     this.dx = dx;
     this.dy = dy;
     this.layer = layer;
     this.isCopy = isCopy;
+    this.setMask = setMask;
   },
   
   LayerMove : function(fromIndex, toIndex) {
@@ -273,7 +281,7 @@ arena.commands.Erase.prototype = {
   consolidate : arena.commands.SetCell.prototype.consolidate
 }
 
-arena.commands.MoveMasked.prototype = {
+arena.commands.MoveArea.prototype = {
   redo : function() {
     var coList = this.coList;
     var dy = this.dy; 
@@ -286,7 +294,7 @@ arena.commands.MoveMasked.prototype = {
     var minX = bounds[0], minY = bounds[1], maxX = bounds[2], maxY = bounds[3];
     var newMask = [];
     // Get starting x, ending x, and dx from move direction, and the same for y
-    var sx, ex, xd, sy, ey, yd;
+    var x, y, cx, cy, sx, ex, xd, sy, ey, yd;
     if (dx <= 0) { // Moved left, copy from left to right
       sx = minX; ex = maxX+1; xd = +1;
     } else if (dx > 0) { // Moved right, copy from right to left
@@ -307,13 +315,13 @@ arena.commands.MoveMasked.prototype = {
     };
     // Move cells, fill on old space with current foreground/background
     for (y = sy; y != ey; y += yd) {
-      var cy = y + dy;
+      cy = y + dy;
       if (cy >= 0 && cy < map.height) {
         for (x = sx; x != ex; x += xd) {
           var cell = layer.get(x,y);
-          var cx = x + dx;
+          cx = x + dx;
           if (cx >= 0 && cx < map.width) {
-            if (!cell || !map.cells[y][x].masked) {
+            if (!cell || arena.xyInCoList(x, y, coList) < 0) {
               if (undoData) {
                 undoData.data.push(false);
                 undoData.data.push(false);
@@ -337,7 +345,8 @@ arena.commands.MoveMasked.prototype = {
     layer.trim();
     arena.map.repaint(coList);
     arena.map.repaint(newMask);
-    arena.map.setMasked(newMask);
+    if (this.setMask)
+      arena.map.setMasked(newMask);
     if (undoData) {
       undoData.newMask = newMask;
       this.undoData = undoData;
@@ -382,7 +391,8 @@ arena.commands.MoveMasked.prototype = {
     arena.map.repaint(coList);
     arena.map.repaint(data.newMask);
     arena.map.repaint(data.mask);
-    arena.map.setMasked(data.mask);
+    if (this.setMask)
+      arena.map.setMasked(data.mask);
   },
   consolidate : function(newCmd) {
     return false;

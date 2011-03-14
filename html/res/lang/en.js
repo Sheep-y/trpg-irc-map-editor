@@ -72,6 +72,9 @@ arena.lang = {
     CopyInstruction : 'Press Ctrl+X to copy.',
     ImportInstruction : 'Paste exported JSON data below.',
     PleaseWait : 'Please wait.',
+    autoSaving : "Autosaving...",
+    autoSaved : "Autosaved at %s.",
+    notSaved : "Map not saved. Discard changes?",
   },
 
   error : {

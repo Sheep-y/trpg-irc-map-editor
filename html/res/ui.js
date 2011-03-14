@@ -89,6 +89,7 @@ arena.event = {
     x += arena.map.dx;
     y += arena.map.dy;
     arena.ui.setStatusTwoPoint('coordinate_status', 'X', x, 'Y', y);
+    arena.io.checkAutoSave();
     //$('dimension_status').innerHTML = '['+arena.toolWidth + 'x' + arena.toolHeight+']';
     //arena.ui.setStatusTwoPoint('dimension_status', 'W', arena.toolWidth, 'H', arena.toolHeight);
   },
@@ -105,6 +106,7 @@ arena.event = {
       arena.ui.setHint(arena.map.tool.hint(evt, x, y));
     }
     arena.ui.focusBody(); // clear selection
+    arena.io.checkAutoSave();
   },
 
   /** Set map cursor */
@@ -151,8 +153,10 @@ arena.event = {
     var textarea = $('#text_data')[0];
     textarea.value = arena.lang.io.PleaseWait;
     arena.ui.showDialog('text');
-        
-    if ($('#dlg_ex_txt')[0].checked)
+
+    if ($('#dlg_ex_url')[0].checked)
+      textarea.value = arena.io.exportToURL(arena.map, arena.map.masked);
+    else if ($('#dlg_ex_txt')[0].checked)
       textarea.value = arena.io.exportToTxt(arena.map, arena.map.masked);
     else if ($('#dlg_ex_bbc')[0].checked)
       textarea.value = arena.io.exportToBBC(arena.map, arena.map.masked);
@@ -454,6 +458,11 @@ arena.event = {
   },
   */
   
+  documentClose : function(evt) {
+    if (arena.map.modified)
+      return arena.lang.io.notSaved;
+  },
+  
   /************************ Toolbox tab *********************************/
 
   undoOnClick : function(evt) {
@@ -704,9 +713,11 @@ arena.ui = {
     $('#dialog_'+id).css('display', 'block');
     $('#dialog_container').css('display', 'table');
     arena.event.mapDialogMode = true;
+    arena.io.pauseAutoSave = true;
   },
 
   hideDialog : function (id) {
+    arena.io.pauseAutoSave = false;
     if ($('#dialog_'+id).length <= 0) return;
     arena.event.mapDialogMode = false;
     $('#dialog_container, #dialog_'+id+', #mask').hide();

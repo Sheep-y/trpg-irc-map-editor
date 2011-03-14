@@ -6,7 +6,7 @@
 
 
 //function $(eid) { return document.getElementById(eid); }
-function sortNumber(a,b) { return a - b; }
+//function sortNumber(a,b) { return a - b; }
 
 //arena.toolWidth  = '--';   // Displayed tool-related width
 //arena.toolHeight = '--';   // Displayed tool-related height
@@ -20,7 +20,10 @@ arena.empty = function() {}
 // Find a given xy coordinate in coordinate list. Return -1 if not found, index of coordinate if found
 arena.xyInCoList = function(x, y, ary) {
   var l = ary.length;
-  for (var i = 0; i < l; i++) { var a = ary[i]; if (a[0] == x && a[1] == y) return i; }
+  for (var i = 0; i < l; i++) {
+    var a = ary[i];
+    if (a[0] == x && a[1] == y) return i;
+  }
   return -1;
 }
 
@@ -102,17 +105,21 @@ arena.Layer.prototype = {
   visible : true,
   cells : null,
   // Remove this layer
-  has : function(x,y) {
+  has : function (x, y) {
     var c = this.cells;
     return c[y] && c[y][x];
   },
-  get : function(x,y) {
+  get : function (x, y) {
     var c = this.cells;
     if (!c[y]) return null;
     c = c[y];
     return c[x] ? c[x] : null;
   },
-  set : function(x,y,value) {
+  getA : function (x, y, attr) {
+    var c = this.get(x, y);
+    return c ? (attr ? c[attr] : c) : null;
+  },
+  set : function (x, y, value) {
     var c = this.cells;
     if (value) {
       if (!c[y])
@@ -124,7 +131,7 @@ arena.Layer.prototype = {
       if (!c[y]) delete c[y];
     }
   },
-  createCell : function (x,y) { // Create cell if not exist, and return the cell
+  createCell : function (x, y) { // Create cell if not exist, and return the cell
     var c = this.get(x,y);
     if (!c) {
       c = new arena.LayerCell();
@@ -176,6 +183,8 @@ arena.map = { /** Map object. Store background, size, name, etc. */
   cells : [],    // Canvas, array of array of Cell. Top left is 0, 0. This array is y then x.
   masked : [],   // Array of cells that are currently masked.
   marked : [],   // Array of cells that are currently marked by tools, always temporary.
+  modified : false, // Set to true after command, set to false after save
+  lastSaveTime : new Date(), // Time of last save
 
   layer : null,  // Current layer.
   tool : null,   // Currently selected map tool
@@ -184,7 +193,7 @@ arena.map = { /** Map object. Store background, size, name, etc. */
   background : '#FFF', // Current paint background colour
   brush : null,
 
-  layers : [], // Layers of this map
+  layers : [], // Layers of this map, 0 is bottom, highest index is top
 
   dx : 1, // displayed coordinate dx
   dy : 1, // displayed coordinate dy
@@ -200,6 +209,9 @@ arena.map = { /** Map object. Store background, size, name, etc. */
     background : '#FFF',
     borderColour : '#000'
   },
+
+  get : arena.Layer.prototype.get,
+  getA : arena.Layer.prototype.getA,
 
   /*------------- Render methods ----------------*/
   
@@ -304,6 +316,7 @@ arena.map = { /** Map object. Store background, size, name, etc. */
   },
   
   /*------------- Layers -----------------------*/
+  /** Add given layer to list, if index is not given then add to top */
   addLayer : function (layer, index) {
     if (index)
       this.layers.splice(index, 0, layer);
@@ -313,6 +326,7 @@ arena.map = { /** Map object. Store background, size, name, etc. */
       this.layer = layer;
   },
   
+  /** Remove given layer from list */
   removeLayer : function (layer) {
     var layers = this.layers;
     var i = layers.indexOf(layer);
@@ -340,7 +354,7 @@ arena.map = { /** Map object. Store background, size, name, etc. */
     }
     */
     map.cells = [];
-    for (y = tbody.getElementsByTagName('tr').length-1; y >= 0; y--)
+    for (var y = tbody.getElementsByTagName('tr').length-1; y >= 0; y--)
        table.deleteRow(y);
 
     // Set new stats
@@ -350,13 +364,16 @@ arena.map = { /** Map object. Store background, size, name, etc. */
     map.masked = [];
 
     // Create cells and borders above cells
-    for (y = 0; y < height; y++) {
+    for (var y = 0; y < height; y++) {
       var r = this.createCellRow(y, y > 0 ? map.cells[y-1] : null);
       tbody.appendChild(r[0]);
       map.cells[y] = r[1];
     }
     arena.ui.setStatus(arena.lang.command.name_CreateMap + ' '+width+'x'+height);
     map.repaint();
+    
+    map.modified = false;
+    map.lastSaveTime = new Date();
   },
 
   /** Create a cell row with vertical border. Returns tr and cell array. */

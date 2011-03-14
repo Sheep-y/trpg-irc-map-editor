@@ -22,8 +22,12 @@
  *
  */
 
+(function(){
+
 arena.tools = {
   list : ['Text','Brush','Eraser','Mask','Move','Dropper'], // Tool list
+  
+  sortNumber : function(a,b) { return a - b; },
 
   // Given four corners, genreate a list of all coordinates in the rectangle
   genRectagleCoList : function(x1, y1, x2, y2) {
@@ -35,6 +39,14 @@ arena.tools = {
     for (var i = minX; i <= maxX; i++) for (var j = minY; j <= maxY; j++)
       coList.push([i,j]);
     return coList;
+  },
+  
+  getTopLayerAt : function(x, y, attr) {
+    var layers = arena.map.layers;
+    for (var i = layers.length-1; i >= 0; i--)
+      if (layers[i].visible && layers[i].getA(x, y, attr))
+        return layers[i];
+    return null;
   },
 
   // Set a tool as currently in use
@@ -49,33 +61,35 @@ arena.tools = {
   },
   
   /** Select cell with same text that are bordering this cell / all over the map */
-  selectSimiliar : function (x, y, selectAll) {
-    var map = arena.map, cells = map.cells, sx = x, sy = y;
-    // Select similiar
-    var newMask = [], txt = cells[y][x].text;
+  selectSimiliar : function (layer, x, y, selectAll) {
+    var map = arena.map
+      , sx = x
+      , sy = y
+      , newMask = []
+      , txt = layer.getA(x,y,'text');
     if (!selectAll) { // Select all similiar text
       // Check left
       --x;
-      while (x >= 0 && cells[y][x].text == txt) --x;
+      while (x >= 0 && layer.getA(x,y,'text') == txt) --x;
       var left = x + 1;
       // Check right
       x = sx + 1;
-      while (x < map.width && cells[y][x].text == txt) ++x;
+      while (x < map.width && layer.getA(x, y, 'text') == txt) ++x;
       var right = x - 1;
       // Prepare to recur seek bordering text
       var thisrow = [], flaggedCells = [];
-      var condition = function(cell) { return cell.text == txt; }
+      var condition = function(cell) { return cell === txt || (cell && cell.text === txt); }
       for (var i = left; i <= right; i++) {
         thisrow.push(i);
         newMask.push([i, y]);
         arena.setCell(flaggedCells, i, y, true);
       }
-      arena.tools.recurSeek(y-1, map, thisrow, condition, flaggedCells, newMask);
-      arena.tools.recurSeek(y+1, map, thisrow, condition, flaggedCells, newMask);
-    } else { // Select all same text on map
-      for (y = 0; y < map.height; y++) { var row = cells[y];
-        for (x = 0; x < map.width; x++) { var cell = row[x];
-          if (cell.text == txt)
+      arena.tools.recurSeek(y-1, map, layer, thisrow, condition, flaggedCells, newMask);
+      arena.tools.recurSeek(y+1, map, layer, thisrow, condition, flaggedCells, newMask);
+    } else { // Select all same text on layer
+      for (y = 0; y < map.height; y++) {
+        for (x = 0; x < map.width; x++) {
+          if (layer.getA(x, y, 'text') == txt)
             newMask.push([x,y]);
         }
       }
@@ -91,14 +105,14 @@ arena.tools = {
    * @param flaggedCells Two-dimension flag array for quick checking
    * @param flaggedCo    Result flagged coordinate array
    */
-  recurSeek : function (y, map, lastrow, condition, flaggedCells, flaggedCo) {
+  recurSeek : function (y, map, layer, lastrow, condition, flaggedCells, flaggedCo) {
     if (y < 0 || y >= map.height) return;
-    var thisrow = [], cells = map.cells;
+    var thisrow = [];
     var l = lastrow.length;
     // First, find cells neighbouring last cell that fulfills condition
     for (var i = 0; i < l; i++) { var x = lastrow[i];
       if (arena.getCell(flaggedCells, x, y, null) !== null) continue; // Skip checked
-      if (condition(cells[y][x])) {
+      if (condition(layer.get(x, y))) {
         thisrow.push(x);
         flaggedCo.push([x, y]);
         arena.setCell(flaggedCells, x, y, true);
@@ -115,7 +129,7 @@ arena.tools = {
       // Work on next segment. Proceed left first.
       var left = thisrow[i];
       for (var x = left-1; x >= 0; x--) {
-        if (arena.getCell(flaggedCells, x, y, null) !== null || !condition(cells[y][x])) break;
+        if (arena.getCell(flaggedCells, x, y, null) !== null || !condition(layer.get(x,y))) break;
         thisrow.push(x);
         flaggedCo.push([x, y]);
         arena.setCell(flaggedCells, x, y, true);
@@ -133,7 +147,7 @@ arena.tools = {
       // Process right
       var right = left;
       for (var x = right+1; x < map.width; x++) {
-        if (arena.getCell(flaggedCells, x, y, null) !== null || !condition(cells[y][x])) break;
+        if (arena.getCell(flaggedCells, x, y, null) !== null || !condition(layer.get(x,y))) break;
         thisrow.push(x);
         flaggedCo.push([x, y]);
         arena.setCell(flaggedCells, x, y, true);
@@ -141,9 +155,9 @@ arena.tools = {
       ++i;
     }
     // Flag cells and seek up & down
-    thisrow.sort(sortNumber);
-    arena.tools.recurSeek(y-1, map, thisrow, condition, flaggedCells, flaggedCo);
-    arena.tools.recurSeek(y+1, map, thisrow, condition, flaggedCells, flaggedCo);
+    thisrow.sort(arena.tools.sortNumber);
+    arena.tools.recurSeek(y-1, map, layer, thisrow, condition, flaggedCells, flaggedCo);
+    arena.tools.recurSeek(y+1, map, layer, thisrow, condition, flaggedCells, flaggedCo);
   },
 }
 
@@ -245,7 +259,10 @@ arena.tools.Text = {
     set : function(evt) { this.drawing = false; this.lastBrushCo = undefined; },
     unset : function(evt) { this.drawing = false; this.lastBrushCo = undefined; },
     cancel : function(evt) { this.drawing = false; this.lastBrushCo = undefined; },
-    outOfCanvas : function(evt) { this.drawing = false; this.lastBrushCo = undefined; },
+    outOfCanvas : function(evt) {
+      arena.commands.run(new arena.commands.SetMask([]));
+      this.cancel(evt);
+    },
   };
 
 arena.tools.Brush = {
@@ -320,7 +337,7 @@ arena.tools.Mask = {
         var map = arena.map;
         if (evt.detail > 1 && evt.detail <= 3) {
           // Double / Triple click
-          var newMask = arena.tools.selectSimiliar(x, y, evt.detail != 2);
+          var newMask = arena.tools.selectSimiliar(map, x, y, evt.detail != 2);
           if (evt.ctrlKey) {
             // Ctrl: Add to exsiting selection
             var l = newMask.length, cells = map.cells;
@@ -388,7 +405,7 @@ arena.tools.Mask = {
               arena.commands.run(new arena.commands.SetMask([[x,y]]));
           } else 
             arena.commands.run(
-              new arena.commands.MoveMasked(arena.map.masked, dx, dy, arena.map.layer, evt.ctrlKey));
+              new arena.commands.MoveArea(arena.map.masked, dx, dy, arena.map.layer, evt.ctrlKey, true));
         } else {
           // If not moving, a mask has been dragged.
           newMask = arena.tools.genRectagleCoList(x, y, this.sx, this.sy);
@@ -498,60 +515,64 @@ arena.tools.Mask = {
   };
 
 
-function MoveTool_Reset() {
-  this.movingArea = null;
-  arena.map.setMarked([]);
-  if (this.clearMask)
-    arena.map.setMasked([]);
-}
-
 // Move tool, used to move stuffs.
 arena.tools.Move = {
     movingArea : null,
-    usingExistingMask : false,
-    clearMask : false,
+    //usingExistingMask : false,
+    //clearMask : false,
+    movingMask : null,
     startX : 0,
     startY : 0,
     down : function(evt, x, y) {
+      this.layer = arena.tools.getTopLayerAt(x, y, 'text');
       this.movingArea = this.getMoveArea(x, y);
       if (this.movingArea.length) {
         this.startX = x;
         this.startY = y;
-        arena.commands.run(new arena.commands.SetMask(this.movingArea));
-        this.clearMask = !this.usingExistingMask;
+        //arena.commands.run(new arena.commands.SetMask(this.movingArea));
+        //this.clearMask = !this.usingExistingMask;
       } else {
         this.movingArea = null;
       }
     },
     move : function(evt, x, y) {
       if (this.movingArea) {
+        // Moving something. Move highlight and show it
         var dx = x - this.startX, dy = y - this.startY;
         var w = arena.map.width, h = arena.map.height;
         var mark = this.movingArea.concat([]);
-        for (j = mark.length-1; j >= 0; j--) {
-          mark[j] = [mark[j][0]+dx, mark[j][1]+dy];
-          if (mark[j][0] <= 0 || mark[j][0] > w || mark[j][1] <= 0 || mark[j][1] > h)
-            mark.splice(j, 1);
+        for (var i = mark.length-1; i >= 0; i--) {
+          mark[i] = [mark[i][0]+dx, mark[i][1]+dy];
+          if (mark[i][0] < 0 || mark[i][0] >= w || mark[i][1] < 0 || mark[i][1] >= h)
+            mark.splice(i, 1);
         }
         arena.map.setMarked(mark);
-      } else
-        arena.map.setMarked(this.getMoveArea(x, y));
+      } else {
+        this.layer = arena.tools.getTopLayerAt(x, y, 'text');
+        // Just hoving around, mark highlight if there is something
+        if (this.layer && this.layer.getA(x, y, 'text')) {
+          arena.map.setMarked(this.getMoveArea(x, y));
+        } else
+          arena.map.setMarked([]);
+      }
     },
-    getMoveArea : function(x, y) {1
-      this.usingExistingMask = false;
-      if (arena.map.cells[y][x].masked) {
-        this.usingExistingMask = true;
-        return arena.map.masked;
-      } else if (arena.map.cells[y][x].text == arena.map.background_fill.text)
-        return [];
+    getMoveArea : function(x, y) {
+      if (!this.layer) this.layer = arena.map.layer;
+      //this.usingExistingMask = false;
+      //if (arena.map.cells[y][x].masked) {
+      //  this.usingExistingMask = true;
+      //  return arena.map.masked;
+      //} else
+        if (!this.layer.getA(x, y, 'text'))
+          return [];
       else
-        return arena.tools.selectSimiliar(x, y);
+        return arena.tools.selectSimiliar(this.layer, x, y);
     },
     up     : function(evt, x, y) {
       if (this.movingArea) {
         if (x != this.startX || y != this.startY) {
           arena.commands.run(
-            new arena.commands.MoveMasked(arena.map.masked, x-this.startX, y-this.startY, arena.map.layer, evt.ctrlKey));
+            new arena.commands.MoveArea(this.movingArea, x-this.startX, y-this.startY, this.layer, evt.ctrlKey, false));
         }
         arena.map.setMarked([]);
         this.movingArea = null;
@@ -561,16 +582,24 @@ arena.tools.Move = {
     key    : arena.empty,
     brush  : arena.empty,
     cursor : function(evt, x, y) {
-      var cell = arena.map.cells[y][x];
-      return (this.movingArea || (cell && ( cell.masked || cell.text != arena.map.background_fill.text ) ))
-      ? (evt.ctrlKey ? 'copy' : 'move') : 'default'; },
+      var topLayer = arena.tools.getTopLayerAt(x, y, 'text');
+      if (!topLayer) return 'default';
+      var cell = arena.map.layer.get(x, y, 'text');
+      return (this.movingArea || cell )? (evt.ctrlKey ? 'copy' : 'move') : 'default';
+    },
     hint   : function(evt, x, y) { return arena.lang.tool.usehint_move; },
-    set    : MoveTool_Reset,
-    unset  : MoveTool_Reset,
-    cancel : MoveTool_Reset,
+    set    : function(){ this.reset(); },
+    unset  : function(){ this.reset(); },
+    cancel : function(){ this.reset(); },
     outOfCanvas : function() {
       arena.map.setMasked([]);
       arena.map.setMarked([]);
+    },
+    reset : function () {
+      this.movingArea = null;
+      arena.map.setMarked([]);
+      //if (this.clearMask)
+      //  arena.map.setMasked([]);
     },
   };
 
@@ -599,3 +628,6 @@ arena.tools.Dropper = {
     cancel : arena.empty,
     outOfCanvas : arena.empty,
   };
+
+
+})();

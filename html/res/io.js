@@ -1,6 +1,79 @@
 /********************** JavaScript Arena, I/O code *****************************/
 arena.io = {
 
+  autoSaveMinInterval : 5 * 60 * 1000, // Don't auto save less then 5 min
+  autoSaveMaxInterval : 10 * 60 * 1000, // Don't auto save more then 10 minute
+  autoSaveDelay : 5 * 1000, // Wait for so much inactivity before save
+  autoSaveTimer : null, // auto save timer
+  pauseAutoSave : false, // pause auto save when in dialog
+
+  /************* Auto save/load - auto recovery / map key load ************/
+  
+  /** Called once on load to do auto load, also setup auto save */
+  autoLoad : function() {
+    // Detect unfinished auto save?
+    // TODO - wait for auto save function. if loaded don't check map key
+    // Detect map key - ver=20101025&map=w51Tw4FSwoMwFM...
+    var hash = location.hash.match(/^#(\d+)=([+/\w+]+=*)$/);
+    if (hash && hash.length == 3) {
+      var build = +hash[1];
+      this.restoreSaveData('json-zip-base64', hash[2]);
+    }
+  },
+  
+  /** Called on every change to check auto save. */
+  checkAutoSave : function() {
+    var map = arena.map, io = arena.io;
+    if (!map.modified) return;
+    
+    // Cancel last timeout, then check whethr it is time to save
+    clearTimeout(io.autoSaveTimer);
+    var dt = new Date() - map.lastSaveTime;
+
+    // Save immediately if over time
+    if (dt > io.autoSaveMaxInterval) {
+
+      io.doAutoSave();
+
+    // Otherwise, if it is still time to autosave, set timeout
+    } else if (dt > io.autoSaveMinInterval) {
+
+      io.autoSaveTimer = setTimeout(io.doAutoSave, io.autoSaveDelay);
+
+    // Finally, check again in a short interval
+    } else {
+    
+      io.autoSaveTimer = setTimeout(io.checkAutoSave, io.autoSaveDelay);
+
+    }
+  },
+  
+  doAutoSave : function() {
+    var io = arena.io;
+    if (io.pauseAutoSave)
+      io.autoSaveTimer = setTimeout(io.doAutoSave, 5000);
+    io.autoSaveTimer = null;
+    arena.ui.setStatus(arena.lang.io.autoSaving);
+    // List save and find last auto save
+    var list = io.listSaves("local"), deleteSave = null, d = new Date();
+    for (var i = 0; i < list.length; i++)
+      if (list[i].match(/^Autosave \d+-\d+-\d+ \d+$/)) {
+        deleteSave = list[i];
+        break;
+      }
+    // Do our save
+    var datetime = d.getHours()*100 + d.getMinutes();
+    datetime = (d.getYear()+1900)+"-"+(d.getMonth()+1)+"-"+d.getDate()+" "+( datetime >= 1000 ? "" : "0")+datetime;
+    io.saveMap("Autosave " + datetime, "local", true);
+    // If found last save, delete it after save
+    if (deleteSave)
+      io.deleteSave(deleteSave);
+    arena.ui.setStatus(arena.lang.io.autoSaved.replace("%s", datetime));
+  },
+  
+  /*************************** inline exports *************************/
+
+
   /** Acquire export boundary */
   getExportArea : function(map, area) {
     if (area && area.length > 0) {
@@ -13,20 +86,6 @@ arena.io = {
     }
   },
 
-  /** Export a string to clipboard *
-  exportToClipboard : function(target) {
-    var win = window.open('html/popup_copy.html', 'clipboard', 'width=500,height=400,menubar=1,resizable=1,scrollbars=1');
-    if (!win) alert(arena.lang.error.CannotOpenWindow);
-    else { var doc = win.document;
-      doc.writeln("<!DOCTYPE HTML>\n<html><head>\n<title>Copy text</title>\n<meta http-equiv='Content-Type' content='text/html; charset=utf-8'>\n</head><body>");
-      doc.writeln("<div>"+arena.lang.io.CopyInstruction+"</div>");
-      doc.writeln("<textarea id='result' onkeyup='if(!this.value)window.close();' rows='20' cols='60'>"+target+"</textarea>");
-      doc.writeln("<script type='text/javascript'>with(document.getElementById('result')){select();focus();}</script>");
-      doc.writeln("</body></html>");
-      doc.close();
-    }
-  },/
-  
   /** Export a string as a web page */
   exportAsDoc : function(target) {
     var win = window.open('', 'clipboard', 'width=660,height=500,menubar=1,resizable=1,scrollbars=1');
@@ -65,7 +124,7 @@ arena.io = {
         height: map.height,
         background : map.background_fill,
         masked: map.masked,  
-        layers: map.layers
+        layers: map.layers { name, cells[][]{text, background, foreground}, visibiilty }
       }] ))) }
       
   { "id" : "sheepy.arena.20101025.json-zip-base64", // Or "json", or "json-zip"
@@ -75,7 +134,7 @@ arena.io = {
         height: map.height,
         background : map.background_fill,
         masked: map.masked,  
-        layers: map.layers
+        layers: map.layers { name, cells[][]{text, background, foreground}, visibiilty }
       }] } ))) }
   
   /************************ Save / Load ********************************/
@@ -90,7 +149,8 @@ arena.io = {
   }, 
 
   /** Save current map */  
-  saveMap : function(name, server) {
+  saveMap : function(name, server, autosave) {
+    var map = arena.map;
     if (server == 'local') {
       var list = this.listSaves(server);
       // Add name
@@ -102,9 +162,12 @@ arena.io = {
           break;
         }
       // Save and update save list
-      localStorage['sheepy.arena.save.'+name] = this.exportToJSON(arena.map, null, 'zip');
+      localStorage['sheepy.arena.save.'+name] = this.exportToJSON(map, null, 'zip');
       localStorage['sheepy.arena.saveList'] = JSON.stringify(list);
     }
+    map.lastSaveTime = new Date();
+    if (!autosave)
+      map.modified = false;
   }, 
 
   /** Load a map */
@@ -124,7 +187,7 @@ arena.io = {
   deleteSave : function(name, server) {
     if (server == 'local') {
       // Delete item
-      localStorage.deleteItem('sheepy.arena.save.'+name);
+      delete localStorage['sheepy.arena.save.'+name];
       // And update save list
       var list = this.listSaves(server);
       for (var i = list.length; i >= 0; i--)
@@ -138,11 +201,8 @@ arena.io = {
   
   /************************** Import **********************************/
 
-  /** Import map from json format */  
+  /** Import map from json format, including backward compatibility conversion */
   importFromJSON : function(data) {
-    var cleanup = false;
-    var result = arena.lang.error.CannotRestore;
-    
     try {
       // Zip library from http://github.com/dankogai/js-deflate
       var restore = JSON.parse(data);
@@ -163,28 +223,39 @@ arena.io = {
     
     if (!spec || spec.length != 3) return arena.lang.error.MalformedSave;
     
-    var build = restore.build = +spec[1];
+    //var build = restore.build = +spec[1];
     var format = restore.format = spec[2];
+    return this.restoreSaveData(format, restore.data);
+  },
 
+  /** Restore (current version) of specific format */
+  restoreSaveData : function(format, data) {
     // Parse map data
-    var maps = null;
+    var mapsdata = null;
     if (format.match(/-zip/) && !RawDeflate.inflate) {
       alert(arena.map.err_NoDeflate);
     } else {
       if (format == 'json-zip-base64')
         //data = JSON.parse(RawDeflate.Base64.decode(RawDeflate.inflate(RawDeflate.Base64.decode(restore.data))));
-        data = JSON.parse(RawDeflate.Base64.decode(RawDeflate.inflate(RawDeflate.Base64.decode(restore.data))));
+        mapsdata = JSON.parse(RawDeflate.Base64.decode(RawDeflate.inflate(RawDeflate.Base64.decode(data))));
       else if (format == 'json-zip')
-        data = JSON.parse(RawDeflate.Base64.decode(RawDeflate.inflate(restore.data)));
+        mapsdata = JSON.parse(RawDeflate.Base64.decode(RawDeflate.inflate(data)));
       else if (format == 'json')
-        data = restore.data;
+        mapsdata = data;
       else
         return arena.lang.error.MalformedSave;
     }
-    if (build <= 20101018) data = { maps: data };
+    //if (build <= 20101018) mapsdata = { maps: mapsdata };
+    if (!mapsdata.maps && mapsdata.layers) mapsdata = { maps: mapsdata };
+    return this.restoreData(mapsdata);
+  },
+  
+  restoreData : function(data) {
+    // Map is erased below this point, mark cleaup on failure
+    var cleanup = true;
+    var result = arena.lang.error.CannotRestore;
     if (data) {
       try {
-        cleanup = true; // Map is erased below this point, mark cleaup on failure
         arena.io.restoreMaps(data);
         // Refresh and reset
         arena.ui.updateLayers();
@@ -222,7 +293,8 @@ arena.io = {
     for (var i = 0; i < map.layers.length; i++) {
       // Do each layer
       var l = map.layers[i];
-      var nl = new arena.Layer(arena.map, l.name);
+      var nl = new arena.Layer(l.name);
+      arena.map.addLayer(nl);
       nl.visible = l.visible;
       
       for (var y = l.cells.length-1; y >= 0; y--)
@@ -250,8 +322,18 @@ arena.io = {
 
   /************************** Export **********************************/
   
+  /** Export in zipped format */
+  exportToURL : function (map, area) {
+    if (!JSON.stringify)
+      return arena.lang.err_NoJSON;
+    var data = RawDeflate.Base64.encode( RawDeflate.deflate(
+               RawDeflate.Base64.encode( JSON.stringify(
+               this.getSaveData(map).data )) ));
+    return location.href.replace(/#.*?$/,'')+"#20110303="+data;
+  },
+  
   /** Export whole map in compressed JSON format */
-  exportToJSON : function(map, area, type) {
+  exportToJSON : function (map, area, type) {
     if (!JSON.stringify)
       return arena.lang.err_NoJSON;
     var data = this.getSaveData(map); 

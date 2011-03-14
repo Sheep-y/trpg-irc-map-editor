@@ -6,7 +6,9 @@
 <script>
 if (!window.$) document.write('<script src="../html/res/jquery.js"></sc'+'ript>');
 </script>
-</head><body onmousedown='arena.event.documentMouseUpDown(event);' onmouseup='arena.event.documentMouseUpDown(event);' onkeydown='arena.event.mapKeyDown(event)' onkeyup='arena.event.mapKeyUp(event)'>
+</head><body onmousedown='arena.event.documentMouseUpDown(event);' onmouseup='arena.event.documentMouseUpDown(event);'
+  onkeydown='arena.event.mapKeyDown(event)' onkeyup='arena.event.mapKeyUp(event)'
+  onbeforeunload='return arena.event.documentClose(event)'>
 
 <input id="hideFocus" type="text">
 
@@ -86,6 +88,7 @@ if (!window.$) document.write('<script src="../html/res/jquery.js"></sc'+'ript>'
 <script src='../html/res/commands.js?ver=[var.out.app_version]'></script>
 <script src='../html/res/io.js?ver=[var.out.app_version]'></script>
 <script>
+(function(){
   if (!window.arena || !arena.lang || !arena.ui || !arena.map || !arena.tools || !arena.commands || !arena.io) {
     var str = "[var.lang.err_IncompleteLoad]";
     if (str.substring(0,1) == "[")
@@ -95,10 +98,12 @@ if (!window.$) document.write('<script src="../html/res/jquery.js"></sc'+'ript>'
     arena.ui.createColourPalette();
     arena.ui.createGlyphs();
     arena.reset();
+    //arena.io.autoLoad();
     arena.ui.focusBody();
     arena.ui.updateButtons();
   }
   document.close();
+})();
 </script><noscript>
 <p>Please enable JavaScript.</p>
 </noscript>
@@ -106,6 +111,9 @@ if (!window.$) document.write('<script src="../html/res/jquery.js"></sc'+'ript>'
 <script src='../html/res/rawinflate.js'></script>
 <script src='../html/res/rawdeflate.js'></script>
 <script src='../html/res/base64.js'></script>
+<script>
+  arena.io.autoLoad();
+</script>
 
 <div id='mask'></div>
 
@@ -113,15 +121,18 @@ if (!window.$) document.write('<script src="../html/res/jquery.js"></sc'+'ript>'
 
 <div id='dialog_export'>
 <h2>Import / Export</h2>
-Export:
+<b>Export:</b> &nbsp;
+<label onmouseover='arena.ui.hint("tool|dlghint_CopyURL")'><input type='radio' name='opt_export' id='dlg_ex_url'> URL </label>
+<br>
 <label onmouseover='arena.ui.hint("tool|dlghint_CopyIRC")'><input type='radio' name='opt_export' id='dlg_ex_txt'> Text </label>
 <label onmouseover='arena.ui.hint("tool|dlghint_CopyBBC")'><input type='radio' name='opt_export' id='dlg_ex_bbc'> BBCode </label>
-<label onmouseover='arena.ui.hint("tool|dlghint_CopyTxt")'><input type='radio' name='opt_export' id='dlg_ex_irc' checked='checked'> mIRC </label><br>
+<label onmouseover='arena.ui.hint("tool|dlghint_CopyTxt")'><input type='radio' name='opt_export' id='dlg_ex_irc' checked='checked'> mIRC </label>
+<br>
 <label onmouseover='arena.ui.hint("tool|dlghint_CopyHtml")'><input type='radio' name='opt_export' id='dlg_ex_html'> HTML </label>
-<label onmouseover='arena.ui.hint("tool|dlghint_CopyJsonZip")'><input type='radio' name='opt_export' id='dlg_ex_json_zip'> Json </label>
 <label onmouseover='arena.ui.hint("tool|dlghint_CopyJson")'><input type='radio' name='opt_export' id='dlg_ex_json'> Plain Json </label>
+<label onmouseover='arena.ui.hint("tool|dlghint_CopyJsonZip")'><input type='radio' name='opt_export' id='dlg_ex_json_zip'> Json </label>
 <hr>
-Import: 
+<b>Import:</b> &nbsp;
 <label onmouseover='arena.ui.hint("tool|dlghint_ImportJson")'><input type='radio' name='opt_export' id='dlg_in_json'> Json </label>
 <br><br>
 <input type='button' value='Go' id='btn_export' onclick='arena.event.dlgExportClick(event)'> &nbsp;
@@ -154,13 +165,13 @@ Load
 </td></tr></table>
 
 <script> 
-var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
-//document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js'%3E%3C/script%3E"));
-</script>
-<script>
+if (location.host && location.host != "localhost") {
+  var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+  document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js'%3E%3C/script%3E"));
+}
 try {
-var pageTracker = _gat._getTracker("UA-9070778-1");
-pageTracker._trackPageview();
+  var pageTracker = _gat._getTracker("UA-9070778-1");
+  pageTracker._trackPageview();
 } catch(err) {}
 document.close()</script>
 
