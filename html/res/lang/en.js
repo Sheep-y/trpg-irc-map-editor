@@ -5,7 +5,6 @@ window.arena = {};
 arena.lang = {
 
   tool : {
-    name_mask    : 'Mask tool. Used to select area for drawing. Double click to select map.',
     usehint_text     : '[Text] Drag: Draw text in colour.  Shift: Draw text and background.',
     usehint_brush    : '[Brush] Drag: Draw background.  Shift: Draw foreground.',
     usehint_eraser   : '[Erase] Drag: Erase from this layer.',
@@ -21,20 +20,20 @@ arena.lang = {
     //barhint_Layer   : 'Click to select layer to draw. Top layer show first.',
     //barhint_UsingLayer : 'You are drawing on this layer.',
     barhint_Foreground : 'Drawing in this foreground colour. Click to fill current mask.',
-    barhint_Background : 'Drawing in this background colour. Click to fill current mask.',
+    //barhint_Background : 'Drawing in this background colour. Click to fill current mask.',
     barhint_MapInput   : 'Brush text for text tool. Press Enter to set text. Press Delete to clear selected area.',
-    barhint_Colour   : 'Click to set foreground, Ctrl/Shift+Click to fill foreground/background of selected area.',
+    barhint_Colour     : 'Click to set foreground, Ctrl/Shift+Click to fill foreground/background of selected area.',
     //barhint_NoColour : 'No colour : Use lower layer\'s colour.',
     //barhint_ReverseColour : 'Reverse colour : Reverse lower layer\'s colour.',
-    barhint_Undo   : 'Undo last command (Ctrl+Z)',
-    barhint_Redo   : 'Redo next command (Ctrl+Y)',
-    barhint_Layer  : 'Click to work with this layer. Double-click to toggle visibility.',
+    barhint_Undo       : 'Undo last command (Ctrl+Z)',
+    barhint_Redo       : 'Redo next command (Ctrl+Y)',
+    barhint_Layer      : 'Click to work with this layer. Double-click to toggle visibility.',
     barhint_toolText   : 'Text tool, draw text on current layer. (T) Press Enter to set text before draw.',
     barhint_toolBrush  : 'Brush tool, paint background on current layer. (B)',
     barhint_toolEraser : 'Eraser tool, erase stuff from curent layer. (E)',
-    barhint_toolMask   : 'Rectangle mask tool, limit paint area or move masked area of current layer. (R) Double click: Mask Layer / Reduce mask.',
+    barhint_toolMask   : 'Rectangle mask tool, limit paint area or move masked area of current layer. (R) Double click: Mask Layer / Reduce mask. (R)',
     barhint_toolMove   : 'Move tool, move similiar area. (M)',
-    barhint_toolDropper: 'Dropper tool, get colours and text of current cell. (D)',
+    barhint_toolDropper: 'Dropper tool, get colours and text of current cell. (O)',
     barhint_brushSize  : 'Brush size. (+/-)',
     barhint_viewLayer  : 'View layer list. Shift+Minus/Plus to move between layers.',
     barhint_viewGlyph  : 'View glyph list.',
@@ -49,19 +48,30 @@ arena.lang = {
     dlghint_CopyBBC : 'Export in BBCode syntax. Text and foreground colour only.',
     dlghint_CopyTxt : 'Export in plain text.',
     dlghint_CopyHtml : 'Export in HTML.',
-    dlghint_CopyJsonZip : 'Export in compressed JSON.',
-    dlghint_CopyJson : 'Export in JSON.',
+    dlghint_CopyJsonZip : 'Export in compressed JSON. Similiar with Json but smaller.',
+    dlghint_CopyJson : 'Export in JSON. Layers are preserved, suitable for long-term map storage.',
   },
 
   command : {
+    undo : "Undo %s",
+    redo : "Redo %s",
+
     name_SetMask : 'Set Mask',
     name_SetCell : 'Set',
     name_SetText : 'Set Text',
     name_SetForeground : 'Set Foreground',
     name_SetBackground : 'Set Background',
+    
+    name_Erase : 'Erase',
+    name_MoveMasked : 'Move Masked',
+    name_CopyMasked : 'Copy Masked',
+    name_LayerMove     : 'Move Layer ',
+    name_LayerDelete   : 'Delete Layer ',
+    name_LayerAdd      : 'Create Layer ',
+    name_LayerShowHide : 'Show/hide Layer ',
+
+    name_MapRotate : 'Rotate Map ',
     name_CreateMap : 'Create Map',
-    undo : "Undo %s",
-    redo : "Redo %s",
   },
 
   map : {
@@ -88,7 +98,6 @@ arena.lang = {
 
 
     // I/O error
-    CannotOpenWindow : 'Cannot popup window. Please allow popup first.',
     CannotRestore : 'Cannot restore map.',
     NoJSON : 'Browser doesn\'t support native JSON, please upgrade.',
     MalformedSave : 'Malformed save data.',

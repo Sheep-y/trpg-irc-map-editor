@@ -278,6 +278,23 @@ input {
 	display: none;
 }
 
+#dialog_export table {
+  margin: 0 auto;
+}
+
+#dialog_export td {
+  text-align: left;
+  vertical-align: top;
+}
+  
+#dialog_export td, #dialog_export th {
+  padding: 1ex;
+}
+
+#dialog_export td:first-child {
+  border-right: 1px solid black;
+}
+
 /************************ Misc ********************************/
 
 #hideFocus {

@@ -54,21 +54,19 @@ arena.io = {
       io.autoSaveTimer = setTimeout(io.doAutoSave, 5000);
     io.autoSaveTimer = null;
     arena.ui.setStatus(arena.lang.io.autoSaving);
-    // List save and find last auto save
-    var list = io.listSaves("local"), deleteSave = null, d = new Date();
-    for (var i = 0; i < list.length; i++)
-      if (list[i].match(/^Autosave \d+-\d+-\d+ \d+$/)) {
-        deleteSave = list[i];
-        break;
-      }
     // Do our save
-    var datetime = d.getHours()*100 + d.getMinutes();
-    datetime = (d.getYear()+1900)+"-"+(d.getMonth()+1)+"-"+d.getDate()+" "+( datetime >= 1000 ? "" : "0")+datetime;
-    io.saveMap("Autosave " + datetime, "local", true);
-    // If found last save, delete it after save
-    if (deleteSave)
-      io.deleteSave(deleteSave);
-    arena.ui.setStatus(arena.lang.io.autoSaved.replace("%s", datetime));
+    var d = new Date(), datetime = d.getHours()*100 + d.getMinutes();
+    datetime = (d.getYear()+1900)+'-'+(d.getMonth()+1)+'-'+d.getDate()+' '+( datetime >= 1000 ? '' : '0')+datetime;
+    var saveName = 'Autosave ' + datetime 
+    io.saveMap(saveName, 'local', true);
+    // Delete previous autosaves
+    var list = io.listSaves('local');
+    for (var i = list.length-1; i >= 0; i--) {
+      if (list[i] != saveName && list[i].match(/^Autosave \d+-\d+-\d+ \d+$/)) {
+        io.deleteSave(list[i], 'local');
+      }
+    }
+    arena.ui.setStatus(arena.lang.io.autoSaved.replace('%s', datetime));
   },
   
   /*************************** inline exports *************************/
@@ -308,7 +306,7 @@ arena.io = {
             if (row[x]) {
               // Restore cell
               var c = row[x];
-              var newc = new arena.Cell(x, y)
+              var newc = nl.createCell(x, y)
               newRow[x] = newc;
               newc.text = c.text;
               newc.background = c.background;
@@ -429,6 +427,32 @@ arena.io = {
     return result;
   },
 
+  /** Export in BBCode syntax with table, foreground only **/
+  exportToBBCTable : function(map, area) {
+    var bounds = this.getExportArea(map, area);
+    var minX = bounds[0], maxX = bounds[2];
+    var minY = bounds[1], maxY = bounds[3];
+    // Export part
+    var lastForeground, result = '[table]';
+    var cells = map.cells;
+    for (var y = minY; y <= maxY; y++) { var row = cells[y];
+      result += '[tr]';
+      for (var x = minX; x <= maxX; x++) { var cell = row[x];
+        var frgd = cell.foreground;
+        var txt = cell.text;
+        var trimmed = txt.replace(/^\s+/, '') // kill spaces
+        result += '[td]';
+        if (trimmed) {
+          result += '[color=' + frgd + ']' + cell.text + '[/color]';
+        }
+        result += '[/td]';
+      }
+      result += '[/tr]\n';
+    }
+    result += '[/table]';
+    return result;
+  },
+  
   /** Export in plain text **/
   exportToTxt : function(map, area) {
     var bounds = this.getExportArea(map, area);

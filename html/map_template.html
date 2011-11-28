@@ -3,6 +3,7 @@
 <title>Sheepy's Arena</title>
 <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
 <link rel='stylesheet' type='text/css' href='../html/res/style.css?ver=[var.out.app_version]'>
+<script src='http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js'></script>
 <script>
 if (!window.$) document.write('<script src="../html/res/jquery.js"></sc'+'ript>');
 </script>
@@ -75,7 +76,22 @@ if (!window.$) document.write('<script src="../html/res/jquery.js"></sc'+'ript>'
   <div id='glyph' style='display:none'></div><br>
 </div>
 
-<script src='../html/res/lang/en.js?ver=[var.out.app_version]'></script>
+<script>
+(function(){
+  var lang = 'en';
+  try {
+    var l = navigator.language;
+    if ( l ) {
+      var l = /(?:^|;)(en|zh)(?=-|$|;)/.exec( navigator.language );
+      if ( l ) lang = l[0]; 
+    }
+  } catch (err) {
+  }
+  var e = document.createElement('script');
+  e.src = '../html/res/lang/'+lang+'.js?ver=[var.out.app_version]';
+  document.appendChild(e);
+})
+</script>
 <script>
   if ("[var.lang.welcome_hint; htmlconv=js]".substring(0,1) != "[") {
     document.getElementById('hint').innerHTML = "[var.lang.welcome_hint; htmlconv=js]";
@@ -120,21 +136,22 @@ if (!window.$) document.write('<script src="../html/res/jquery.js"></sc'+'ript>'
 <table id='dialog_container'><tr><td>
 
 <div id='dialog_export'>
-<h2>Import / Export</h2>
-<b>Export:</b> &nbsp;
-<label onmouseover='arena.ui.hint("tool|dlghint_CopyURL")'><input type='radio' name='opt_export' id='dlg_ex_url'> URL </label>
-<br>
-<label onmouseover='arena.ui.hint("tool|dlghint_CopyIRC")'><input type='radio' name='opt_export' id='dlg_ex_txt'> Text </label>
-<label onmouseover='arena.ui.hint("tool|dlghint_CopyBBC")'><input type='radio' name='opt_export' id='dlg_ex_bbc'> BBCode </label>
-<label onmouseover='arena.ui.hint("tool|dlghint_CopyTxt")'><input type='radio' name='opt_export' id='dlg_ex_irc' checked='checked'> mIRC </label>
-<br>
-<label onmouseover='arena.ui.hint("tool|dlghint_CopyHtml")'><input type='radio' name='opt_export' id='dlg_ex_html'> HTML </label>
-<label onmouseover='arena.ui.hint("tool|dlghint_CopyJson")'><input type='radio' name='opt_export' id='dlg_ex_json'> Plain Json </label>
-<label onmouseover='arena.ui.hint("tool|dlghint_CopyJsonZip")'><input type='radio' name='opt_export' id='dlg_ex_json_zip'> Json </label>
-<hr>
-<b>Import:</b> &nbsp;
+
+
+<table><tr><th> <h2>Import</h2> </th><th colspan='2'> <h2>Export</h2> </th></tr>
+<tr><td>
 <label onmouseover='arena.ui.hint("tool|dlghint_ImportJson")'><input type='radio' name='opt_export' id='dlg_in_json'> Json </label>
-<br><br>
+</td><td>
+<label onmouseover='arena.ui.hint("tool|dlghint_CopyURL")'><input type='radio' name='opt_export' id='dlg_ex_url'> URL </label><br>
+<label onmouseover='arena.ui.hint("tool|dlghint_CopyIRC")'><input type='radio' name='opt_export' id='dlg_ex_txt'> Text </label><br>
+<label onmouseover='arena.ui.hint("tool|dlghint_CopyHtml")'><input type='radio' name='opt_export' id='dlg_ex_html'> HTML </label><br>
+<label onmouseover='arena.ui.hint("tool|dlghint_CopyTxt")'><input type='radio' name='opt_export' id='dlg_ex_irc' checked='checked'> mIRC </label><br>
+</td><td>
+<label onmouseover='arena.ui.hint("tool|dlghint_CopyBBC")'><input type='radio' name='opt_export' id='dlg_ex_bbc'> BBCode (no table)</label><br>
+<label onmouseover='arena.ui.hint("tool|dlghint_CopyBBCTable")'><input type='radio' name='opt_export' id='dlg_ex_bbctable'> BBCode (table)</label><br>
+<label onmouseover='arena.ui.hint("tool|dlghint_CopyJson")'><input type='radio' name='opt_export' id='dlg_ex_json'> Plain Json </label><br>
+<label onmouseover='arena.ui.hint("tool|dlghint_CopyJsonZip")'><input type='radio' name='opt_export' id='dlg_ex_json_zip'> Json </label><br>
+</td></tr></table>
 <input type='button' value='Go' id='btn_export' onclick='arena.event.dlgExportClick(event)'> &nbsp;
 <input type='button' value='Cancel' onclick='arena.ui.hideDialog("export")'>
 </div>

@@ -1,5 +1,11 @@
 Sheepy's Arena, Change log
 
+== 2011-11: Bug fix ==
+2011-11-28: Sync chinese language resources and added auto-language detection. 
+2011-11-28: Added BBCode (table) export option. Re-layout import/export dialog.
+2011-11-28: Fix load map cell creation (would break move tool and mass colour fill on loaded maps).
+2011-07-27: Autosave would now properly delete previous autosaves.  
+
 == 2011-03: Undo, Redo, Move tool ==
 2011-03-14: Move tool can moves any layer not only current layer.
 2011-03-11: Prompt save on close, move tool don't set mask and works by layer.

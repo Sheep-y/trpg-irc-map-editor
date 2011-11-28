@@ -160,6 +160,8 @@ arena.event = {
       textarea.value = arena.io.exportToTxt(arena.map, arena.map.masked);
     else if ($('#dlg_ex_bbc')[0].checked)
       textarea.value = arena.io.exportToBBC(arena.map, arena.map.masked);
+    else if ($('#dlg_ex_bbctable')[0].checked)
+      textarea.value = arena.io.exportToBBCTable(arena.map, arena.map.masked);
     else if ($('#dlg_ex_irc')[0].checked)
       textarea.value = arena.io.exportToIRC(arena.map, arena.map.masked);
     else if ($('#dlg_ex_json_zip')[0].checked)
