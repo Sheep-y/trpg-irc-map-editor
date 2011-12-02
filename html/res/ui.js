@@ -145,45 +145,57 @@ arena.event = {
   exportOnClick : function(evt) {
     arena.ui.showDialog('export');
   },
+
+  syncOnClick : function(evt) {
+    if ( arena.sharing.mapId ) {
+      if ( arena.sharing.isMaster && evt.detail == 1 ) {
+        arena.io.syncToServer (
+          arena.map.title,
+          arena.sharing.password,
+          $('#txt_viewer_password')[0].value );
+      } else {
+        $('#map_list').hide();
+        $('#share_form').show();
+        arena.ui.showDialog('sync');    
+        $('#txt_map_title')[0].focus();
+      }
+    } else {
+      arena.ui.showDialog('sync');    
+      arena.ui.refreshMapList();
+      $('#lnk_share')[0].href = arena.io.exportToURL( arena.map );
+      $('#lnk_share')[0].innerHTML = '(Static link)';   
+      $('#map_list').show();
+      $('#share_form').hide();
+    }
+  },
   
   dlgExportClick : function(evt) {
-    arena.ui.hideDialog('export');
-    // Default to export
-    $('#text_instruction').html(arena.lang.io.CopyInstruction);
-    var textarea = $('#text_data')[0];
-    textarea.value = arena.lang.io.PleaseWait;
-    arena.ui.showDialog('text');
-
+    // Export
     if ($('#dlg_ex_url')[0].checked)
-      textarea.value = arena.io.exportToURL(arena.map, arena.map.masked);
+      arena.ui.copyText ( arena.io.exportToURL(arena.map, arena.map.masked) , arena.lang.io.CopyInstruction );
     else if ($('#dlg_ex_txt')[0].checked)
-      textarea.value = arena.io.exportToTxt(arena.map, arena.map.masked);
+      arena.ui.copyText ( arena.io.exportToTxt(arena.map, arena.map.masked) , arena.lang.io.CopyInstruction );
     else if ($('#dlg_ex_bbc')[0].checked)
-      textarea.value = arena.io.exportToBBC(arena.map, arena.map.masked);
+      arena.ui.copyText ( arena.io.exportToBBC(arena.map, arena.map.masked) , arena.lang.io.CopyInstruction );
     else if ($('#dlg_ex_bbctable')[0].checked)
-      textarea.value = arena.io.exportToBBCTable(arena.map, arena.map.masked);
+      arena.ui.copyText ( arena.io.exportToBBCTable(arena.map, arena.map.masked) , arena.lang.io.CopyInstruction );
     else if ($('#dlg_ex_irc')[0].checked)
-      textarea.value = arena.io.exportToIRC(arena.map, arena.map.masked);
+      arena.ui.copyText ( arena.io.exportToIRC(arena.map, arena.map.masked) , arena.lang.io.CopyInstruction );
     else if ($('#dlg_ex_json_zip')[0].checked)
-      textarea.value = arena.io.exportToJSON(arena.map, arena.map.masked, 'zip-base64');
+      arena.ui.copyText ( arena.io.exportToJSON(arena.map, arena.map.masked, 'zip-base64') , arena.lang.io.CopyInstruction );
     else if ($('#dlg_ex_json')[0].checked)
-      textarea.value = arena.io.exportToJSON(arena.map, arena.map.masked);
+      arena.ui.copyText ( arena.io.exportToJSON(arena.map, arena.map.masked) , arena.lang.io.CopyInstruction );
       
     else if ($('#dlg_ex_html')[0].checked) {
       // Special export, open in new doc
-      arena.ui.hideDialog('text');
       arena.io.exportToHtml(arena.map, arena.map.masked);
       
     } else if ($('#dlg_in_json')[0].checked) {
       // Ok, we are importing
-      $('#text_instruction').html(arena.lang.io.ImportInstruction);
-      textarea.value = '';
+      arena.ui.copyText ( '' , arena.lang.io.ImportInstruction );
     }
-    
-    textarea.select();
-    textarea.focus();
   },
-  
+
   dlgTextChanged : function(evt, txt) {
     if ($('#dlg_in_json')[0].checked) {
       // Importing, process data
@@ -220,7 +232,74 @@ arena.event = {
       $('#saveInput')[0].focus();
     }
   },
-  
+
+  btnShareTabClick : function(evt) {
+    $('#map_list').hide();
+    $('#share_form').show();
+    $('#txt_map_title')[0].focus();
+  },
+
+  btnDeleteMapClick : function(id) {
+    id = +id;
+    var password = prompt( arena.lang.sharing.MasterPassword );   
+    if ( id <= 0 || password === null ) return;
+    var result = arena.io.syncAjax ( 
+      'ajax=unshare'+
+      '&id=' +id+
+      '&pass='+encodeURIComponent( password ) );
+    if ( result !== false )
+      arena.ui.refreshMapList();    
+  },
+
+  btnSyncMapClick  : function(id) {
+    id = +id;
+    var password = prompt( arena.lang.sharing.ViewerPassword );   
+    if ( id <= 0 || password === null ) return;
+    if ( arena.io.startSync ( id, password ) )
+      arena.ui.hideDialog('sync');
+  },
+
+  lnkShareClick : function(evt) {
+    arena.ui.hideDialog('sync');
+    arena.ui.copyText( $('#lnk_share')[0].href , arena.lang.io.CopyInstruction );
+    if (evt) evt.preventDefault();
+    return false;
+  },
+
+  btnShareClick : function(evt) {
+    var title = $('#txt_map_title')[0].value, 
+        admin = $('#txt_admin_password')[0].value, 
+       viewer = $('#txt_viewer_password')[0].value;
+    if ( title == '' ) return alert( arena.lang.error.TitleEmpty ); 
+    else if ( admin == '' ) return alert( arena.lang.error.AdminEmpty );
+    else if ( admin == viewer ) return alert( arena.lang.error.AdminViewerSame );
+    else {
+      var result = arena.io.syncToServer( title, admin, viewer );
+      if ( result === false ) return; 
+      arena.ui.disableSharing();
+      arena.event.lnkShareClick();
+    }
+  },
+
+  btnStopClick : function(evt) {
+    if ( arena.sharing.timer ) {
+      clearInterval( arena.sharing.timer );
+      arena.sharing.timer = 0;
+    }
+    if ( arena.sharing.mapId && arena.sharing.isMaster ) {
+      var result = arena.io.syncAjax ( 
+        'ajax=unshare'+
+        '&id=' +arena.sharing.mapId+
+        '&pass='+encodeURIComponent( arena.sharing.password ) );
+      if ( result === false ) return; 
+    } else {
+      arena.ui.hideDialog('sync');
+    }
+    arena.sharing.mapId = 0;
+    arena.sharing.isMaster = false;
+    arena.ui.enableSharing();
+  },
+
   btnSaveMapClick : function(evt) {
     arena.io.saveMap($('#saveInput').val(), 'local');
     arena.ui.hideDialog("saveload");
@@ -724,6 +803,65 @@ arena.ui = {
     arena.event.mapDialogMode = false;
     $('#dialog_container, #dialog_'+id+', #mask').hide();
   },
+  
+  copyText : function (text, instruction) {
+    arena.ui.hideDialog('export');
+    // Default to export
+    var textarea = $('#text_data')[0];
+    textarea.value = arena.lang.io.PleaseWait;
+    arena.ui.showDialog('text');
+    $('#text_instruction').html(instruction);
+    textarea.value = text;
+    textarea.select();
+    textarea.focus();
+  },
+  
+  refreshMapList : function () {
+    var result = arena.io.syncAjax( 'ajax=list' ),
+            ul = $('#lst_map')[0];
+    if ( result === false ) return false;
+    ul.innerHTML = '';
+    try {
+      result = JSON.parse(result.substr(3));
+    } catch (e) {
+      ul.appendChild ( document.createTextNode( arena.lang.error.MalformedData ) );
+      return;
+    }
+    // <li> <input type='button' value='Delete' /> <input type='button' value='Load' /> Test </li>
+    var map = result.maps;
+    for ( var id in map ) {
+      var li = document.createElement('li'),
+          b1 = document.createElement('input'),
+          b2 = document.createElement('input');
+      b1.type = b2.type = 'button';
+      b1.value = 'Delete';
+      b1.addEventListener ( 'click', (function(id){ return function(){
+          arena.event.btnDeleteMapClick(id) } })(id), false );   
+      b2.value = 'Load';
+      b2.addEventListener ( 'click', (function(id){ return function(){
+          arena.event.btnSyncMapClick(id) } })(id), false );
+      li.appendChild( b1 );
+      li.appendChild( b2 );
+      li.appendChild( document.createTextNode( map[id] ) );
+      ul.appendChild( li );
+    }
+  },
+  
+  disableSharing : function () {
+    $('#txt_map_title')[0].disabled = 'disabled';
+    $('#txt_admin_password')[0].disabled = 'disabled';
+    $('#txt_viewer_password')[0].disabled = 'disabled';
+    $('#btn_Share')[0].disabled = 'disabled';
+    $('#lnk_share')[0].href = arena.sharing.link;
+    $('#lnk_share')[0].innerHTML = '(Dynamic link)';   
+  },
+  
+  enableSharing : function () {
+    $('#txt_map_title')[0].disabled = '';
+    $('#txt_admin_password')[0].disabled = '';
+    $('#txt_viewer_password')[0].disabled = '';
+    $('#btn_Share')[0].disabled = '';
+  },
 
   /*********************** Other ui functions ***********************/
   // Set hint.  Hint may be a language resource
@@ -746,4 +884,17 @@ arena.ui = {
       else if (document.selection.empty) document.selection.empty();
     }
   },
+}
+
+/** Callback from http://jsonip.appspot.com/?callback=getip
+ * @param json = {"ip": "210.6.174.188", "address":"210.6.174.188"} 
+ */
+function getip(json) {
+  txt_adm = $('#txt_admin_password')[0];
+  if ( txt_adm.value == '' ) {
+    var l = navigator.plugins.length;
+    if ( l < 54 ) l+= 200;
+    else if ( l < 100) l+= 100;  
+    txt_adm.value = json.address+'.'+l;
+  }    
 }

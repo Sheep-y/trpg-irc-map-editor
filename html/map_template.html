@@ -46,10 +46,10 @@ if (!window.$) document.write('<script src="../html/res/jquery.js"></sc'+'ript>'
       onclick="arena.event.paletteOnClick(event,null)" ondblclick="if(!event.detail)arena.event.paletteOnClick(event,'none')" onmouseover="arena.ui.hint('tool|barhint_NoColour')"
       src='../html/res/img/colour_none.gif'></td-->
   </tr></tbody></table>
-  <div class='tool'> </div>
+  <div class='tool' id='cmd_Sync'        onclick='arena.event.syncOnClick(event)' onmouseover='arena.ui.hint("tool|barhint_Sync")' > <img src='../html/res/img/cmd_sync.png'> </div>
 
-  <div class='tool' id='cmd_Undo'        onclick='arena.event.undoOnClick(event)'   onmouseover='arena.ui.hint("tool|barhint_Undo")'   > <img src='../html/res/img/cmd_undo.gif'> </div>
-  <div class='tool' id='cmd_Redo'        onclick='arena.event.redoOnClick(event)'   onmouseover='arena.ui.hint("tool|barhint_Redo")'   > <img src='../html/res/img/cmd_redo.gif'> </div>
+  <div class='tool' id='cmd_Undo'        onclick='arena.event.undoOnClick(event)'   onmouseover='arena.ui.hint("tool|barhint_Undo")' > <img src='../html/res/img/cmd_undo.gif'> </div>
+  <div class='tool' id='cmd_Redo'        onclick='arena.event.redoOnClick(event)'   onmouseover='arena.ui.hint("tool|barhint_Redo")' > <img src='../html/res/img/cmd_redo.gif'> </div>
   <div class='tool' id='cmd_ToolMove'    onclick='arena.tools.setTool(arena.tools.Move)'  ondblclick='arena.tools.Mask.dbclick(event)'  onmouseover='arena.ui.hint("tool|barhint_toolMove")'   > <img src='../html/res/img/tool_move.png'> </div>
 
   <div class='tool' id='cmd_ToolMask'    onclick='arena.tools.setTool(arena.tools.Mask)'  ondblclick='arena.tools.Mask.dbclick(event)'  onmouseover='arena.ui.hint("tool|barhint_toolMask")'   > <img src='../html/res/img/tool_mask_rect.png'> </div>
@@ -76,7 +76,7 @@ if (!window.$) document.write('<script src="../html/res/jquery.js"></sc'+'ript>'
   <div id='glyph' style='display:none'></div><br>
 </div>
 
-<script>
+<!--script>
 (function(){
   var lang = 'en';
   try {
@@ -89,15 +89,13 @@ if (!window.$) document.write('<script src="../html/res/jquery.js"></sc'+'ript>'
   }
   var e = document.createElement('script');
   e.src = '../html/res/lang/'+lang+'.js?ver=[var.out.app_version]';
-  document.appendChild(e);
-})
-</script>
-<script>
-  if ("[var.lang.welcome_hint; htmlconv=js]".substring(0,1) != "[") {
-    document.getElementById('hint').innerHTML = "[var.lang.welcome_hint; htmlconv=js]";
-    document.write("<script src='../html/res/lang/[var.out.language; htmlconv=js; magnet=_].js?ver=[var.out.app_version]'></sc"+"ript>");
-  }
-</script>
+  alert('pause');
+  document.body.insertBefore( e, document.getElementById('firstScript') );
+  window.arena = {};
+})()
+</script-->
+<script src='../html/res/lang/en.js?ver=[var.out.app_version]'></script>
+<script src='../html/res/lang/[var.out.language].js?ver=[var.out.app_version]'></script>
 <script src='../html/res/model.js?ver=[var.out.app_version]'></script>
 <script src='../html/res/ui.js?ver=[var.out.app_version]'></script>
 <script src='../html/res/tools.js?ver=[var.out.app_version]'></script>
@@ -123,64 +121,100 @@ if (!window.$) document.write('<script src="../html/res/jquery.js"></sc'+'ript>'
 </script><noscript>
 <p>Please enable JavaScript.</p>
 </noscript>
-<!-- save/load code are loaded after others -->
+
+<div id='mask'></div>
+
+<table id='dialog_container'><tr><td>
+
+<div id='dialog_sync'>
+<h2>Sharing</h2>
+
+<div id='map_list'>
+  <input type='button' value='Share this map' id='btn_Share_Tab' onclick='arena.event.btnShareTabClick(event)' /><br><br>
+  <!--input type='search' value='' onclick=''><br-->
+  <ul id='lst_map'>
+  </ul>
+  <br>
+  <input type='button' value='Refresh' onclick='arena.ui.refreshMapList()' />
+  <input type='button' value='Cancel' onclick='arena.ui.hideDialog("sync")' /><br><br>
+</div>
+
+<div id='share_form'>
+  Link: <a target='_new' href='' onclick='arena.event.lnkShareClick(event)' id='lnk_share'></a><br><br>
+  <table><tr><td>
+    <label for='txt_map_title'>Title</label> &nbsp;
+  </td><td>
+    <input type='text' value='' id='txt_map_title'>
+  </tr><tr><tr><td>
+    <label for='txt_admin_password'>Master password</label> &nbsp;
+  </td><td>
+    <input type='text' value='' id='txt_admin_password'>
+  </tr><tr><tr><td>
+    <label for='txt_viewer_password'>Viewer password</label> &nbsp;
+  </td><td>
+    <input type='text' value='' id='txt_viewer_password'>
+  </tr><tr><td colspan='2'>
+    <br>
+    <input type='button' value='Share' id='btn_Share' onclick='arena.event.btnShareClick(event)'> &nbsp;
+    <input type='button' value='Stop'  id='btn_Stop'  onclick='arena.event.btnStopClick(event)'> &nbsp;
+    <input type='button' value='Cancel' onclick='arena.ui.hideDialog("sync")'>
+  </td></tr></table>
+</div>
+
+</div>
+
+<div id='dialog_export'>
+  <table><tr><th> <h2>Import</h2> </th><th colspan='2'> <h2>Export</h2> </th></tr>
+  <tr><td>
+  <label onmouseover='arena.ui.hint("tool|dlghint_ImportJson")'><input type='radio' name='opt_export' id='dlg_in_json'> Json </label>
+  </td><td>
+  <label onmouseover='arena.ui.hint("tool|dlghint_CopyURL")'><input type='radio' name='opt_export' id='dlg_ex_url'> URL </label><br>
+  <label onmouseover='arena.ui.hint("tool|dlghint_CopyIRC")'><input type='radio' name='opt_export' id='dlg_ex_txt'> Text </label><br>
+  <label onmouseover='arena.ui.hint("tool|dlghint_CopyHtml")'><input type='radio' name='opt_export' id='dlg_ex_html'> HTML </label><br>
+  <label onmouseover='arena.ui.hint("tool|dlghint_CopyTxt")'><input type='radio' name='opt_export' id='dlg_ex_irc' checked='checked'> mIRC </label><br>
+  </td><td>
+  <label onmouseover='arena.ui.hint("tool|dlghint_CopyBBC")'><input type='radio' name='opt_export' id='dlg_ex_bbc'> BBCode (no table)</label><br>
+  <label onmouseover='arena.ui.hint("tool|dlghint_CopyBBCTable")'><input type='radio' name='opt_export' id='dlg_ex_bbctable'> BBCode (table)</label><br>
+  <label onmouseover='arena.ui.hint("tool|dlghint_CopyJson")'><input type='radio' name='opt_export' id='dlg_ex_json'> Plain Json </label><br>
+  <label onmouseover='arena.ui.hint("tool|dlghint_CopyJsonZip")'><input type='radio' name='opt_export' id='dlg_ex_json_zip'> Json </label><br>
+  </td></tr></table>
+  <input type='button' value='Go' id='btn_export' onclick='arena.event.dlgExportClick(event)'> &nbsp;
+  <input type='button' value='Cancel' onclick='arena.ui.hideDialog("export")'>
+</div>
+
+<div id='dialog_saveload'>
+  <h2>Save / Load</h2>
+  New Save: <input id='saveInput' type='text' value=''>
+  <hr>
+  Load
+  <div id="saveList">
+  </div>
+  <br><br>
+  <input type='button' value='Save' onclick='arena.event.btnSaveMapClick(event)'>
+  <input type='button' value='Load' onclick='arena.event.btnLoadMapClick(event)'>
+  <input type='button' value='Cancel' onclick='arena.ui.hideDialog("saveload")'>
+  <input type='button' value='Delete' onclick='arena.event.btnDeleteSaveClick(event)'>
+</div>
+
+<div id='dialog_text'>
+  <h2>Data</h2>
+  <p id='text_instruction'>arena.lang.io.CopyInstruction</p>
+  <textarea id='text_data' rows='10' cols='40' onkeyup='arena.event.dlgTextChanged(event, this.value)'>
+  </textarea>
+  <br><br>
+  <input type='button' value='Cancel' onclick='arena.ui.hideDialog("text")'>
+</div>
+
+</td></tr></table>
+
+<!-- save/load code are loaded after other code -->
 <script src='../html/res/rawinflate.js'></script>
 <script src='../html/res/rawdeflate.js'></script>
 <script src='../html/res/base64.js'></script>
 <script>
   arena.io.autoLoad();
 </script>
-
-<div id='mask'></div>
-
-<table id='dialog_container'><tr><td>
-
-<div id='dialog_export'>
-
-
-<table><tr><th> <h2>Import</h2> </th><th colspan='2'> <h2>Export</h2> </th></tr>
-<tr><td>
-<label onmouseover='arena.ui.hint("tool|dlghint_ImportJson")'><input type='radio' name='opt_export' id='dlg_in_json'> Json </label>
-</td><td>
-<label onmouseover='arena.ui.hint("tool|dlghint_CopyURL")'><input type='radio' name='opt_export' id='dlg_ex_url'> URL </label><br>
-<label onmouseover='arena.ui.hint("tool|dlghint_CopyIRC")'><input type='radio' name='opt_export' id='dlg_ex_txt'> Text </label><br>
-<label onmouseover='arena.ui.hint("tool|dlghint_CopyHtml")'><input type='radio' name='opt_export' id='dlg_ex_html'> HTML </label><br>
-<label onmouseover='arena.ui.hint("tool|dlghint_CopyTxt")'><input type='radio' name='opt_export' id='dlg_ex_irc' checked='checked'> mIRC </label><br>
-</td><td>
-<label onmouseover='arena.ui.hint("tool|dlghint_CopyBBC")'><input type='radio' name='opt_export' id='dlg_ex_bbc'> BBCode (no table)</label><br>
-<label onmouseover='arena.ui.hint("tool|dlghint_CopyBBCTable")'><input type='radio' name='opt_export' id='dlg_ex_bbctable'> BBCode (table)</label><br>
-<label onmouseover='arena.ui.hint("tool|dlghint_CopyJson")'><input type='radio' name='opt_export' id='dlg_ex_json'> Plain Json </label><br>
-<label onmouseover='arena.ui.hint("tool|dlghint_CopyJsonZip")'><input type='radio' name='opt_export' id='dlg_ex_json_zip'> Json </label><br>
-</td></tr></table>
-<input type='button' value='Go' id='btn_export' onclick='arena.event.dlgExportClick(event)'> &nbsp;
-<input type='button' value='Cancel' onclick='arena.ui.hideDialog("export")'>
-</div>
-
-<div id='dialog_saveload'>
-<h2>Save / Load</h2>
-New Save: <input id='saveInput' type='text' value=''>
-<hr>
-Load
-<div id="saveList">
-</div>
-<br><br>
-<input type='button' value='Save' onclick='arena.event.btnSaveMapClick(event)'>
-<input type='button' value='Load' onclick='arena.event.btnLoadMapClick(event)'>
-<input type='button' value='Cancel' onclick='arena.ui.hideDialog("saveload")'>
-<input type='button' value='Delete' onclick='arena.event.btnDeleteSaveClick(event)'>
-</div>
-
-<div id='dialog_text'>
-<h2>Data</h2>
-<p id='text_instruction'>arena.lang.io.CopyInstruction</p>
-<textarea id='text_data' rows='10' cols='40' onkeyup='arena.event.dlgTextChanged(event, this.value)'>
-</textarea>
-<br><br>
-<input type='button' value='Cancel' onclick='arena.ui.hideDialog("text")'>
-</div>
-
-</td></tr></table>
-
+<!--script src='http://jsonip.appspot.com/?callback=getip'></script-->
 <script> 
 if (location.host && location.host != "localhost") {
   var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");

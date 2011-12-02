@@ -1,4 +1,12 @@
 /********************** JavaScript Arena, I/O code *****************************/
+arena.sharing = {
+  mapId : false,
+  isMaster : false,
+  password : '',
+  link : '',
+  timer : 0,
+};
+
 arena.io = {
 
   autoSaveMinInterval : 5 * 60 * 1000, // Don't auto save less then 5 min
@@ -13,12 +21,19 @@ arena.io = {
   autoLoad : function() {
     // Detect unfinished auto save?
     // TODO - wait for auto save function. if loaded don't check map key
-    // Detect map key - ver=20101025&map=w51Tw4FSwoMwFM...
-    var hash = location.hash.match(/^#(\d+)=([+/\w+]+=*)$/);
-    if (hash && hash.length == 3) {
+    // Detect map key - 20101025=w51Tw4FSwoMwFM...
+    // or sync key - 
+    var hash = location.hash.match(/^#(\d{6})=([+/\w+]+=*)$/),
+        sync = location.hash.match(/^#sync=(\d+):?(.*)$/); 
+    if ( hash ) {
       var build = +hash[1];
       this.restoreSaveData('json-zip-base64', hash[2]);
-    }
+    } else if ( sync ) {
+      var id = +hash[1];
+      var password = hash[2] ? hash[2] : '';
+      arena.io.startSync ( id, hash );        
+    } 
+    
   },
   
   /** Called on every change to check auto save. */
@@ -67,6 +82,25 @@ arena.io = {
       }
     }
     arena.ui.setStatus(arena.lang.io.autoSaved.replace('%s', datetime));
+  },
+
+  /******************************** ajax ******************************/
+  syncAjax : function(param) {
+    var ajax = new XMLHttpRequest();
+    ajax.open('POST', window.location.href, false);
+    ajax.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+    ajax.send( param );
+    if ( ajax.status != 200 ) {
+      alert( ajax.status + ' ' + ajax.statusText );
+      return false;
+    } 
+    var result = ajax.responseText;
+    //if ( result.match(/\(0x[0-9A-F]+\)$/) ) {
+    if ( !result.match(/^OK/) ) {
+      alert( result );
+      return false;
+    }
+    return ajax.responseText;
   },
   
   /*************************** inline exports *************************/
@@ -232,16 +266,21 @@ arena.io = {
     var mapsdata = null;
     if (format.match(/-zip/) && !RawDeflate.inflate) {
       alert(arena.map.err_NoDeflate);
-    } else {
-      if (format == 'json-zip-base64')
-        //data = JSON.parse(RawDeflate.Base64.decode(RawDeflate.inflate(RawDeflate.Base64.decode(restore.data))));
-        mapsdata = JSON.parse(RawDeflate.Base64.decode(RawDeflate.inflate(RawDeflate.Base64.decode(data))));
-      else if (format == 'json-zip')
-        mapsdata = JSON.parse(RawDeflate.Base64.decode(RawDeflate.inflate(data)));
-      else if (format == 'json')
-        mapsdata = data;
-      else
+    } else { 
+      try {
+        if (format == 'json-zip-base64')
+          //data = JSON.parse(RawDeflate.Base64.decode(RawDeflate.inflate(RawDeflate.Base64.decode(restore.data))));
+          mapsdata = JSON.parse(RawDeflate.Base64.decode(RawDeflate.inflate(RawDeflate.Base64.decode(data))));
+        else if (format == 'json-zip')
+          mapsdata = JSON.parse(RawDeflate.Base64.decode(RawDeflate.inflate(data)));
+        else if (format == 'json') {
+          if ( typeof data === 'string' ) data = JSON.parse(data); 
+          mapsdata = data;
+        } else
+          return arena.lang.error.MalformedSave;
+      } catch (e) {
         return arena.lang.error.MalformedSave;
+      }
     }
     //if (build <= 20101018) mapsdata = { maps: mapsdata };
     if (!mapsdata.maps && mapsdata.layers) mapsdata = { maps: mapsdata };
@@ -258,6 +297,7 @@ arena.io = {
         // Refresh and reset
         arena.ui.updateLayers();
         arena.map.repaint();
+        arena.map.modified = false;
         result = true;
         cleanup = false;
       } catch (err) {
@@ -499,4 +539,60 @@ arena.io = {
     this.exportAsDoc(result);
   },
   
+  syncToServer : function ( title, admin, viewer ) {
+    var result = arena.io.syncAjax (
+      'ajax=share'+
+      '&title=' +encodeURIComponent( title )+
+      '&master='+encodeURIComponent( admin )+
+      '&viewer='+encodeURIComponent( viewer )+/*
+      '&data='+RawDeflate.Base64.encode( RawDeflate.deflate(
+             RawDeflate.Base64.encode( JSON.stringify(
+             arena.io.getSaveData(arena.map).data ))))
+             */
+      '&data='+JSON.stringify( arena.io.getSaveData(arena.map).data )
+       );
+    if ( result ) {
+      arena.map.title = title;
+      arena.sharing.mapId = +(result.match(/\d+/)[0]);
+      arena.sharing.isMaster = true;
+      arena.sharing.password = admin;
+      arena.sharing.link = window.location.href.replace(/#.*?$/,'')+
+        '#sync='+arena.sharing.mapId;
+      if ( password )
+        arena.sharing.link += ':'+encodeURIComponent( password );
+    }
+    return result;
+  },
+  
+  syncFromServer : function ( id, password ) {
+    var result = arena.io.syncAjax ( 
+      'ajax=sync'+
+      '&id=' +id+
+      '&pass='+encodeURIComponent( password ) );
+    arena.sharing.mapId = 0;
+    if ( result ) {
+      //arena.io.restoreSaveData('json-zip-base64', result.substr(3));
+      arena.io.restoreSaveData('json', result.substr(3));
+      arena.sharing.mapId = id;
+      arena.sharing.isMaster = false;
+      arena.sharing.password = password;
+      arena.sharing.link = window.location.href.replace(/#.*?$/,'')+
+        '#sync='+arena.sharing.mapId;
+      if ( password )
+        arena.sharing.link += ':'+encodeURIComponent( password );
+    }
+    return true;
+  },
+  
+  startSync : function ( id, password ) {
+    var result = arena.io.syncFromServer ( id, password );
+    if ( !result ) return result;
+    $('#txt_viewer_password')[0].value = password;
+    arena.ui.disableSharing();
+    arena.sharing.timer = setInterval ( function() { 
+      arena.io.syncFromServer ( id, password ) } , 3000 );
+    return true;
+  },
+  
 }
+ 

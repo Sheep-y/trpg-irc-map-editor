@@ -90,6 +90,7 @@ arena.reset = function() {
   arena.ui.setForeground(arena.map.background_fill.foreground);
   arena.ui.setBackground(arena.map.background_fill.background);
   arena.commands.resetUndo();
+  arena.map.modified = false;
 }
 
 /************************* Map objects *********************************/

@@ -24,7 +24,7 @@ noscript p {
 }
 
 input {
-    	font-family: monospace;
+  font-family: monospace;
 }
 
 /***************** Grid map **********************/
@@ -263,6 +263,7 @@ input {
 	height: 100%;
 	display:none;
 	z-index: 101;
+  background-color: rgba(0,0,0,0.5);
 }
 #dialog_container td {
 	vertical-align: middle;
@@ -276,6 +277,26 @@ input {
 	background-color: #DDD;
 	border: 2px ridge #DDD;
 	display: none;
+}
+
+#dialog_sync > div {
+  margin: 0 auto;
+}
+
+#map_list ul li {
+  text-align: left;
+}
+
+#map_list ul input {
+  float: right;
+}
+
+#map_list li {
+  clear: both;
+}
+
+#share_form table {
+  width: 100%;
 }
 
 #dialog_export table {

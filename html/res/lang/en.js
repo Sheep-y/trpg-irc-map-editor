@@ -21,6 +21,7 @@ arena.lang = {
     //barhint_UsingLayer : 'You are drawing on this layer.',
     barhint_Foreground : 'Drawing in this foreground colour. Click to fill current mask.',
     //barhint_Background : 'Drawing in this background colour. Click to fill current mask.',
+    barhint_Sync       : 'Sync map to viewers. Double click to setup sharing.',
     barhint_MapInput   : 'Brush text for text tool. Press Enter to set text. Press Delete to clear selected area.',
     barhint_Colour     : 'Click to set foreground, Ctrl/Shift+Click to fill foreground/background of selected area.',
     //barhint_NoColour : 'No colour : Use lower layer\'s colour.',
@@ -77,6 +78,12 @@ arena.lang = {
   map : {
     background : '　',
   },
+  
+  sharing : {
+    MasterPassword : 'Please enter master password:',
+    ViewerPassword : 'Please enter viewer password:',
+    Success : 'Map shared.\nClick sync button to update map.\nDouble-click it to open sync dialog.', 
+  },
 
   io : {
     CopyInstruction : 'Press Ctrl+X to copy.',
@@ -91,11 +98,17 @@ arena.lang = {
     // Drawing error
     NoMask : 'Where should I draw? Please select an area first.',
 
+    // Sync error
+    TitleEmpty : 'Title must not be empty',
+    AdminEmpty : 'Master password must not be empty',
+    AdminViewerSame : 'Master password must not be same with viewer password',
+    TitleExists : 'A shared map with same title already exists',
+    MalformedData : 'Malformed data.', 
+    
     // S/L error
     NoHost : 'Save/load unavailable (Host not found). Blame HTML5 spec.',
     NoLocalStorage : 'No LocalStorage facility. Please upgrade browser or enable offline storage.',
     SaveNotFound : 'Cannot find saved map',
-
 
     // I/O error
     CannotRestore : 'Cannot restore map.',

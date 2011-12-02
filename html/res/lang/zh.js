@@ -21,6 +21,7 @@ arena.lang = {
     //barhint_UsingLayer : 'You are drawing on this layer.',
     barhint_Foreground : '目前的繪圖顏色.',
     //barhint_Background : 'Drawing in this background colour. Click to fill current mask.',
+    barhint_Sync       : '同步地圖給觀眾。雙按可以設定共享選項。',
     barhint_MapInput   : '文字工具的文字. Enter: 設定文字 Delete: 清除遮罩區域',
     barhint_Colour     : '按: 使用此色, Ctrl/Shift+按: 填充遮罩區域的文字顏色/背景顏色',
     //barhint_NoColour : 'No colour : Use lower layer\'s colour.',
@@ -91,11 +92,16 @@ arena.lang = {
     // Drawing error
     NoMask : '請先選擇一片區域',
 
+    // Sync error
+    TitleEmpty : 'Title must not be empty',
+    AdminEmpty : '主密碼不能為空。',
+    AdminViewerSame : '主密碼不能相同於觀看密碼。',
+    TitleExists : 'A shared map with same title already exists', 
+ 
     // S/L error
     NoHost : 'Save/load unavailable (Host not found). Blame HTML5 spec.',
     NoLocalStorage : '沒有 LocalStorage 功能。請升級瀏覽器。',
     SaveNotFound : '找不到存檔',
-
 
     // I/O error
     CannotRestore : '無法恢復地圖',

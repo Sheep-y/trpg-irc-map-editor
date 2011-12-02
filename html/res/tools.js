@@ -260,7 +260,7 @@ arena.tools.Text = {
     unset : function(evt) { this.drawing = false; this.lastBrushCo = undefined; },
     cancel : function(evt) { this.drawing = false; this.lastBrushCo = undefined; },
     outOfCanvas : function(evt) {
-      arena.commands.run(new arena.commands.SetMask([]));
+      if ( arena.map.masked.length > 0 ) arena.commands.run(new arena.commands.SetMask([]));
       this.cancel(evt);
     },
   };
@@ -460,9 +460,10 @@ arena.tools.Mask = {
       arena.map.setMasked(newMask);
     },
     outOfCanvas : function (evt) {
-      if (!this.isInUse)
+      if ( !this.isInUse && arena.map.masked.length > 0 )
         arena.commands.run(new arena.commands.SetMask([]));
-      this.cancel();
+      else
+        this.cancel();
     },
     key : function (evt) {
       var dx = 0, dy = 0;
@@ -509,7 +510,7 @@ arena.tools.Mask = {
     set : function() { this.isInUse = this.isMoving = false; this.reduceCount = 0; },
     unset : function() { this.cancel(); },
     cancel : function() {
-      if (this.isInUse) arena.map.setMarked([]);
+      if ( this.isInUse && arena.map.masked.length > 0 ) arena.map.setMarked([]);
       this.isInUse = this.isMoving = false;
     },
   };
@@ -592,7 +593,7 @@ arena.tools.Move = {
     unset  : function(){ this.reset(); },
     cancel : function(){ this.reset(); },
     outOfCanvas : function() {
-      arena.map.setMasked([]);
+      if ( arena.map.masked.length > 0 ) arena.map.setMasked([]);
       arena.map.setMarked([]);
     },
     reset : function () {
