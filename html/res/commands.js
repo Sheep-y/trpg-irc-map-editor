@@ -8,7 +8,7 @@
  *   desc   : More detailed description of this command.
  *   redo() : Call to redo this action.
  *   undo() : Call to undo this action.
- *   consolidate() : Consolidate next action in queue. Return true if consolidated, return false to leave it untouched.  
+ *   consolidate() : Consolidate next action in queue. Return true if consolidated, return false to leave it untouched.
  *
  */
 
@@ -17,7 +17,7 @@ arena.commands = {
          , 'Erase', 'MoveArea'
          , 'LayerMove', 'LayerDelete', 'LayerAdd', 'LayerShowHide'
          , 'MapRotate'],
-         
+
   undoStack : [],   // commands are unshifted into it
   undoPosition : -1, // point to next command
 
@@ -57,11 +57,11 @@ arena.commands = {
     }
     this.setModified(arena.map, command.desc);
   },
-  
+
   canUndo : function() {
     return this.undoPosition+1 < this.undoStack.length;
   },
-  
+
   canRedo : function() {
     return this.undoPosition >= 0;
   },
@@ -89,17 +89,17 @@ arena.commands = {
     this.setModified(arena.map, arena.lang.command.redo.replace("%s", command.desc));
     return true;
   },
-  
+
   setModified : function(map, status) {
     // If this is new change, set now as auto save compare time
     if (!map.modified)
       map.lastSaveTime = new Date();
-    map.modified = true;
+    map.setModified( true );
     arena.io.checkAutoSave();
     arena.ui.setStatus(status);
     arena.ui.updateUndoRedo();
   },
-  
+
   resetUndo : function() {
     this.undoStack = [];
     this.undoPosition = -1;
@@ -141,13 +141,13 @@ arena.commands = {
     this.coList = coList;
     this.layer = layer;
   },
-  
+
   Erase : function(coList, layer) {
     this.desc = "Erase cells";
     this.coList = coList;
     this.layer = layer;
   },
-  
+
   MoveArea : function(coList, dx, dy, layer, isCopy, setMask) {
     this.desc = isCopy ? "Copy masked area" : "Move masked area";
     this.coList = coList;
@@ -157,13 +157,13 @@ arena.commands = {
     this.isCopy = isCopy;
     this.setMask = setMask;
   },
-  
+
   LayerMove : function(fromIndex, toIndex) {
     this.desc = "Move layer " + arena.map.layers[fromIndex];
     this.fromIndex = fromIndex;
     this.toIndex = toIndex;
   },
-  
+
   LayerDelete : function(target) {
     this.desc = "Delete layer " + target.name;
     this.layer = target;
@@ -173,13 +173,13 @@ arena.commands = {
     this.desc = "Create layer " + name;
     this.name = name;
   },
-  
+
   LayerShowHide : function(layer, visibility) {
     this.desc = "Toogle layer visibility";
     this.layer = layer;
     this.visibility = visibility;
   },
-  
+
   MapRotate : function(degree) {
     this.desc = "Rotate " + degree + " degree";
     this.degree = degree;
@@ -284,10 +284,10 @@ arena.commands.Erase.prototype = {
 arena.commands.MoveArea.prototype = {
   redo : function() {
     var coList = this.coList;
-    var dy = this.dy; 
-    var dx = this.dx; 
+    var dy = this.dy;
+    var dx = this.dx;
     var layer = this.layer;
-    var isCopy = this.isCopy; 
+    var isCopy = this.isCopy;
     // Determin movement scope and direction
     var bounds = arena.coListBounds(coList);
     var map = arena.map;
@@ -510,7 +510,7 @@ arena.commands.MapRotate.prototype = {
     } else {
       // TODO: flexible rotate
       return;
-    } 
+    }
     var newH = map.height-1;
     var newW = map.width-1;
     for (var i = map.layers.length-1; i >= 0; i--) {
@@ -525,7 +525,7 @@ arena.commands.MapRotate.prototype = {
             for (var x = row.length-1; x >= 0; x--) if (row[x]) {
               var cell = row[x];
               var newCo = rotate(x, y, newW, newH);
-              if (cell && cell.text && glyphMap[cell.text]) cell.text = glyphMap[cell.text]; 
+              if (cell && cell.text && glyphMap[cell.text]) cell.text = glyphMap[cell.text];
               l.set(newCo[0], newCo[1], cell);
             };
           }

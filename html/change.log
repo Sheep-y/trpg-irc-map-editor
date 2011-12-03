@@ -1,7 +1,18 @@
 Sheepy's Arena, Change log
 
-== 2011-12: Server implementation ==
-2011-12-02: Finish implementation on map sharing. 
+TODO
+* Add version to sync
+* Export area select tool to free up mask
+* Update Dialog, add enter and esc handling
+* Use html5 form
+* Chinese localisation
+
+== 2011-12: Server side implementation and usabiliy==
+2011-12-04: Ajax is now async. Can have a separate database config php file. Silence php/mysql error messages.
+2011-12-03: Cleanup highligh and text selection more rigorously.
+2011-12-03: Added sync status indicator, sync etag, and gzip compression for view map.
+2011-12-03: Text tool use prompt box instead of textbox, would not overwrite layer text if text is empty.
+2011-12-02: Implemented map sharing. 
 2011-12-01: Avoid unnecessary mask clearing, so that new map won't ask for save on leave.
 2011-11-28: Added export to table BBCode, re-layout import/export screen
 2011-11-28: Loading / importing map would recreate the map correctly (fix move tool failed on restored map)

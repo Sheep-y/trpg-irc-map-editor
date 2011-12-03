@@ -24,7 +24,7 @@ noscript p {
 }
 
 input {
-  font-family: monospace;
+	font-family: monospace;
 }
 
 /***************** Grid map **********************/
@@ -39,7 +39,7 @@ input {
 }
 
 #map td { /* Default cell */
-	margin: 0;               
+	margin: 0;
 	min-height: 20px;
 	height: 20px;
 	max-height: 20px;
@@ -96,6 +96,10 @@ input {
 	border: 1px solid #444;
 }
 
+#toolbox .tool.attention {
+	border: 1px solid red;
+}
+
 #toolbox .disabled {
 	opacity: 0.2;
 	-moz-opacity: 0.2;
@@ -125,12 +129,6 @@ input {
 	border: 0 none transparent;
 }
 
-#toolbox #mapinput {
-	margin-top: 1px;
-	height: 17px;
-	width: 22px;
-	float: left;
-}
 #toolbox #cmd_setAll { width: 48px; }
 /*
 #toolbox #layer {
@@ -161,12 +159,12 @@ input {
 	width: 200px;
 	display: none;
 }
-#toolbox #palette td, #toolbox #palette img { 
-  height: 25px; 
-  width: 18px; 
-  vertical-align:bottom;
-  text-align: center;
-  color: #444;
+#toolbox #palette td, #toolbox #palette img {
+	height: 25px;
+	width: 18px;
+	vertical-align:bottom;
+	text-align: center;
+	color: #444;
 }
 
 #toolbox #layer {
@@ -233,7 +231,7 @@ input {
 }
 
 #statusbar #coordinate_status, #statusbar #dimension_status, #statusbar #current_background {
-    border-right: 2px ridge #DDD;
+		border-right: 2px ridge #DDD;
 }
 #statusbar #hint { border-bottom: 2px ridge #DDD; }
 
@@ -263,7 +261,7 @@ input {
 	height: 100%;
 	display:none;
 	z-index: 101;
-  background-color: rgba(0,0,0,0.5);
+	background-color: rgba(0,0,0,0.5);
 }
 #dialog_container td {
 	vertical-align: middle;
@@ -280,46 +278,38 @@ input {
 }
 
 #dialog_sync > div {
-  margin: 0 auto;
+	margin: 0 auto;
 }
 
-#map_list ul li {
-  text-align: left;
+#dialog_sync #map_list ul li {
+	text-align: left;
 }
 
-#map_list ul input {
-  float: right;
+#dialog_sync #map_list ul input {
+	float: right;
 }
 
-#map_list li {
-  clear: both;
+#dialog_sync #map_list li {
+	clear: both;
 }
 
-#share_form table {
-  width: 100%;
+#dialog_sync #share_form table {
+	width: 100%;
 }
 
 #dialog_export table {
-  margin: 0 auto;
+	margin: 0 auto;
 }
 
 #dialog_export td {
-  text-align: left;
-  vertical-align: top;
+	text-align: left;
+	vertical-align: top;
 }
-  
+
 #dialog_export td, #dialog_export th {
-  padding: 1ex;
+	padding: 1ex;
 }
 
 #dialog_export td:first-child {
-  border-right: 1px solid black;
-}
-
-/************************ Misc ********************************/
-
-#hideFocus {
-	position: fixed;
-	top: -10000px;
-	left: -10000px;
+	border-right: 1px solid black;
 }

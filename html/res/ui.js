@@ -13,8 +13,6 @@ arena.event = {
   lastHint   : '', // Last status bar hint
   lastCursor : '', // Last in use map cursor
 
-  lastMapInputValue : '',
-  mapInputMode : false, // True when inputing, false when not inputing
   mapDialogMode : false, // True when in dialog, false when not in dialog
 
   lastSubmenu: null, // last sub-menu id
@@ -37,7 +35,7 @@ arena.event = {
     this.lastEventTime = time;
     this.lastEventHash = hash;
   },
-  
+
   // Prevent a event from triggering default behaviour
   eatEvent : function(evt, eatSpecial) {
     if (evt.altKey) return; // Alt is used for menu access, shortcut bar, etc.
@@ -48,7 +46,7 @@ arena.event = {
 
   /*********************** Document events ***********************/
   documentMouseUpDown : function(evt) {
-    //$('debug').innerHTML += evt.originalTarget+',';
+    arena.map.setMarked([]);
     var target = evt.target || evt.srcElement;
     if (target && target.tagName && target.tagName.toLowerCase() == "body" && arena.map.tool) {
       arena.map.tool.outOfCanvas(evt);
@@ -58,7 +56,7 @@ arena.event = {
   /*********************** Grid map events ***********************/
   /** When cell is mouse pressed **/
   cellPress : function(evt, x, y) {
-    if (!arena.map.layer || !arena.map.layer.visible) return; 
+    if (!arena.map.layer || !arena.map.layer.visible) return;
     this.checkRepeat(evt, 'press'+x+','+y);
     this.lastMouseEvent = 'down';
     if (arena.map.tool) {
@@ -72,7 +70,7 @@ arena.event = {
   /** When cell is mouse released **/
   cellHover : function(evt, x, y) {
     if (x == this.lastMouseX && y == this.lastMouseY) return;
-    if (!arena.map.layer || !arena.map.layer.visible) return; 
+    if (!arena.map.layer || !arena.map.layer.visible) return;
     this.lastMouseEvent = 'move';
     if (arena.map.tool) {
       arena.map.tool.move(evt, x, y);
@@ -96,7 +94,7 @@ arena.event = {
 
   /** When cell is mouse released **/
   cellRelease : function(evt, x, y) {
-    if (!arena.map.layer || !arena.map.layer.visible) return; 
+    if (!arena.map.layer || !arena.map.layer.visible) return;
     if (!evt.detail && this.lastMouseEvent == 'up' && this.lastMouseX == x && this.lastMouseY == y)
       this.cellPress(evt, x, y); // Recreate IE's missing mousedown event on double click
     this.lastMouseEvent = 'up';
@@ -105,7 +103,6 @@ arena.event = {
       this.updateCursor(evt, x, y);
       arena.ui.setHint(arena.map.tool.hint(evt, x, y));
     }
-    arena.ui.focusBody(); // clear selection
     arena.io.checkAutoSave();
   },
 
@@ -147,28 +144,34 @@ arena.event = {
   },
 
   syncOnClick : function(evt) {
+    arena.event.checkRepeat(evt, 'syncOnClick');
     if ( arena.sharing.mapId ) {
-      if ( arena.sharing.isMaster && evt.detail == 1 ) {
-        arena.io.syncToServer (
-          arena.map.title,
-          arena.sharing.password,
-          $('#txt_viewer_password')[0].value );
-      } else {
+      if ( evt.detail != 1 ) {
+        arena.ui.disableSharing();
         $('#map_list').hide();
         $('#share_form').show();
-        arena.ui.showDialog('sync');    
+        arena.ui.showDialog('sync');
         $('#txt_map_title')[0].focus();
+      } else {
+        if ( arena.sharing.isMaster )
+          arena.io.syncToServer (
+            arena.map.name,
+            arena.sharing.password,
+            $('#txt_viewer_password').val() );
+        else {
+          arena.sharing.etag = '';
+          arena.io.syncFromServer();
+        }
       }
     } else {
-      arena.ui.showDialog('sync');    
-      arena.ui.refreshMapList();
-      $('#lnk_share')[0].href = arena.io.exportToURL( arena.map );
-      $('#lnk_share')[0].innerHTML = '(Static link)';   
       $('#map_list').show();
       $('#share_form').hide();
+      arena.ui.showDialog('sync');
+      arena.ui.refreshMapList();
+      arena.ui.stopSharing();
     }
   },
-  
+
   dlgExportClick : function(evt) {
     // Export
     if ($('#dlg_ex_url')[0].checked)
@@ -185,11 +188,11 @@ arena.event = {
       arena.ui.copyText ( arena.io.exportToJSON(arena.map, arena.map.masked, 'zip-base64') , arena.lang.io.CopyInstruction );
     else if ($('#dlg_ex_json')[0].checked)
       arena.ui.copyText ( arena.io.exportToJSON(arena.map, arena.map.masked) , arena.lang.io.CopyInstruction );
-      
+
     else if ($('#dlg_ex_html')[0].checked) {
       // Special export, open in new doc
       arena.io.exportToHtml(arena.map, arena.map.masked);
-      
+
     } else if ($('#dlg_in_json')[0].checked) {
       // Ok, we are importing
       arena.ui.copyText ( '' , arena.lang.io.ImportInstruction );
@@ -205,10 +208,10 @@ arena.event = {
           arena.ui.hideDialog('text');
         else
           $('#text_instruction').html(result);
-      }      
+      }
     } else {
       // We're exporting, clear on empty
-      if (!txt) arena.ui.hideDialog('text'); 
+      if (!txt) arena.ui.hideDialog('text');
     }
   },
 
@@ -225,7 +228,7 @@ arena.event = {
         var esc = saves[i].replace(/</g,'&lt;').replace(/'/g, '&apos;').replace(/"/g, '&quot;');
         html += "<label class='save'><input type='radio' id='save"+i+"' onclick='$(\"#saveInput\").val(\""+esc+"\")'>"
               + esc + "</label><br>";
-      } 
+      }
       $('#saveList').html(html);
       arena.ui.showDialog('saveload');
       $('#saveInput')[0].select();
@@ -241,70 +244,58 @@ arena.event = {
 
   btnDeleteMapClick : function(id) {
     id = +id;
-    var password = prompt( arena.lang.sharing.MasterPassword );   
+    var password = prompt( arena.lang.tool.dlghint_MasterPassword, $('#txt_admin_password').val() );
     if ( id <= 0 || password === null ) return;
-    var result = arena.io.syncAjax ( 
-      'ajax=unshare'+
-      '&id=' +id+
-      '&pass='+encodeURIComponent( password ) );
-    if ( result !== false )
-      arena.ui.refreshMapList();    
+    var result = arena.io.removeFromServer ( id, password, function(){
+      arena.ui.refreshMapList();
+    });
   },
 
   btnSyncMapClick  : function(id) {
     id = +id;
-    var password = prompt( arena.lang.sharing.ViewerPassword );   
+    var password = prompt( arena.lang.tool.dlghint_ViewerPassword, $('#txt_viewer_password').val() );
     if ( id <= 0 || password === null ) return;
-    if ( arena.io.startSync ( id, password ) )
-      arena.ui.hideDialog('sync');
+    arena.io.startSync ( id, password, function(){ arena.ui.hideDialog('sync') } );
   },
 
   lnkShareClick : function(evt) {
     arena.ui.hideDialog('sync');
-    arena.ui.copyText( $('#lnk_share')[0].href , arena.lang.io.CopyInstruction );
+    arena.ui.copyText( $('#lnk_share')[0].href , arena.lang.tool.dlghint_ShareSuccess );
     if (evt) evt.preventDefault();
     return false;
   },
 
   btnShareClick : function(evt) {
-    var title = $('#txt_map_title')[0].value, 
-        admin = $('#txt_admin_password')[0].value, 
-       viewer = $('#txt_viewer_password')[0].value;
-    if ( title == '' ) return alert( arena.lang.error.TitleEmpty ); 
+    var name = $('#txt_map_title').val(),
+       admin = $('#txt_admin_password').val(),
+      viewer = $('#txt_viewer_password').val();
+    if ( name == '' ) return alert( arena.lang.error.TitleEmpty );
     else if ( admin == '' ) return alert( arena.lang.error.AdminEmpty );
     else if ( admin == viewer ) return alert( arena.lang.error.AdminViewerSame );
     else {
-      var result = arena.io.syncToServer( title, admin, viewer );
-      if ( result === false ) return; 
-      arena.ui.disableSharing();
-      arena.event.lnkShareClick();
+      arena.io.syncToServer( name, admin, viewer, function(){
+        arena.ui.disableSharing();
+        arena.event.lnkShareClick();
+      });
     }
   },
 
   btnStopClick : function(evt) {
-    if ( arena.sharing.timer ) {
-      clearInterval( arena.sharing.timer );
-      arena.sharing.timer = 0;
-    }
     if ( arena.sharing.mapId && arena.sharing.isMaster ) {
-      var result = arena.io.syncAjax ( 
-        'ajax=unshare'+
-        '&id=' +arena.sharing.mapId+
-        '&pass='+encodeURIComponent( arena.sharing.password ) );
-      if ( result === false ) return; 
+      arena.io.removeFromServer ( arena.sharing.mapId, arena.sharing.password, function(){
+        arena.ui.stopSharing();
+      });
     } else {
       arena.ui.hideDialog('sync');
+      arena.ui.stopSharing();
     }
-    arena.sharing.mapId = 0;
-    arena.sharing.isMaster = false;
-    arena.ui.enableSharing();
   },
 
   btnSaveMapClick : function(evt) {
     arena.io.saveMap($('#saveInput').val(), 'local');
     arena.ui.hideDialog("saveload");
   },
-  
+
   btnLoadMapClick : function(evt) {
     var saves = arena.io.listSaves('local');
     for (var i = 0; i < saves.length; i++)
@@ -316,7 +307,7 @@ arena.event = {
       }
     arena.ui.hideDialog("saveload");
   },
-  
+
   btnDeleteSaveClick : function(evt) {
     var saves = arena.io.listSaves('local');
     for (var i = 0; i < saves.length; i++)
@@ -326,16 +317,8 @@ arena.event = {
       }
     arena.ui.hideDialog("saveload");
   },
-  
+
   /************************ Toolbox pattle/text *********************************/
-
-  setForegroundOnClick : function(evt) {
-    //arena.commands.run(new arena.commands.SetForeground(arena.map.foreground, arena.map.masked, arena.map.layer));
-  },
-
-  setBackgroundOnClick : function(evt) {
-    //arena.commands.run(new arena.commands.SetBackground(arena.map.background, arena.map.masked, arena.map.layer));
-  },
 
   mapKeyDown : function(evt) {
     if (this.mapDialogMode) return;
@@ -346,26 +329,16 @@ arena.event = {
       evt.pressCount = 1;
     switch (evt.keyCode) {
       case 27: // Escape: send cancel command to tool
-        if (!this.mapInputMode) {
-          if (arena.map.tool && arena.map.tool.cancel) {
-            arena.map.tool.cancel();
-            this.updateCursor(evt, this.lastMouseX, this.lastMouseY);
-          }
-        } else {
-          $('#mapinput').val(this.lastMapInputValue);
-          arena.ui.focusBody();
+        if (arena.map.tool && arena.map.tool.cancel) {
+          arena.map.setMarked([]);
+          arena.map.tool.cancel();
+          this.updateCursor(evt, this.lastMouseX, this.lastMouseY);
         }
         arena.event.eatEvent(evt);
         break;
       case 13: // Enter: set text
-        if (!this.mapInputMode) {
-          arena.ui.focusMapInput();
-          this.lastMapInputValue = $('#mapinput').val();
-        } else {
-//          this.setTextOnClick(evt);
-          arena.map.text = $('#mapinput').val();
+        if ( arena.ui.promptTextBrush() ) {
           arena.tools.setTool(arena.tools.Text);
-          arena.ui.focusBody();
         }
         arena.event.eatEvent(evt);
         break;
@@ -373,11 +346,9 @@ arena.event = {
       case 9: // Tab
         arena.event.eatEvent(evt);
         break;
-        
-      default: 
-        if (!this.mapInputMode) {
-      arena.ui.focusBody(); // clear selection
-          switch (evt.keyCode) {
+
+      default:
+        switch (evt.keyCode) {
 
       case 32: // Space
       case 40: // Down
@@ -402,7 +373,6 @@ arena.event = {
       case 84: // T
         arena.tools.setTool(arena.tools.Text, evt);
         arena.event.eatEvent(evt, false);
-        arena.ui.focusMapInput();
         break;
       case 69: // E
         arena.tools.setTool(arena.tools.Eraser, evt);
@@ -467,7 +437,7 @@ arena.event = {
         break;
       //case 56: // 8
       //case 57: // 9
-      
+
       case 107: // +
         if (evt.shiftKey) {
           // Select higher layer
@@ -486,8 +456,8 @@ arena.event = {
           arena.map.tool.key(evt);
         }
         break;
-        
-      
+
+
       case 109: // -
         if (evt.shiftKey) {
           // Select lower layer
@@ -511,7 +481,6 @@ arena.event = {
         arena.map.tool.key(evt);
         //if (console) console.log(evt.keyCode);
       }
-      }
     }
     if (evt.keyCode < 32) // Update cursor for control characters - Shift, Ctrl, Alt, etc.
       this.updateCursor(evt, this.lastMouseX, this.lastMouseY);
@@ -524,32 +493,17 @@ arena.event = {
       this.updateCursor(evt, this.lastMouseX, this.lastMouseY);
   },
 
-  /*
-  mapInputKeyDown : function(evt) {
-    return;
-    if (evt.keyCode == 27 || evt.keyCode == 13) {
-      switch (evt.keyCode) {
-        case 27: // Escape: cancel text edit
-        case 13: // Enter: accept and return
-      }
-    }
-  },
-
-  mapInputKeyUp : function(evt) {
-  },
-  */
-  
   documentClose : function(evt) {
     if (arena.map.modified)
       return arena.lang.io.notSaved;
   },
-  
+
   /************************ Toolbox tab *********************************/
 
   undoOnClick : function(evt) {
     arena.commands.undo();
   },
-  
+
   redoOnClick : function(evt) {
     arena.commands.redo();
   },
@@ -565,7 +519,7 @@ arena.event = {
     $('#glyph').show();
     arena.ui.updateButtons();
   },
-  
+
   addLayerOnClick : function(evt) {
     var name = prompt("New layer name?", "New Layer");
     if (name)
@@ -576,7 +530,7 @@ arena.event = {
     if (arena.map.layers.length > 1)
       arena.commands.run(new arena.commands.LayerDelete(arena.map.layer));
   },
-  
+
   layerOnClick : function(evt, layer) {
     if (evt.detail > 1 && evt.detail <= 3) {
       arena.commands.run(new arena.commands.LayerShowHide(arena.map.layer, !arena.map.layer.visible));
@@ -617,13 +571,9 @@ arena.event = {
       arena.commands.run(new arena.commands.SetForeground(colour, arena.map.masked, arena.map.layer));
     } else if (evt.shiftKey) { // Quick set background: alt+press
       arena.commands.run(new arena.commands.SetBackground(colour, arena.map.masked, arena.map.layer));
-    } else //if (evt.detail % 2 == 1) {
-      //this.lastForeground = arena.map.foreground;
+    } else {
       arena.ui.setForeground(colour);
-    /*} else { // Double click: restore foreground and set background instead
-      arena.ui.setForeground(this.lastForeground);
-      arena.ui.setBackground(colour);
-    }*/
+    }
   },
 
   hideSubmenu : function() {
@@ -637,8 +587,9 @@ arena.event = {
       clearTimeout(this.submenuTimer);
       this.submenuTimer = null;
     }
-    if (!$('#'+menu)[0].style.display || $('#'+menu)[0].style.display == 'none') {
-      $('#'+menu)[0].style.display = 'table';
+    var display = $('#'+menu).css('display');
+    if ( !display || display == 'none') {
+      $('#'+menu).css('display', 'table');
       this.lastSubmenu = menu;
     }
   },
@@ -651,7 +602,7 @@ arena.event = {
     if (evt.ctrlKey || evt.metaKey) // Quick set text: ctrl+press
       arena.commands.run(new arena.commands.SetText(glyph, arena.map.masked, arena.map.layer));
     else {
-      arena.map.text = $("#mapinput")[0].value = glyph;
+      arena.ui.setText( glyph );
       arena.tools.setTool(arena.tools.Text);
     }
   },
@@ -678,7 +629,7 @@ arena.ui = {
       if (i++ % 2 != 0) tbody.appendChild(tr);
     }
   },
-  
+
   updateButtons : function() {
     $('.tool[id]').removeClass('active');
     arena.tools.list.forEach(function(name){
@@ -692,7 +643,7 @@ arena.ui = {
       $('#cmd_ViewGlyph').addClass('active');
     arena.ui.updateUndoRedo();
   },
-  
+
   updateUndoRedo : function() {
     if (!arena.commands.canUndo())
       $('#cmd_Undo').addClass('disabled');
@@ -739,7 +690,7 @@ arena.ui = {
   },
 
   setText : function (text) {
-    $('#mapinput').val(arena.map.text = text);
+    $('#cmd_Text').html( arena.map.text = text );
   },
 
   setForeground : function (colour) {
@@ -751,21 +702,11 @@ arena.ui = {
     $('#cmd_Foreground').css('border', '2px solid '+colour);
   },
 
-  focusMapInput : function() {
-    var i = $('#mapinput')[0];
-    i.disabled = false;
-    i.focus();
-    i.select();
-    arena.event.mapInputMode = true;
-  },
-  
-  focusBody : function() {
-    arena.event.mapInputMode = false;
-    var i = $('#hideFocus')[0]
-    i.focus();
-    i.select();
-    i.disabled = true;
-    //setTimeout(document.body.focus, 10);
+  promptTextBrush : function() {
+    var t = prompt ( arena.lang.tool.dlghint_TextPrompt, arena.map.text );
+    if ( t === null ) return t;
+    arena.ui.setText( t );
+    return t;
   },
 
   /*********************** Status bar functions ***********************/
@@ -790,6 +731,7 @@ arena.ui = {
   /*********************** Dialog functions ***********************/
   showDialog : function (id) {
     if ($('#dialog_'+id).length <= 0) return;
+    arena.map.setMarked([]);
     $('#masqk').css('display', 'block');
     $('#dialog_'+id).css('display', 'block');
     $('#dialog_container').css('display', 'table');
@@ -803,7 +745,7 @@ arena.ui = {
     arena.event.mapDialogMode = false;
     $('#dialog_container, #dialog_'+id+', #mask').hide();
   },
-  
+
   copyText : function (text, instruction) {
     arena.ui.hideDialog('export');
     // Default to export
@@ -815,52 +757,71 @@ arena.ui = {
     textarea.select();
     textarea.focus();
   },
-  
+
   refreshMapList : function () {
-    var result = arena.io.syncAjax( 'ajax=list' ),
-            ul = $('#lst_map')[0];
-    if ( result === false ) return false;
-    ul.innerHTML = '';
-    try {
-      result = JSON.parse(result.substr(3));
-    } catch (e) {
-      ul.appendChild ( document.createTextNode( arena.lang.error.MalformedData ) );
-      return;
-    }
-    // <li> <input type='button' value='Delete' /> <input type='button' value='Load' /> Test </li>
-    var map = result.maps;
-    for ( var id in map ) {
-      var li = document.createElement('li'),
-          b1 = document.createElement('input'),
-          b2 = document.createElement('input');
-      b1.type = b2.type = 'button';
-      b1.value = 'Delete';
-      b1.addEventListener ( 'click', (function(id){ return function(){
-          arena.event.btnDeleteMapClick(id) } })(id), false );   
-      b2.value = 'Load';
-      b2.addEventListener ( 'click', (function(id){ return function(){
-          arena.event.btnSyncMapClick(id) } })(id), false );
-      li.appendChild( b1 );
-      li.appendChild( b2 );
-      li.appendChild( document.createTextNode( map[id] ) );
-      ul.appendChild( li );
+    arena.io.ajax( 'ajax=list', null,
+    function( result ){
+      var ul = $('#lst_map')[0];
+      ul.innerHTML = '';
+      try {
+        result = JSON.parse(result.responseText.substr(3));
+      } catch (e) {
+        ul.appendChild ( document.createTextNode( arena.lang.error.MalformedData ) );
+        return;
+      }
+      var map = result.maps;
+      for ( var id in map ) {
+        var li = document.createElement('li'),
+            b1 = document.createElement('input'),
+            b2 = document.createElement('input');
+        b1.type = b2.type = 'button';
+        b1.value = 'Delete';
+        b1.addEventListener ( 'click', (function(id){ return function(){
+            arena.event.btnDeleteMapClick(id) } })(id), false );
+        b2.value = 'View';
+        b2.addEventListener ( 'click', (function(id){ return function(){
+            arena.event.btnSyncMapClick(id) } })(id), false );
+        li.appendChild( b1 );
+        li.appendChild( b2 );
+        li.appendChild( document.createTextNode( map[id] ) );
+        ul.appendChild( li );
+      }
+    });
+  },
+
+  setOutOfSync : function ( needSync ) {
+    if ( needSync && arena.sharing.mapId ) {
+      $('#cmd_Sync').addClass('attention');
+    } else {
+      $('#cmd_Sync').removeClass('attention');
     }
   },
-  
+
   disableSharing : function () {
     $('#txt_map_title')[0].disabled = 'disabled';
     $('#txt_admin_password')[0].disabled = 'disabled';
     $('#txt_viewer_password')[0].disabled = 'disabled';
     $('#btn_Share')[0].disabled = 'disabled';
-    $('#lnk_share')[0].href = arena.sharing.link;
-    $('#lnk_share')[0].innerHTML = '(Dynamic link)';   
+    $('#lnk_share').html( arena.lang.tool.dlghint_ShareDynamic )[0].href = arena.sharing.link;
   },
-  
-  enableSharing : function () {
+
+  stopSharing : function () {
+    /* Update sharing status */
+    if ( arena.sharing.timer ) {
+      clearInterval( arena.sharing.timer );
+      arena.sharing.timer = 0;
+    }
+    arena.sharing.mapId = 0;
+    arena.sharing.etag = '';
+    arena.sharing.isMaster = false;
+    arena.ui.setOutOfSync( false );
+
+    /* Enable dialog inputes and update link */
     $('#txt_map_title')[0].disabled = '';
     $('#txt_admin_password')[0].disabled = '';
     $('#txt_viewer_password')[0].disabled = '';
     $('#btn_Share')[0].disabled = '';
+    $('#lnk_share').html( arena.lang.tool.dlghint_ShareStatic )[0].href = arena.io.exportToURL( arena.map );
   },
 
   /*********************** Other ui functions ***********************/
@@ -887,14 +848,14 @@ arena.ui = {
 }
 
 /** Callback from http://jsonip.appspot.com/?callback=getip
- * @param json = {"ip": "210.6.174.188", "address":"210.6.174.188"} 
+ * @param json = {"ip": "12.45.56.78", "address":"yourdnsname"}
  */
 function getip(json) {
   txt_adm = $('#txt_admin_password')[0];
   if ( txt_adm.value == '' ) {
     var l = navigator.plugins.length;
     if ( l < 54 ) l+= 200;
-    else if ( l < 100) l+= 100;  
-    txt_adm.value = json.address+'.'+l;
-  }    
+    else if ( l < 100) l+= 100;
+    txt_adm.value = json.ip+'.'+l;
+  }
 }

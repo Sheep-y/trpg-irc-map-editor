@@ -5,6 +5,7 @@ arena.sharing = {
   password : '',
   link : '',
   timer : 0,
+  etag : '',
 };
 
 arena.io = {
@@ -16,31 +17,31 @@ arena.io = {
   pauseAutoSave : false, // pause auto save when in dialog
 
   /************* Auto save/load - auto recovery / map key load ************/
-  
+
   /** Called once on load to do auto load, also setup auto save */
   autoLoad : function() {
     // Detect unfinished auto save?
     // TODO - wait for auto save function. if loaded don't check map key
     // Detect map key - 20101025=w51Tw4FSwoMwFM...
-    // or sync key - 
-    var hash = location.hash.match(/^#(\d{6})=([+/\w+]+=*)$/),
-        sync = location.hash.match(/^#sync=(\d+):?(.*)$/); 
+    // or sync key -
+    var hash = location.hash.match(/^#(\d{8})=([+/\w+]+=*)$/),
+        sync = location.hash.match(/^#sync=(\d+):?(.*)$/);
     if ( hash ) {
       var build = +hash[1];
       this.restoreSaveData('json-zip-base64', hash[2]);
     } else if ( sync ) {
-      var id = +hash[1];
-      var password = hash[2] ? hash[2] : '';
-      arena.io.startSync ( id, hash );        
-    } 
-    
+      var id = +sync[1];
+      var password = sync[2] ? sync[2] : '';
+      arena.io.startSync ( id, password );
+    }
+
   },
-  
+
   /** Called on every change to check auto save. */
   checkAutoSave : function() {
     var map = arena.map, io = arena.io;
     if (!map.modified) return;
-    
+
     // Cancel last timeout, then check whethr it is time to save
     clearTimeout(io.autoSaveTimer);
     var dt = new Date() - map.lastSaveTime;
@@ -57,12 +58,12 @@ arena.io = {
 
     // Finally, check again in a short interval
     } else {
-    
+
       io.autoSaveTimer = setTimeout(io.checkAutoSave, io.autoSaveDelay);
 
     }
   },
-  
+
   doAutoSave : function() {
     var io = arena.io;
     if (io.pauseAutoSave)
@@ -72,7 +73,7 @@ arena.io = {
     // Do our save
     var d = new Date(), datetime = d.getHours()*100 + d.getMinutes();
     datetime = (d.getYear()+1900)+'-'+(d.getMonth()+1)+'-'+d.getDate()+' '+( datetime >= 1000 ? '' : '0')+datetime;
-    var saveName = 'Autosave ' + datetime 
+    var saveName = 'Autosave ' + datetime
     io.saveMap(saveName, 'local', true);
     // Delete previous autosaves
     var list = io.listSaves('local');
@@ -85,24 +86,36 @@ arena.io = {
   },
 
   /******************************** ajax ******************************/
-  syncAjax : function(param) {
+  ajax : function(param, header, success, fail) {
     var ajax = new XMLHttpRequest();
-    ajax.open('POST', window.location.href, false);
+    ajax.open('POST', window.location.href);
     ajax.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-    ajax.send( param );
-    if ( ajax.status != 200 ) {
-      alert( ajax.status + ' ' + ajax.statusText );
-      return false;
-    } 
-    var result = ajax.responseText;
-    //if ( result.match(/\(0x[0-9A-F]+\)$/) ) {
-    if ( !result.match(/^OK/) ) {
-      alert( result );
-      return false;
+    if (header) {
+      for (var tag in header)
+        ajax.setRequestHeader( tag, header[tag] );
     }
-    return ajax.responseText;
+    ajax.onreadystatechange = function( evt ) {
+      if ( ajax.readyState == 4 ) {
+        if ( ajax.status == 304 ) {
+          if ( fail ) fail( null );
+        } else if ( ajax.status != 200 ) {
+          alert( ajax.status + ' ' + ajax.statusText );
+          if ( fail ) fail( false );
+        } else {
+          var result = ajax.responseText;
+          if ( !result.match(/^OK/) ) {
+            //var error = result.match(/\(0x[0-9A-F]+\)$/);
+            alert( result );
+            if ( fail ) fail( false );
+          } else {
+            if ( success ) success ( ajax );
+          }
+        }
+      }
+    };
+    ajax.send( param );
   },
-  
+
   /*************************** inline exports *************************/
 
 
@@ -144,10 +157,10 @@ arena.io = {
       }
     };
   },
-  
-  
+
+
   /************************ Previous builds *****************************
-     
+
   { "build" : 20101018,
     "format" : "json.zip.base64", // Or "json", or "json.zip"
     "maps" : Base64(Deflate(Base64( [{
@@ -155,32 +168,32 @@ arena.io = {
         width: map.width,
         height: map.height,
         background : map.background_fill,
-        masked: map.masked,  
+        masked: map.masked,
         layers: map.layers { name, cells[][]{text, background, foreground}, visibiilty }
       }] ))) }
-      
+
   { "id" : "sheepy.arena.20101025.json-zip-base64", // Or "json", or "json-zip"
     "data" : Base64(Deflate(Base64( { maps : [{
         name: map.name,
         width: map.width,
         height: map.height,
         background : map.background_fill,
-        masked: map.masked,  
+        masked: map.masked,
         layers: map.layers { name, cells[][]{text, background, foreground}, visibiilty }
       }] } ))) }
-  
+
   /************************ Save / Load ********************************/
 
-  /** List saved map */  
+  /** List saved map */
   listSaves : function(server) {
     if (server == 'local') {
       var list = localStorage['sheepy.arena.saveList'];
       if (!list || !list.length) return [];
       else return JSON.parse(list);
     }
-  }, 
+  },
 
-  /** Save current map */  
+  /** Save current map */
   saveMap : function(name, server, autosave) {
     var map = arena.map;
     if (server == 'local') {
@@ -199,8 +212,8 @@ arena.io = {
     }
     map.lastSaveTime = new Date();
     if (!autosave)
-      map.modified = false;
-  }, 
+      map.setModified( false );
+  },
 
   /** Load a map */
   loadMap : function(name, server) {
@@ -215,7 +228,7 @@ arena.io = {
     }
   },
 
-  /** Delete a saved map */  
+  /** Delete a saved map */
   deleteSave : function(name, server) {
     if (server == 'local') {
       // Delete item
@@ -230,7 +243,7 @@ arena.io = {
         }
     }
   },
-  
+
   /************************** Import **********************************/
 
   /** Import map from json format, including backward compatibility conversion */
@@ -240,7 +253,7 @@ arena.io = {
       var restore = JSON.parse(data);
     } catch (err) {
     }
-    
+
     // Basic checkings and version normalisation
     if (restore && !restore.id && restore.build && restore.build <= 20101018 && restore.maps) {
       restore.id = 'sheepy.arena.'+restore.build+'.'+restore.format.replace(/\./g,'-');
@@ -252,9 +265,9 @@ arena.io = {
     }
 
     var spec = restore.id.match(/^sheepy\.arena\.(\d{8})\.([\w-]+)$/);
-    
+
     if (!spec || spec.length != 3) return arena.lang.error.MalformedSave;
-    
+
     //var build = restore.build = +spec[1];
     var format = restore.format = spec[2];
     return this.restoreSaveData(format, restore.data);
@@ -266,7 +279,7 @@ arena.io = {
     var mapsdata = null;
     if (format.match(/-zip/) && !RawDeflate.inflate) {
       alert(arena.map.err_NoDeflate);
-    } else { 
+    } else {
       try {
         if (format == 'json-zip-base64')
           //data = JSON.parse(RawDeflate.Base64.decode(RawDeflate.inflate(RawDeflate.Base64.decode(restore.data))));
@@ -274,7 +287,7 @@ arena.io = {
         else if (format == 'json-zip')
           mapsdata = JSON.parse(RawDeflate.Base64.decode(RawDeflate.inflate(data)));
         else if (format == 'json') {
-          if ( typeof data === 'string' ) data = JSON.parse(data); 
+          if ( typeof data === 'string' ) data = JSON.parse(data);
           mapsdata = data;
         } else
           return arena.lang.error.MalformedSave;
@@ -286,7 +299,7 @@ arena.io = {
     if (!mapsdata.maps && mapsdata.layers) mapsdata = { maps: mapsdata };
     return this.restoreData(mapsdata);
   },
-  
+
   restoreData : function(data) {
     // Map is erased below this point, mark cleaup on failure
     var cleanup = true;
@@ -297,7 +310,7 @@ arena.io = {
         // Refresh and reset
         arena.ui.updateLayers();
         arena.map.repaint();
-        arena.map.modified = false;
+        arena.map.setModified( false );
         result = true;
         cleanup = false;
       } catch (err) {
@@ -307,7 +320,7 @@ arena.io = {
     } else {
       result = arena.lang.error.MalformedSave;
     }
-    
+
     // Reset if we got unknown error
     if (cleanup) {
       arena.reset();
@@ -315,33 +328,33 @@ arena.io = {
     return result;
   },
 
-  /** Given map data, try to restore maps */  
+  /** Given map data, try to restore maps */
   restoreMaps : function(data) {
     var maps = data.maps;
     arena.commands.resetUndo();
     arena.map.layer = null;
     arena.map.layers = [];
     var map = maps[0];
-    
+
     if (map.width != arena.map.width || map.height != arena.map.height)
       arena.map.recreate(map.width, map.height);
     arena.map.name = map.name;
     arena.map.background_fill = map.background;
-    
+
     for (var i = 0; i < map.layers.length; i++) {
       // Do each layer
       var l = map.layers[i];
       var nl = new arena.Layer(l.name);
       arena.map.addLayer(nl);
       nl.visible = l.visible;
-      
+
       for (var y = l.cells.length-1; y >= 0; y--)
         // Do each row
         if (l.cells[y]) {
           var row = l.cells[y];
-          var newRow = []; 
+          var newRow = [];
           nl.cells[y] = newRow;
-          
+
           for (var x = row.length-1; x >= 0; x--)
             if (row[x]) {
               // Restore cell
@@ -352,14 +365,14 @@ arena.io = {
               newc.background = c.background;
               newc.foreground = c.foreground;
             }
-        } 
+        }
     }
     arena.map.setMasked(map.masked);
   },
 
 
   /************************** Export **********************************/
-  
+
   /** Export in zipped format */
   exportToURL : function (map, area) {
     if (!JSON.stringify)
@@ -369,12 +382,12 @@ arena.io = {
                this.getSaveData(map).data )) ));
     return location.href.replace(/#.*?$/,'')+"#20110303="+data;
   },
-  
+
   /** Export whole map in compressed JSON format */
   exportToJSON : function (map, area, type) {
     if (!JSON.stringify)
       return arena.lang.err_NoJSON;
-    var data = this.getSaveData(map); 
+    var data = this.getSaveData(map);
     data.id += 'json';
     // Zip library from http://github.com/dankogai/js-deflate
     if (RawDeflate.deflate && (type=='zip'||type=='zip-base64') ) {
@@ -492,7 +505,7 @@ arena.io = {
     result += '[/table]';
     return result;
   },
-  
+
   /** Export in plain text **/
   exportToTxt : function(map, area) {
     var bounds = this.getExportArea(map, area);
@@ -528,7 +541,7 @@ arena.io = {
     result += "</style>\n</head><body><h1>" + map.title.replace('<', '&lt;').replace('&','&amp;') + "</h1><table id='map'>";
     for (var y = minY; y <= maxY; y++) { var row = cells[y];
       result += '<tr>';
-      for (var x = minX; x <= maxX; x++) { var cell = row[x]; 
+      for (var x = minX; x <= maxX; x++) { var cell = row[x];
         result += '<td style="color:'+cell.foreground+';background-color:'+cell.background+'">';
         result += cell.text + '</td>';
       }
@@ -538,41 +551,49 @@ arena.io = {
     result += "</table></body></html>";
     this.exportAsDoc(result);
   },
-  
-  syncToServer : function ( title, admin, viewer ) {
-    var result = arena.io.syncAjax (
+
+  /** Synchronise map to server */
+  syncToServer : function ( name, admin, viewer, success ) {
+    arena.map.name = name;
+    arena.io.ajax (
       'ajax=share'+
-      '&title=' +encodeURIComponent( title )+
+      '&title=' +encodeURIComponent( name )+
       '&master='+encodeURIComponent( admin )+
       '&viewer='+encodeURIComponent( viewer )+/*
       '&data='+RawDeflate.Base64.encode( RawDeflate.deflate(
              RawDeflate.Base64.encode( JSON.stringify(
              arena.io.getSaveData(arena.map).data ))))
              */
-      '&data='+JSON.stringify( arena.io.getSaveData(arena.map).data )
-       );
-    if ( result ) {
-      arena.map.title = title;
-      arena.sharing.mapId = +(result.match(/\d+/)[0]);
+      '&data='+JSON.stringify( arena.io.getSaveData(arena.map).data ),
+      null,
+    function( result ) {
+      arena.sharing.mapId = +(result.responseText.match(/\d+/)[0]);
       arena.sharing.isMaster = true;
       arena.sharing.password = admin;
       arena.sharing.link = window.location.href.replace(/#.*?$/,'')+
         '#sync='+arena.sharing.mapId;
-      if ( password )
-        arena.sharing.link += ':'+encodeURIComponent( password );
-    }
-    return result;
+      if ( viewer )
+        arena.sharing.link += ':'+encodeURIComponent( viewer );
+      arena.ui.setOutOfSync( false );
+      if ( success ) success( result );
+    });
   },
-  
-  syncFromServer : function ( id, password ) {
-    var result = arena.io.syncAjax ( 
+
+  /** Synchronise map from server */
+  syncFromServer : function ( id, password, success ) {
+    if ( id === undefined ) id = arena.sharing.mapId; // Bug from firefox
+    if ( navigator.onLine === false || id <= 0 ) return;
+    if ( password === undefined ) password = arena.sharing.password;
+    arena.io.ajax (
       'ajax=sync'+
       '&id=' +id+
-      '&pass='+encodeURIComponent( password ) );
-    arena.sharing.mapId = 0;
-    if ( result ) {
-      //arena.io.restoreSaveData('json-zip-base64', result.substr(3));
-      arena.io.restoreSaveData('json', result.substr(3));
+      '&pass='+encodeURIComponent( password )+
+      '&etag='+arena.sharing.etag , {
+        'If-None-Match' : arena.sharing.etag
+      },
+    function( result ){
+      if ( arena.map.tool ) arena.map.tool.cancel();
+      arena.io.restoreSaveData('json', result.responseText.substr(3));
       arena.sharing.mapId = id;
       arena.sharing.isMaster = false;
       arena.sharing.password = password;
@@ -580,19 +601,32 @@ arena.io = {
         '#sync='+arena.sharing.mapId;
       if ( password )
         arena.sharing.link += ':'+encodeURIComponent( password );
-    }
-    return true;
+      arena.sharing.etag = result.getResponseHeader('ETag');
+      arena.ui.setOutOfSync( false );
+      if ( success ) success( result );
+    }, function( result ) {
+      if ( result !== null )
+        arena.ui.stopSharing();
+    });
   },
-  
-  startSync : function ( id, password ) {
-    var result = arena.io.syncFromServer ( id, password );
-    if ( !result ) return result;
-    $('#txt_viewer_password')[0].value = password;
-    arena.ui.disableSharing();
-    arena.sharing.timer = setInterval ( function() { 
-      arena.io.syncFromServer ( id, password ) } , 3000 );
-    return true;
+
+  /** Delete map from server */
+  removeFromServer : function ( id, password, success ) {
+    arena.io.ajax (
+      'ajax=unshare'+
+      '&id=' +id+
+      '&pass='+encodeURIComponent( password ), null, success );
   },
-  
+
+  /** Start viewer synchronisation */
+  startSync : function ( id, password, success ) {
+    arena.io.syncFromServer ( id, password, function( result ){
+      $('#txt_map_title').val( arena.map.name );
+      $('#txt_viewer_password').val( password );
+      arena.ui.disableSharing();
+      arena.sharing.timer = setInterval ( function() {
+        arena.io.syncFromServer( id, password ) }, 3000 );
+      if ( success ) success( result );
+    });
+  },
 }
- 

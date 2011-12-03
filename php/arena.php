@@ -8,8 +8,11 @@ $config = array(
   'db_pass' => '',
 );
 
+// Load/override settings if config file exists
+if ( file_exists('config.php') ) include('config.php');
+
 $out = array(
-  'app_version' => '20111202',
+  'app_version' => '20111203',
   'language' => 'en',
   'title' => 'Map1',
 );
@@ -27,12 +30,12 @@ function conn() {
   global $config;
   $conn = mysql_connect( $config['db_host'], $config['db_user'], $config['db_pass'] );
   if ( !$conn ) {
-    echo 'ERROR: Cannot connect to database. (0x10)';
+    echo 'ERROR 0x10: Cannot connect to database.';
     die;
   }
   mysql_query( "SET NAMES 'UTF8'" );
   if ( !mysql_select_db( $config['db_name'] ) ) {
-    echo 'ERROR: Database not found. (0x11)';
+    echo 'ERROR 0x11: Database not found.';
     mysql_close( $conn );
     die;
   }
@@ -44,13 +47,13 @@ function list_map() {
 
   // Connect and escape strings
   $table = $config['db_prefix'].'arena_syncmap';
-  $conn = conn();
+  $conn = @conn();
   
   // Delete old maps and then list maps
-  mysql_query("DELETE FROM $table WHERE mtime < DATE_SUB(NOW(), INTERVAL 3 MONTH)"); 
-  $res = mysql_query("SELECT id, title FROM $table ORDER BY mtime DESC");
+  @mysql_query("DELETE FROM $table WHERE mtime < DATE_SUB(NOW(), INTERVAL 3 MONTH)"); 
+  $res = @mysql_query("SELECT id, title FROM $table ORDER BY mtime DESC");
   if ( !$res ) {
-    echo 'ERROR: '.mysql_error().' (0x12)';
+    echo 'ERROR 0x12: '.mysql_error();
     return mysql_close( $conn );
   }
   
@@ -76,21 +79,28 @@ function sync_map() {
 
   // Check parameters  
   $id = (int) @$_REQUEST['id'];
+  $etag = (int) @$_REQUEST['etag'];
   $master_password = trim( @$_REQUEST['pass'] );
   if ( $id <= 0 ) {
-    echo 'ERROR: Please provide id and password. (0x03)';
+    echo 'ERROR 0x03: Please provide id and password.';
     die;
   }
+  /*
+  $headers = apache_request_headers();
+  if ( !empty( $headers['If-None-Match'] ) )
+    $etag = $headers['If-None-Match'];
+  */ 
   
   // Connect and escape strings
   $table = $config['db_prefix'].'arena_syncmap';
-  $conn = conn();
+  $conn = @conn();
   $master_password = hash('whirlpool', $master_password );
   
   // Check for existing map with given id
-  $res = mysql_query("SELECT id, viewer_password, data FROM $table WHERE id=$id");
+  $res = @mysql_query("SELECT id, UNIX_TIMESTAMP(mtime) etag, viewer_password, data 
+    FROM $table WHERE id=$id" );
   if ( !$res ) {
-    echo 'ERROR: '.mysql_error().' (0x12)';
+    echo 'ERROR 0x12: '.mysql_error();
     return mysql_close( $conn );
   }
   $result = mysql_fetch_assoc( $res );
@@ -98,14 +108,19 @@ function sync_map() {
   
   // Delete if exists and password ok, error otherwise
   if ( !$result || $result['viewer_password'] != $master_password ) {
-    echo 'ERROR: Map not found or incorrect password (0x0C)';
+    echo 'ERROR 0x0C: Map not found or incorrect password.';
   } else {
-    echo "OK:".$result['data'];
+    if ( $result['etag'] == $etag ) {
+      header("HTTP/1.1 304 Not Modified");
+    } else {
+      ini_set("zlib.output_compression", 8192);
+      header( "ETag: $result[etag]" );
+      echo "OK:".$result['data'];
+    }
   }
   
   // Cleanup
-  mysql_close( $conn );
-  
+  mysql_close( $conn );  
 }
 
 
@@ -117,28 +132,28 @@ function share_map() {
   $viewer_password = trim( @$_REQUEST['viewer'] );
   $data = @$_REQUEST['data'];
   if (!$title || !$master_password || !$data) {
-    echo 'ERROR: Please provide title, master password, and data. (0x01)';
+    echo 'ERROR 0x01: Please provide title, master password, and data.';
     die;
   }
   if ( $master_password == $viewer_password ) {
-    echo 'ERROR: Master password must not be same with viewer password. (0x02)';
+    echo 'ERROR 0x02: Master password must not be same with viewer password.';
     die;
   }
   
   // Connect and escape strings
   $table = $config['db_prefix'].'arena_syncmap'; 
-  $conn = conn();
-  $title = mysql_real_escape_string( $title );
-  $data = mysql_real_escape_string( $data ); 
+  $conn = @conn();
+  $title = @mysql_real_escape_string( $title );
+  $data = @mysql_real_escape_string( $data ); 
   $master_password = hash('whirlpool', $master_password );
   $viewer_password = hash('whirlpool', $viewer_password );
   
   // Lock table and check for existing map with same title
-  mysql_query( "LOCK TABLES $table WRITE" );
-  $res = mysql_query("SELECT id, master_password FROM $table WHERE title='$title'");
+  @mysql_query( "LOCK TABLES $table WRITE" );
+  $res = @mysql_query("SELECT id, master_password FROM $table WHERE title='$title'");
   if ( !$res ) {
     mysql_query( "UNLOCK TABLES" );
-    echo 'ERROR: '.mysql_error().' (0x12)';
+    echo 'ERROR 0x12: '.mysql_error();
     return mysql_close( $conn );
   }
   $result = mysql_fetch_assoc( $res );
@@ -146,7 +161,7 @@ function share_map() {
 
   // Insert if ok, error if exists
   if ( $result && $result['master_password'] != $master_password ) {
-    echo 'ERROR: Map exists (0x0B)';
+    echo 'ERROR 0x0B: Map exists';
   } else {
     if ( $result ) {
       mysql_query("UPDATE $table 
@@ -180,13 +195,13 @@ function unshare_map() {
   
   // Connect and escape strings
   $table = $config['db_prefix'].'arena_syncmap';
-  $conn = conn();
+  $conn = @conn();
   $master_password = hash('whirlpool', $master_password );
   
   // Check for existing map with given id
-  $res = mysql_query("SELECT id, master_password FROM $table WHERE id=$id");
+  $res = @mysql_query("SELECT id, master_password FROM $table WHERE id=$id");
   if ( !$res ) {
-    echo 'ERROR: '.mysql_error().' (0x12)';
+    echo 'ERROR 0x12: '.mysql_error();
     return mysql_close( $conn );
   }
   $result = mysql_fetch_assoc( $res );
@@ -194,7 +209,7 @@ function unshare_map() {
   
   // Delete if exists and password ok, error otherwise
   if ( !$result || $result['master_password'] != $master_password ) {
-    echo 'ERROR: Map not found or incorrect password (0x0C)';
+    echo 'ERROR 0x0C: Map not found or incorrect password.';
   } else {
     mysql_query("DELETE FROM $table WHERE id=$result[id]"); 
     echo "OK";

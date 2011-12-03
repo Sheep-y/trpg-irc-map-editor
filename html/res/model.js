@@ -86,11 +86,11 @@ arena.reset = function() {
   arena.map.addLayer(new arena.Layer('Creature'));
   arena.map.addLayer(new arena.Layer('Overlay' ));
   arena.ui.updateLayers();
-  arena.ui.setText(arena.map.background_fill.text);
+  arena.ui.setText('');
   arena.ui.setForeground(arena.map.background_fill.foreground);
   arena.ui.setBackground(arena.map.background_fill.background);
   arena.commands.resetUndo();
-  arena.map.modified = false;
+  arena.map.setModified( false );
 }
 
 /************************* Map objects *********************************/
@@ -214,8 +214,15 @@ arena.map = { /** Map object. Store background, size, name, etc. */
   get : arena.Layer.prototype.get,
   getA : arena.Layer.prototype.getA,
 
+  /************ Accessors ************/
+  setModified : function ( modified ) {
+    if ( modified ) arena.ui.setOutOfSync( true );
+    if ( this.modified == modified ) return;
+    this.modified = modified;
+  },
+
   /*------------- Render methods ----------------*/
-  
+
   // Update specified canvas area from layers
   repaint : function(coList) {
     if (coList)
@@ -315,7 +322,7 @@ arena.map = { /** Map object. Store background, size, name, etc. */
       cell.dirty = false;
     }
   },
-  
+
   /*------------- Layers -----------------------*/
   /** Add given layer to list, if index is not given then add to top */
   addLayer : function (layer, index) {
@@ -326,7 +333,7 @@ arena.map = { /** Map object. Store background, size, name, etc. */
     if (!this.layer)
       this.layer = layer;
   },
-  
+
   /** Remove given layer from list */
   removeLayer : function (layer) {
     var layers = this.layers;
@@ -347,13 +354,6 @@ arena.map = { /** Map object. Store background, size, name, etc. */
     var tbody = table.getElementsByTagName('tbody')[0];
 
     // Clear map
-    /*
-    for (var y = 0; y < map.height; y++) {
-      var row = map.cells[y];
-      for (var x = 0; x < map.width; x++)
-        row[x].td = null;
-    }
-    */
     map.cells = [];
     for (var y = tbody.getElementsByTagName('tr').length-1; y >= 0; y--)
        table.deleteRow(y);
@@ -372,8 +372,8 @@ arena.map = { /** Map object. Store background, size, name, etc. */
     }
     arena.ui.setStatus(arena.lang.command.name_CreateMap + ' '+width+'x'+height);
     map.repaint();
-    
-    map.modified = false;
+
+    map.setModified( false );
     map.lastSaveTime = new Date();
   },
 
@@ -514,7 +514,7 @@ arena.Cell.prototype = {
     marked : '1px solid #F00', // Marked
     masked : '1px solid #00F' // Masked
   },
-  
+
   /** Get border style of the side between this cell and given cell */
   getBorder : function(target) {
     if (target) {
@@ -523,7 +523,7 @@ arena.Cell.prototype = {
     mr mr -- mr --
     ms ms ms -- --
     rs rs ms mr -- */
-    
+
       // If is empty or if target share same state, draw nothing
       if ( (!this.marked && !this.masked) || (this.marked == target.marked && this.masked == target.masked) ) {
         return '';

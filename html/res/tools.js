@@ -26,7 +26,7 @@
 
 arena.tools = {
   list : ['Text','Brush','Eraser','Mask','Move','Dropper'], // Tool list
-  
+
   sortNumber : function(a,b) { return a - b; },
 
   // Given four corners, genreate a list of all coordinates in the rectangle
@@ -40,7 +40,7 @@ arena.tools = {
       coList.push([i,j]);
     return coList;
   },
-  
+
   getTopLayerAt : function(x, y, attr) {
     var layers = arena.map.layers;
     for (var i = layers.length-1; i >= 0; i--)
@@ -57,9 +57,10 @@ arena.tools = {
     arena.map.tool = newTool;
     if (evt)
       arena.ui.setHint(newTool.hint(evt, arena.event.lastMouseX, arena.event.lastMouseY));
+    arena.map.setMarked([]);
     arena.ui.updateButtons();
   },
-  
+
   /** Select cell with same text that are bordering this cell / all over the map */
   selectSimiliar : function (layer, x, y, selectAll) {
     var map = arena.map
@@ -193,7 +194,7 @@ arena.tools.Text = {
       	  else {
       	    // The coordinate jumped; draw a line
       	    var dx = this.lastBrushCo[0]-x, dy = this.lastBrushCo[1]-y;
-            var d = Math.max(Math.abs(dx), Math.abs(dy)); 
+            var d = Math.max(Math.abs(dx), Math.abs(dy));
             coList = [];
             for (var i = d; i >= 0; i--)
               coList = coList.concat( this.getBrushCoList( x + Math.round(dx*i/d), y + Math.round(dy*i/d) ) );
@@ -216,9 +217,11 @@ arena.tools.Text = {
       }
     },
     getCommand : function(evt, coList) {
+      var text = arena.map.text;
+      if ( !text ) text = null;
       return !evt.shiftKey
-        ? new arena.commands.SetCell(arena.map.text, arena.map.foreground, null, coList, arena.map.layer)
-        : new arena.commands.SetCell(arena.map.text, null, arena.map.foreground, coList, arena.map.layer);
+        ? new arena.commands.SetCell(text, arena.map.foreground, null, coList, arena.map.layer)
+        : new arena.commands.SetCell(text, null, arena.map.foreground, coList, arena.map.layer);
     },
     dbclick: arena.empty,
     key  : function(evt) {
@@ -403,7 +406,7 @@ arena.tools.Mask = {
               arena.commands.run(new arena.commands.SetMask([]));
             else
               arena.commands.run(new arena.commands.SetMask([[x,y]]));
-          } else 
+          } else
             arena.commands.run(
               new arena.commands.MoveArea(arena.map.masked, dx, dy, arena.map.layer, evt.ctrlKey, true));
         } else {
@@ -446,11 +449,11 @@ arena.tools.Mask = {
       ++this.reduceCount;
       switch (this.reduceCount) {
         case 2:
-          func = function(co) { return co[1] % 2 == 0 && (co[0]+co[1]) %2 == 0; }; break; 
+          func = function(co) { return co[1] % 2 == 0 && (co[0]+co[1]) %2 == 0; }; break;
         case 3:
-          func = function(co) { return (co[0]+co[1]) %4 == 0; }; break; 
+          func = function(co) { return (co[0]+co[1]) %4 == 0; }; break;
         case 4:
-          func = function(co) { return co[1] % 4 == 0 && (co[0]+co[1]) %8 == 0; }; break; 
+          func = function(co) { return co[1] % 4 == 0 && (co[0]+co[1]) %8 == 0; }; break;
         default:
           func = function(co) { return (co[0]+co[1]) %2 == 0; }; break;
       }
@@ -610,7 +613,7 @@ arena.tools.Move = {
 arena.tools.Dropper = {
     down : function(evt, x, y) {
       var cell = arena.map.layer.get(x,y);
-      arena.map.text = $('#mapinput')[0].value = cell && cell.text ? cell.text : arena.map.background_fill.text;
+      arena.ui.setText( cell && cell.text ? cell.text : arena.map.background_fill.text );
       var foreground = cell && cell.foreground ? cell.foreground : arena.map.background_fill.foreground ;
       var background = cell && cell.background ? cell.background : arena.map.background_fill.background ;
       arena.ui.setForeground( evt.shiftKey ? background : foreground );

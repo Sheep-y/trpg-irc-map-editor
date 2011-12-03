@@ -22,7 +22,7 @@ arena.lang = {
     barhint_Foreground : 'Drawing in this foreground colour. Click to fill current mask.',
     //barhint_Background : 'Drawing in this background colour. Click to fill current mask.',
     barhint_Sync       : 'Sync map to viewers. Double click to setup sharing.',
-    barhint_MapInput   : 'Brush text for text tool. Press Enter to set text. Press Delete to clear selected area.',
+    barhint_MapInput   : 'Brush text for text tool. Click or press Enter to set text.',
     barhint_Colour     : 'Click to set foreground, Ctrl/Shift+Click to fill foreground/background of selected area.',
     //barhint_NoColour : 'No colour : Use lower layer\'s colour.',
     //barhint_ReverseColour : 'Reverse colour : Reverse lower layer\'s colour.',
@@ -45,6 +45,13 @@ arena.lang = {
     barhint_LayerDown : 'Move currnet layer down',
     barhint_Glyph  : 'Click to set brush text, Ctrl+Click to draw text in current mask.',
 
+    dlghint_TextPrompt : 'Enter text to draw:',
+    dlghint_MasterPassword : 'Please enter master password:',
+    dlghint_ViewerPassword : 'Please enter viewer password:',
+    dlghint_ShareSuccess : 'Map shared, press Ctrl+X to copy link.<br>Click sync button to update map.<br>Double-click it to open sync dialog.',
+    dlghint_ShareStatic : '(Static Link)',
+    dlghint_ShareDynamic : '(Live Update Link)',
+
     dlghint_CopyIRC : 'Export in IRC syntax.',
     dlghint_CopyBBC : 'Export in BBCode syntax. Text and foreground colour only.',
     dlghint_CopyTxt : 'Export in plain text.',
@@ -62,7 +69,7 @@ arena.lang = {
     name_SetText : 'Set Text',
     name_SetForeground : 'Set Foreground',
     name_SetBackground : 'Set Background',
-    
+
     name_Erase : 'Erase',
     name_MoveMasked : 'Move Masked',
     name_CopyMasked : 'Copy Masked',
@@ -77,12 +84,6 @@ arena.lang = {
 
   map : {
     background : '　',
-  },
-  
-  sharing : {
-    MasterPassword : 'Please enter master password:',
-    ViewerPassword : 'Please enter viewer password:',
-    Success : 'Map shared.\nClick sync button to update map.\nDouble-click it to open sync dialog.', 
   },
 
   io : {
@@ -103,8 +104,8 @@ arena.lang = {
     AdminEmpty : 'Master password must not be empty',
     AdminViewerSame : 'Master password must not be same with viewer password',
     TitleExists : 'A shared map with same title already exists',
-    MalformedData : 'Malformed data.', 
-    
+    MalformedData : 'Malformed data.',
+
     // S/L error
     NoHost : 'Save/load unavailable (Host not found). Blame HTML5 spec.',
     NoLocalStorage : 'No LocalStorage facility. Please upgrade browser or enable offline storage.',

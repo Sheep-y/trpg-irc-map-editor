@@ -7,11 +7,13 @@
 <script>
 if (!window.$) document.write('<script src="../html/res/jquery.js"></sc'+'ript>');
 </script>
-</head><body onmousedown='arena.event.documentMouseUpDown(event);' onmouseup='arena.event.documentMouseUpDown(event);'
-  onkeydown='arena.event.mapKeyDown(event)' onkeyup='arena.event.mapKeyUp(event)'
+</head><body
+  onmousedown='arena.event.documentMouseUpDown(event)'
+  onmousemove='arena.ui.clearSelection()'
+  onmouseup='arena.event.documentMouseUpDown(event)'
+  onkeydown='arena.event.mapKeyDown(event)'
+  onkeyup='arena.event.mapKeyUp(event)'
   onbeforeunload='return arena.event.documentClose(event)'>
-
-<input id="hideFocus" type="text">
 
 <table id='map'><tbody><tr><td style='width: auto; max-width: none; font-size:x-large; padding:2em 4em'>Please wait a few seconds.</td><tr></tbody></table>
 
@@ -33,9 +35,9 @@ if (!window.$) document.write('<script src="../html/res/jquery.js"></sc'+'ript>'
   <div class='tool' onclick='arena.event.newMapOnClick(event)'   onmouseover='arena.ui.hint("tool|barhint_NewMap")'> <img src='../html/res/img/cmd_new.png' width='21' > </div>
   <div class='tool' onclick='arena.event.exportOnClick(event)'   onmouseover='arena.ui.hint("tool|barhint_ImportExport")'> <img src='../html/res/img/cmd_export.png' width='21' > </div>
   <div class='tool' onclick='arena.event.saveLoadOnClick(event)' onmouseover='arena.ui.hint("tool|barhint_SaveLoad")'> <img src='../html/res/img/cmd_save.png' width='21' > </div>
-  
+
   <!-- Icons from GIMP GPL -->
-  <input id='mapinput' type='text' maxlength='2' value='  ' disabled onclick='arena.ui.focusMapInput()' onmouseover='arena.ui.hint("tool|barhint_MapInput")'>
+  <div id='cmd_Text' class='tool' onclick='arena.ui.promptTextBrush()' onmouseover='arena.ui.hint("tool|barhint_MapInput")'>  </div>
   <div id='cmd_Foreground' onclick='arena.event.setForegroundOnClick(event)' onmouseover='arena.event.submenuOnHover(event,"palette");arena.ui.hint("tool|barhint_Foreground")' onmouseout='arena.event.submenuOnExit(event);'></div>
   <div id='cmd_Background' onclick='arena.event.setBackgroundOnClick(event)' onmouseover='arena.event.submenuOnHover(event,"palette");arena.ui.hint("tool|barhint_Background")' onmouseout='arena.event.submenuOnExit(event);' style='display:none'></div>
   <table id='palette'><tbody><tr>
@@ -83,7 +85,7 @@ if (!window.$) document.write('<script src="../html/res/jquery.js"></sc'+'ript>'
     var l = navigator.language;
     if ( l ) {
       var l = /(?:^|;)(en|zh)(?=-|$|;)/.exec( navigator.language );
-      if ( l ) lang = l[0]; 
+      if ( l ) lang = l[0];
     }
   } catch (err) {
   }
@@ -112,8 +114,6 @@ if (!window.$) document.write('<script src="../html/res/jquery.js"></sc'+'ript>'
     arena.ui.createColourPalette();
     arena.ui.createGlyphs();
     arena.reset();
-    //arena.io.autoLoad();
-    arena.ui.focusBody();
     arena.ui.updateButtons();
   }
   document.close();
@@ -144,11 +144,11 @@ if (!window.$) document.write('<script src="../html/res/jquery.js"></sc'+'ript>'
   <table><tr><td>
     <label for='txt_map_title'>Title</label> &nbsp;
   </td><td>
-    <input type='text' value='' id='txt_map_title'>
+    <input type='text' value='' id='txt_map_title' required>
   </tr><tr><tr><td>
     <label for='txt_admin_password'>Master password</label> &nbsp;
   </td><td>
-    <input type='text' value='' id='txt_admin_password'>
+    <input type='text' value='' id='txt_admin_password' required>
   </tr><tr><tr><td>
     <label for='txt_viewer_password'>Viewer password</label> &nbsp;
   </td><td>
@@ -212,10 +212,10 @@ if (!window.$) document.write('<script src="../html/res/jquery.js"></sc'+'ript>'
 <script src='../html/res/rawdeflate.js'></script>
 <script src='../html/res/base64.js'></script>
 <script>
-  arena.io.autoLoad();
+  if ( arena && arena.io ) arena.io.autoLoad();
 </script>
 <!--script src='http://jsonip.appspot.com/?callback=getip'></script-->
-<script> 
+<script>
 if (location.host && location.host != "localhost") {
   var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
   document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js'%3E%3C/script%3E"));
