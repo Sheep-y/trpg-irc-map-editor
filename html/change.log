@@ -1,20 +1,27 @@
 Sheepy's Arena, Change log
 
 TODO
-* Add version to sync
-* Export area select tool to free up mask
-* Update Dialog, add enter and esc handling
-* Use html5 form
+* Add version to online sync
+* Dialog layout
 * Chinese localisation
 
-== 2011-12: Server side implementation and usabiliy==
+== 2012-08: Bug fix and usability enhancements ==
+2012-08-19: Add fixed palette
+2012-08-18: Export would left pad single ASCII characters in a cell
+2012-08-15: Move layer box to the right
+2012-08-08: Fix dropper bug preventing other tools from being selected
+
+== 2011-12: Server side implementation and usabiliy ==
+2011-12-08: Fix typo breaking client sync. Fix webkit export compatibility.
+2011-12-07: Export area selection tool, so that mask won't be used or modified.  
+2011-12-05: Dialog box can be cancelled by Esc and submitted by Enter.
 2011-12-04: Ajax is now async. Can have a separate database config php file. Silence php/mysql error messages.
 2011-12-03: Cleanup highligh and text selection more rigorously.
-2011-12-03: Added sync status indicator, sync etag, and gzip compression for view map.
+2011-12-03: Sync status indicator, sync etag, and gzip compression for view map.
 2011-12-03: Text tool use prompt box instead of textbox, would not overwrite layer text if text is empty.
-2011-12-02: Implemented map sharing. 
+2011-12-02: Implement map sharing. 
 2011-12-01: Avoid unnecessary mask clearing, so that new map won't ask for save on leave.
-2011-11-28: Added export to table BBCode, re-layout import/export screen
+2011-11-28: Export to table BBCode, re-layout import/export screen
 2011-11-28: Loading / importing map would recreate the map correctly (fix move tool failed on restored map)
 2011-07-27: Autosave would now properly delete previous autosaves.  
 

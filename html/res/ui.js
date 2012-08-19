@@ -1,3 +1,4 @@
+"strict mode";
 /********************** JavaScript Arena, user interface code *****************************/
 
 arena.event = {
@@ -13,7 +14,7 @@ arena.event = {
   lastHint   : '', // Last status bar hint
   lastCursor : '', // Last in use map cursor
 
-  mapDialogMode : false, // True when in dialog, false when not in dialog
+  mapDialogMode : false, // Dialog id (without diag) when in dialog, false when not in dialog
 
   lastSubmenu: null, // last sub-menu id
   submenuTimer: null, // sub-menu disappear timer
@@ -37,11 +38,15 @@ arena.event = {
   },
 
   // Prevent a event from triggering default behaviour
-  eatEvent : function(evt, eatSpecial) {
-    if (evt.altKey) return; // Alt is used for menu access, shortcut bar, etc.
+  eatEvent : function(evt, eatSpecial, stopPropagation ) {
+    if (!evt || evt.altKey) return false; // Alt is used for menu access, shortcut bar, etc.
     if (eatSpecial === false) // If don't want to consume special key then check for them
-      if (evt.shiftKey || evt.ctrlKey || evt.metaKey) return;
-    if (evt.preventDefault) evt.preventDefault(); else evt.returnValue = false;
+      if (evt.shiftKey || evt.ctrlKey || evt.metaKey) return false;
+    if ( stopPropagation && evt.stopPropagation )
+      evt.stopPropagation();
+    if (evt.preventDefault) evt.preventDefault();
+    else evt.returnValue = false;
+    return false;
   },
 
   /*********************** Document events ***********************/
@@ -122,6 +127,26 @@ arena.event = {
 
   /**************************** Dialogs *********************************/
 
+  dialogKeyDown : function(evt) {
+    switch (evt.keyCode) {
+    case 27: // Escape: hide this dialog
+      if ( arena.event.mapDialogMode )
+        arena.ui.hideDialog( arena.event.mapDialogMode );
+      arena.event.eatEvent(evt);
+      break;
+    case 13: // Enter: trigger first enabled button click
+      arena.event.eatEvent(evt, undefined, true);
+      if ( arena.event.mapDialogMode ) {
+        var b = $( '#dialog_' + arena.event.mapDialogMode ).find('input:button:enabled');
+        if ( b.length <= 0 ) return;
+        b = b[0];
+        if ( b.onclick ) b.onclick(evt);        
+      }                    
+      break;
+    }
+  },
+
+
   newMapOnClick : function(evt) {
     var x, y;
     while (x == undefined) {
@@ -174,24 +199,30 @@ arena.event = {
 
   dlgExportClick : function(evt) {
     // Export
+    var area = function(){ return [ [ arena.tools.Crop.sx, arena.tools.Crop.sy ], [ arena.tools.Crop.ex, arena.tools.Crop.ey ] ]; },
+        msg = arena.lang.io.CopyInstruction,
+        crop = function( func ) {
+          arena.ui.hideDialog ( 'export' );
+          arena.tools.Crop.activate ( function(){ arena.ui.copyText ( arena.io[func](arena.map, area()) , msg ); }); 
+        }; 
     if ($('#dlg_ex_url')[0].checked)
-      arena.ui.copyText ( arena.io.exportToURL(arena.map, arena.map.masked) , arena.lang.io.CopyInstruction );
+      arena.ui.copyText ( arena.io.exportToURL(arena.map, area()) , msg );
     else if ($('#dlg_ex_txt')[0].checked)
-      arena.ui.copyText ( arena.io.exportToTxt(arena.map, arena.map.masked) , arena.lang.io.CopyInstruction );
+      crop ( 'exportToTxt' );
     else if ($('#dlg_ex_bbc')[0].checked)
-      arena.ui.copyText ( arena.io.exportToBBC(arena.map, arena.map.masked) , arena.lang.io.CopyInstruction );
+      crop ( 'exportToBBC' );
     else if ($('#dlg_ex_bbctable')[0].checked)
-      arena.ui.copyText ( arena.io.exportToBBCTable(arena.map, arena.map.masked) , arena.lang.io.CopyInstruction );
+      crop ( 'exportToBBCTable' );
     else if ($('#dlg_ex_irc')[0].checked)
-      arena.ui.copyText ( arena.io.exportToIRC(arena.map, arena.map.masked) , arena.lang.io.CopyInstruction );
+      crop ( 'exportToIRC' );
     else if ($('#dlg_ex_json_zip')[0].checked)
-      arena.ui.copyText ( arena.io.exportToJSON(arena.map, arena.map.masked, 'zip-base64') , arena.lang.io.CopyInstruction );
+      arena.ui.copyText ( arena.io.exportToJSON(arena.map, area(), 'zip-base64') , msg );
     else if ($('#dlg_ex_json')[0].checked)
-      arena.ui.copyText ( arena.io.exportToJSON(arena.map, arena.map.masked) , arena.lang.io.CopyInstruction );
+      arena.ui.copyText ( arena.io.exportToJSON(arena.map, area()) , msg );
 
     else if ($('#dlg_ex_html')[0].checked) {
       // Special export, open in new doc
-      arena.io.exportToHtml(arena.map, arena.map.masked);
+      arena.io.exportToHtml(arena.map, area());
 
     } else if ($('#dlg_in_json')[0].checked) {
       // Ok, we are importing
@@ -337,10 +368,16 @@ arena.event = {
         arena.event.eatEvent(evt);
         break;
       case 13: // Enter: set text
-        if ( arena.ui.promptTextBrush() ) {
-          arena.tools.setTool(arena.tools.Text);
+        var process = true;
+        if (arena.map.tool ) {
+          process = arena.map.tool.key(evt);
         }
-        arena.event.eatEvent(evt);
+        if ( process !== false ) {
+          if ( arena.ui.promptTextBrush() ) {
+            arena.tools.setTool(arena.tools.Text);
+          }
+          arena.event.eatEvent(evt);
+        }
         break;
 
       case 9: // Tab
@@ -609,24 +646,44 @@ arena.event = {
 }
 
 arena.ui = {
+  /*********************** Language functions ***********************/
+  applyLanguage : function() {
+  /*
+    $('input:button.cancel').val( arena.lang. );
+    for ( var i in arena.lang. )
+      $('#'+i).val( arena.lang. );
+      */
+  },
+
   /*********************** Toolbox functions ***********************/
   createColourPalette : function() {
     var p = $('#palette')[0];
+    var tbody = $('#hover_palette')[0].firstChild;
     var palette = arena.lang.palette;
-    var i = 0, td, tr, tbody = $('#palette')[0].firstChild;
+    var i = 0, td, tr;
     for (var c in palette) { var colour = palette[c];
       if (i % 8 == 0) tr = document.createElement('tr');
+      // Create popup palette
       td = document.createElement('td');
       td.setAttribute('onclick', 'arena.event.paletteOnClick(event,"'+colour+'")');
       td.setAttribute('ondblclick', 'if(!event.detail)arena.event.paletteOnClick(event,"'+colour+'")');
-      td.setAttribute('onmouseover', 'arena.event.submenuOnHover(event,"palette");arena.ui.hint("tool|barhint_Colour")');
+      td.setAttribute('onmouseover', 'arena.event.submenuOnHover(event,"hover_palette");arena.ui.hint("tool|barhint_Colour")');
       td.setAttribute('onmouseout', 'arena.event.submenuOnExit(event);');
       td.setAttribute('style', 'background-color:'+colour);
-      //td.setAttribute('title', c);
-      td.setAttribute('class', 'palette');
-      td.innerHTML = c;
+      td.className = 'palette';
+      td.textContent = c;
       tr.appendChild(td);
       if (i++ % 2 != 0) tbody.appendChild(tr);
+      
+      // Create fixed palette
+      var div = document.createElement('div');
+      div.className = 'palette tool';
+      div.setAttribute('onclick', 'arena.event.paletteOnClick(event,"'+colour+'")');
+      div.setAttribute('ondblclick', 'if(!event.detail)arena.event.paletteOnClick(event,"'+colour+'")');
+      div.setAttribute('onmouseover', 'arena.ui.hint("tool|barhint_Colour")');
+      div.setAttribute('style', 'background-color:'+colour);
+      div.textContent = c;
+      p.appendChild(div);      
     }
   },
 
@@ -735,14 +792,16 @@ arena.ui = {
     $('#masqk').css('display', 'block');
     $('#dialog_'+id).css('display', 'block');
     $('#dialog_container').css('display', 'table');
-    arena.event.mapDialogMode = true;
+    var firstInput = $('#dialog_'+id).find('input:enabled');
+    if ( firstInput.length > 0 ) firstInput[0].focus();
+    arena.event.mapDialogMode = id;
     arena.io.pauseAutoSave = true;
   },
 
   hideDialog : function (id) {
     arena.io.pauseAutoSave = false;
-    if ($('#dialog_'+id).length <= 0) return;
     arena.event.mapDialogMode = false;
+    if ($('#dialog_'+id).length <= 0) return;
     $('#dialog_container, #dialog_'+id+', #mask').hide();
   },
 
@@ -776,11 +835,13 @@ arena.ui = {
             b2 = document.createElement('input');
         b1.type = b2.type = 'button';
         b1.value = 'Delete';
-        b1.addEventListener ( 'click', (function(id){ return function(){
-            arena.event.btnDeleteMapClick(id) } })(id), false );
+        //b1.addEventListener ( 'click', (function(id){ return function(){
+        //    arena.event.btnDeleteMapClick(id) } })(id), false );
+        b1.onclick = (function(id){ return function(){ arena.event.btnDeleteMapClick(id) } })(id); 
         b2.value = 'View';
-        b2.addEventListener ( 'click', (function(id){ return function(){
-            arena.event.btnSyncMapClick(id) } })(id), false );
+        //b2.addEventListener ( 'click', (function(id){ return function(){
+        //    arena.event.btnSyncMapClick(id) } })(id), false );
+        b2.onclick = (function(id){ return function(){ arena.event.btnSyncMapClick(id) } })(id);
         li.appendChild( b1 );
         li.appendChild( b2 );
         li.appendChild( document.createTextNode( map[id] ) );
@@ -801,7 +862,7 @@ arena.ui = {
     $('#txt_map_title')[0].disabled = 'disabled';
     $('#txt_admin_password')[0].disabled = 'disabled';
     $('#txt_viewer_password')[0].disabled = 'disabled';
-    $('#btn_Share')[0].disabled = 'disabled';
+    $('#btnShare')[0].disabled = 'disabled';
     $('#lnk_share').html( arena.lang.tool.dlghint_ShareDynamic )[0].href = arena.sharing.link;
   },
 
@@ -836,13 +897,15 @@ arena.ui = {
   // Remove text selection.
   // Copied from http://bytes.com/groups/javascript/635488-prevent-text-selection-after-double-click
   clearSelection : function() {
-    if (window.getSelection) {
+    if ( arena.event.mapDialogMode ) return;
+    if ( window.getSelection ) {
       window.getSelection().removeAllRanges();
 //      var sel = window.getSelection();
 //      if(sel && sel.rangeCount == 0 && sel.removeAllRanges) sel.removeAllRanges();
-    } else if (document.selection && document.selection.empty) {
-      if (document.selection.collapse) document.selection.collapse();
-      else if (document.selection.empty) document.selection.empty();
+    } else if ( document.selection && document.selection.collapse ) {
+      document.selection.collapse();
+    } else if ( document.selection && document.selection.empty ) {
+      document.selection.empty();
     }
   },
 }

@@ -11,7 +11,7 @@ arena.lang = {
     usehint_mask     : '[遮罩] 拖移: 選擇區塊. Ctrl: 多重選擇, Shift: 反選擇, Ctrl+Shift: XOR. 雙按/三按: 選取類近.',
     usehint_maskmove : '[遮罩] 拖移: 移動區塊. Ctrl: 複制區塊.',
     usehint_move     : '[移動] 拖移: 移動區塊. 點擊: 選取目前區塊.',
-    usehint_picker   : '[取色器] 點擊: 從圖層提取文字及文字顏色.  Shift: 文字及底色. Crtl: 從地圖提取',
+    usehint_dropper  : '[取色器] 點擊: 從圖層提取文字及文字顏色.  Shift: 文字及底色. Crtl: 從地圖提取',
 
     barhint_NewMap   : '創建新地圖. 現有地圖將被丟棄',
     barhint_ImportExport  : '將地圖輸出成各種格式, 或從 Json 格式載入地圖',
@@ -36,8 +36,8 @@ arena.lang = {
     barhint_toolMove   : '移動工具, 移動類近區域 (M)',
     barhint_toolDropper: '取色器, 從格子提取文字和顏色 (O)',
     barhint_brushSize  : '筆刷大小 (+/-)',
-    barhint_viewLayer  : '檢視圖層列表. 圖層互相獨立. Shift+加/減: 切換工作圖層.',
-    barhint_viewGlyph  : '檢視字符列表',
+    //barhint_viewLayer  : '檢視圖層列表. 圖層互相獨立. Shift+加/減: 切換工作圖層.',
+    //barhint_viewGlyph  : '檢視字符列表',
 
     barhint_AddLayer : '新增圖層',
     barhint_DelLayer : '刪除目前圖層',
@@ -76,7 +76,7 @@ arena.lang = {
   },
 
   map : {
-    background : '  ',
+    background : '　',
   },
 
   io : {

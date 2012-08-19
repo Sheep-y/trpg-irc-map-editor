@@ -25,7 +25,7 @@
 (function(){
 
 arena.tools = {
-  list : ['Text','Brush','Eraser','Mask','Move','Dropper'], // Tool list
+  list : ['Text','Brush','Eraser','Mask','Move','Dropper','Crop'], // Tool list
 
   sortNumber : function(a,b) { return a - b; },
 
@@ -52,11 +52,14 @@ arena.tools = {
   // Set a tool as currently in use
   setTool : function(newTool, evt) {
     if (arena.map.tool) {
-      arena.map.tool.unset();
+      arena.map.tool.unsetTool();
     }
     arena.map.tool = newTool;
-    if (evt)
-      arena.ui.setHint(newTool.hint(evt, arena.event.lastMouseX, arena.event.lastMouseY));
+    if ( newTool ) {
+      newTool.setTool();
+      if (evt)
+        arena.ui.setHint(newTool.hint(evt, arena.event.lastMouseX, arena.event.lastMouseY));
+    }
     arena.map.setMarked([]);
     arena.ui.updateButtons();
   },
@@ -225,11 +228,11 @@ arena.tools.Text = {
     },
     dbclick: arena.empty,
     key  : function(evt) {
-      if (evt.keyCode == 107 && this.brushSize < 100) { // +
+      if (evt.keyCode == 107 && !evt.ctrlKey  && this.brushSize < 100) { // +
         ++this.brushSize;
         this.move(evt, arena.event.lastMouseX, arena.event.lastMouseY);
         arena.event.eatEvent(evt);
-      } else if (evt.keyCode == 109 && this.brushSize > 1) { // -
+      } else if (evt.keyCode == 109 && !evt.ctrlKey  && this.brushSize > 1) { // -
         --this.brushSize;
         this.move(evt, arena.event.lastMouseX, arena.event.lastMouseY);
         arena.event.eatEvent(evt);
@@ -259,8 +262,8 @@ arena.tools.Text = {
     hint : function(evt, x, y) {
       return arena.lang.tool.usehint_text;
     },
-    set : function(evt) { this.drawing = false; this.lastBrushCo = undefined; },
-    unset : function(evt) { this.drawing = false; this.lastBrushCo = undefined; },
+    setTool : function(evt) { this.drawing = false; this.lastBrushCo = undefined; },
+    unsetTool : function(evt) { this.drawing = false; this.lastBrushCo = undefined; },
     cancel : function(evt) { this.drawing = false; this.lastBrushCo = undefined; },
     outOfCanvas : function(evt) {
       if ( arena.map.masked.length > 0 ) arena.commands.run(new arena.commands.SetMask([]));
@@ -291,8 +294,8 @@ arena.tools.Brush = {
     hint : function(evt, x, y) {
       return arena.lang.tool.usehint_brush;
     },
-    set : arena.tools.Text.set,
-    unset : arena.tools.Text.unset,
+    setTool : arena.tools.Text.setTool,
+    unsetTool : arena.tools.Text.unsetTool,
     cancel : arena.tools.Text.cancel,
     outOfCanvas : arena.tools.Text.outOfCanvas,
   };
@@ -319,8 +322,8 @@ arena.tools.Eraser = {
     hint : function(evt, x, y) {
       return arena.lang.tool.usehint_eraser;
     },
-    set : arena.tools.Text.set,
-    unset : arena.tools.Text.unset,
+    setTool : arena.tools.Text.setTool,
+    unsetTool : arena.tools.Text.unsetTool,
     cancel : arena.tools.Text.cancel,
     outOfCanvas : arena.tools.Text.outOfCanvas,
   };
@@ -510,8 +513,8 @@ arena.tools.Mask = {
         : arena.lang.tool.usehint_mask;
     },
 
-    set : function() { this.isInUse = this.isMoving = false; this.reduceCount = 0; },
-    unset : function() { this.cancel(); },
+    setTool : function() { this.isInUse = this.isMoving = false; this.reduceCount = 0; },
+    unsetTool : function() { this.cancel(); },
     cancel : function() {
       if ( this.isInUse && arena.map.masked.length > 0 ) arena.map.setMarked([]);
       this.isInUse = this.isMoving = false;
@@ -528,15 +531,18 @@ arena.tools.Move = {
     startX : 0,
     startY : 0,
     down : function(evt, x, y) {
-      this.layer = arena.tools.getTopLayerAt(x, y, 'text');
-      this.movingArea = this.getMoveArea(x, y);
-      if (this.movingArea.length) {
-        this.startX = x;
-        this.startY = y;
-        //arena.commands.run(new arena.commands.SetMask(this.movingArea));
-        //this.clearMask = !this.usingExistingMask;
+      if (evt.button < 2) {
+        this.layer = arena.tools.getTopLayerAt(x, y, 'text');
+        this.movingArea = this.getMoveArea(x, y);
+        if (this.movingArea.length) {
+          this.startX = x;
+          this.startY = y;
+          //arena.commands.run(new arena.commands.SetMask(this.movingArea));
+          //this.clearMask = !this.usingExistingMask;
+        } else {
+          this.movingArea = null;
+        }
       } else {
-        this.movingArea = null;
       }
     },
     move : function(evt, x, y) {
@@ -592,8 +598,8 @@ arena.tools.Move = {
       return (this.movingArea || cell )? (evt.ctrlKey ? 'copy' : 'move') : 'default';
     },
     hint   : function(evt, x, y) { return arena.lang.tool.usehint_move; },
-    set    : function(){ this.reset(); },
-    unset  : function(){ this.reset(); },
+    setTool    : function(){ this.reset(); },
+    unsetTool  : function(){ this.reset(); },
     cancel : function(){ this.reset(); },
     outOfCanvas : function() {
       if ( arena.map.masked.length > 0 ) arena.map.setMasked([]);
@@ -627,11 +633,247 @@ arena.tools.Dropper = {
     brush  : arena.empty,
     cursor : function(evt, x, y) { return 'cell'; },
     hint   : function(evt, x, y) { return arena.lang.tool.usehint_dropper; },
-    set    : arena.empty,
-    unset  : arena.empty,
-    cancel : arena.empty,
+    setTool  : arena.empty,
+    unsetTool: arena.empty,
+    cancel   : arena.empty,
     outOfCanvas : arena.empty,
   };
 
+// Crop tool, used to select a rectangular area without affecting mask.
+arena.tools.Crop = {
+    sx : null,
+    sy : null,
+    ex : null,
+    ey : null,
+    mx : null,
+    my : null,
+    movingArea : '',
+    lastTool : null,
+    lastMask : [],
+    callback : null,
+    activate : function( callback ) {
+      arena.tools.Crop.lastTool = arena.map.tool;
+      arena.tools.Crop.callback = callback;
+      arena.tools.setTool(arena.tools.Crop);
+    },
+    /** Check whether given coordinate is inside, at border, or outside current area */
+    checkBorder : function(x,y) {
+      if ( x < this.sx || x > this.ex || y < this.sy || y > this.ey ) return '';
+      var border = '';
+      if ( y === this.sy ) {
+        border += 'top';
+      } else if ( y === this.ey ) {
+        border += 'bottom';
+      }
+      if ( x === this.sx ) {
+        border += 'left';
+      } else if ( x === this.ex ) {
+        border += 'right';
+      }
+      return border ? border : 'area';
+    },
+    down : function(evt, x, y) {
+      if ( evt.detail < 2 ) {
+        if ( this.movingArea == '' ) {
+          var border = this.checkBorder(x,y);
+          if ( border === 'area' ) {
+            /* move area */
+            this.mx = x;
+            this.my = y;
+          } else if ( border == '' ) {
+            /* reset area */
+            this.sx = this.ex = x;
+            this.sy = this.ey = y;
+            border = 'bottomright';
+          }
+          this.movingArea = border;
+          this.draw(evt, x, y);
+        }
+      } else {
+        this.apply(evt);
+      }
+    },
+    move : function(evt, x, y) {
+      this.draw(evt, x, y);
+    },
+    up   : function(evt, x, y) {
+      if ( this.movingArea ) {
+        switch ( this.movingArea ) {
+          case 'topleft'    : this.sx = x;
+          case 'top'        : this.sy = y; break;
+          case 'topright'   : this.sy = y;
+          case 'right'      : this.ex = x; break;
+          case 'bottomright': this.ex = x;
+          case 'bottom'     : this.ey = y; break;
+          case 'bottomleft' : this.ey = y;
+          case 'left'       : this.sx = x; break;
+          case 'area' :
+            var dx  = x - this.mx,
+                dy = y - this.my;
+            this.sx += dx;
+            this.ex += dx;
+            this.sy += dy;
+            this.ey += dy;
+        }
+        this.movingArea = '';
+        this.draw(evt, x, y);
+      }
+    },
+    /** Update mask / mark */
+    draw : function(evt, x, y) {
+      // Set initial dimension
+      if ( this.sx === null ) {
+        this.sx = this.sy = 2;
+        this.ex = arena.map.width-3;
+        this.ey = arena.map.height-3;
+      } else {
+        // Make sure dimensions is correct
+        if ( this.sx > this.ex ) {
+          var tmp = this.sx;
+          this.sx = this.ex;
+          this.ex = tmp;
+          if ( this.movingArea.match(/right/) )
+             this.movingArea = this.movingArea.replace(/right/, 'left');
+          else if ( this.movingArea.match(/left/) )
+             this.movingArea = this.movingArea.replace(/left/, 'right');
+        }
+        if ( this.sy > this.ey ) {
+          var tmp = this.sy;
+          this.sy = this.ey;
+          this.ey = tmp;
+          if ( this.movingArea.match(/top/) )
+             this.movingArea = this.movingArea.replace(/top/, 'bottom');
+          else if ( this.movingArea.match(/bottom/) )
+             this.movingArea = this.movingArea.replace(/bottom/, 'top');
+        }
+        if ( this.sx < 0 ) this.sx = 0;
+        if ( this.sy < 0 ) this.sy = 0;
+        if ( this.ex >= arena.map.width )
+          this.ex = arena.map.width-1;
+        if ( this.ey >= arena.map.height )
+          this.ey = arena.map.height-1;
+      }
+      // Set mask
+      arena.map.setMasked( arena.tools.genRectagleCoList( this.sx, this.sy, this.ex, this.ey ));
+      if ( this.movingArea == '' ) {
+        // Not moving, highlight borders that you can move
+        switch ( this.checkBorder(x,y) ) {
+          case 'topleft'    : arena.map.setMarked( arena.tools.genRectagleCoList( this.sx, this.sy, this.ex, this.sy ).concat(arena.tools.genRectagleCoList( this.sx, this.sy, this.sx, this.ey ) ) ); break;
+          case 'top'        : arena.map.setMarked( arena.tools.genRectagleCoList( this.sx, this.sy, this.ex, this.sy ) ); break;
+          case 'topright'   : arena.map.setMarked( arena.tools.genRectagleCoList( this.sx, this.sy, this.ex, this.sy ).concat(arena.tools.genRectagleCoList( this.ex, this.sy, this.ex, this.ey ) ) ); break;
+          case 'right'      : arena.map.setMarked( arena.tools.genRectagleCoList( this.ex, this.sy, this.ex, this.ey ) ); break;
+          case 'bottomright': arena.map.setMarked( arena.tools.genRectagleCoList( this.sx, this.ey, this.ex, this.ey ).concat(arena.tools.genRectagleCoList( this.ex, this.sy, this.ex, this.ey ) ) ); break;
+          case 'bottom'     : arena.map.setMarked( arena.tools.genRectagleCoList( this.sx, this.ey, this.ex, this.ey ) ); break;
+          case 'bottomleft' : arena.map.setMarked( arena.tools.genRectagleCoList( this.sx, this.ey, this.ex, this.ey ).concat(arena.tools.genRectagleCoList( this.sx, this.sy, this.sx, this.ey ) ) ); break;
+          case 'left'       : arena.map.setMarked( arena.tools.genRectagleCoList( this.sx, this.sy, this.sx, this.ey ) ); break;
+          case 'area' :
+            arena.map.setMarked( arena.tools.genRectagleCoList( this.sx, this.sy, this.ex, this.ey ) ); break;
+          default : arena.map.setMarked( [[x, y]] );
+        }
+      } else {
+        // Highlight new area
+        var sx = this.sx, ex = this.ex, sy = this.sy, ey = this.ey;
+        switch ( this.movingArea ) {
+          case 'topleft'    : sx = x;
+          case 'top'        : sy = y; break;
+          case 'topright'   : sy = y;
+          case 'right'      : ex = x; break;
+          case 'bottomright': ex = x;
+          case 'bottom'     : ey = y; break;
+          case 'bottomleft' : ey = y;
+          case 'left'       : sx = x; break;
+          case 'area' :
+            var dx = x - this.mx,
+                dy = y - this.my;
+            sx += dx;
+            sy += dy;
+            ex += dx; 
+            ey += dy;
+        }
+        if ( sx < 0 ) sx = 0;
+        if ( sy < 0 ) sy = 0;
+        if ( ex >= arena.map.width ) ex = arena.map.width-1;
+        if ( ey >= arena.map.height ) ey = arena.map.height-1;
+        arena.map.setMarked( arena.tools.genRectagleCoList( sx, sy, ex, ey ) );
+      }
+    },
+    /** Apply this area */
+    apply : function(evt) {
+      if ( this.callback ) this.callback(evt);
+      arena.tools.setTool( this.lastTool );
+    },
+    dbclick: arena.empty,
+    key  : function(evt) {
+      if ( evt.keyCode == 107 && !evt.ctrlKey ) { // +
+        this.sx--;
+        this.ex++;
+        this.sy--;
+        this.ey++;
+        this.draw(evt);
+        return arena.event.eatEvent(evt);
+
+      } else if ( evt.keyCode == 109 && !evt.ctrlKey ) { // -
+        if (this.sx < this.ex-2 ) {
+          this.sx++;
+          this.ex--;
+        } 
+        if (this.sy < this.ey-2 ) {
+          this.sy++;
+          this.ey--;
+        }
+        this.draw(evt); 
+        return arena.event.eatEvent(evt);
+
+      //} else if ( evt.keyCode == 27 ) { // Escape
+      } else if ( evt.keyCode == 13 ) { // Enter
+        this.apply(evt);
+        return arena.event.eatEvent(evt, undefined, true);
+      }
+    },
+    cursor : function(evt, x, y) {
+      var type = this.movingArea ? this.movingArea : this.checkBorder(x,y);  
+      switch ( type ) {
+        case 'topleft'    : return 'nw-resize';
+        case 'top'        : return 'n-resize';
+        case 'topright'   : return 'ne-resize';
+        case 'right'      : return 'e-resize';
+        case 'bottomright': return 'se-resize';
+        case 'bottom'     : return 's-resize';
+        case 'bottomleft' : return 'sw-resize'; 
+        case 'left'       : return 'w-resize'; 
+        case 'area' : return 'move';
+        default : return 'default';
+      };
+    },
+    hint : function(evt, x, y) {
+      return arena.lang.tool.usehint_crop;
+    },
+    setTool : function(evt) {
+      $('#toolbox').hide();
+      this.lastMask = arena.map.masked.concat();
+      this.movingArea = '';
+      this.draw();
+    },
+    unsetTool : function(evt) {
+      arena.map.setMarked( [] )
+      arena.map.setMasked( this.lastMask );
+      $('#toolbox').show();
+    },
+    cancel : function(evt) {
+      if ( this.movingArea ) {
+        // Cancel move area
+        //this.outOfCanvas(evt);
+        this.movingArea = '';
+        this.mx = this.my = 0;
+        this.draw(evt);
+      } else {
+        // Unset tool. this.unset() called by map.setTool()
+        arena.tools.setTool( this.lastTool );
+      }
+    },
+    outOfCanvas : function(evt) {
+      this.cancel(evt);
+    },
+  };
 
 })();

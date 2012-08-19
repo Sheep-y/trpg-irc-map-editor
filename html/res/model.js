@@ -12,6 +12,22 @@
 //arena.toolHeight = '--';   // Displayed tool-related height
 
 
+if ( !Array.prototype.forEach ) {
+  Array.prototype.forEach = function( callback, thisArg ) {
+    if ( this == null )
+      throw new TypeError( " this is null or not defined" );
+    var O = Object(this), len = O.length >>> 0, T, k = 0;
+    if ( {}.toString.call(callback) != "[object Function]" )
+      throw new TypeError( callback + " is not a function" );
+    if ( thisArg ) T = thisArg;
+    while( k < len ) {
+      if ( k in O )
+        callback.call( T, O[ k ], k, O );
+      k++;
+    }
+  };
+}
+
 /************************* General functions ******************************/
 
 // Empty, do nothing functions
@@ -90,6 +106,7 @@ arena.reset = function() {
   arena.ui.setForeground(arena.map.background_fill.foreground);
   arena.ui.setBackground(arena.map.background_fill.background);
   arena.commands.resetUndo();
+  arena.tools.Crop.sx = null; // arena.tools.Crop.sy = arena.tools.Crop.ex = arena.tools.Crop.ey = null;    
   arena.map.setModified( false );
 }
 
@@ -484,8 +501,8 @@ arena.Cell.prototype = {
 
   /** Draw border style. */
   repaintBorder : function() {
-    // FF3.6 with self border, 9x9 cursor random paint: Avg 0.33ms, min 0.04, max 2.5
-    // FF3.6 w/o self border, 9x9 cursor random paint: Avg 1.7ms	min 1, max 4
+    // FF3.6 with self border check, 9x9 cursor random paint: Avg 0.33ms, min 0.04, max 2.5
+    // FF3.6 w/o self border check, 9x9 cursor random paint: Avg 1.7ms	min 1, max 4
     var border = '';
     border = this.getBorder(this.topCell);
     if (border != this.lastBorderTop) {

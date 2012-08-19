@@ -36,8 +36,8 @@ arena.lang = {
     barhint_toolMove   : 'Move tool, move similiar area. (M)',
     barhint_toolDropper: 'Dropper tool, get colours and text of current cell. (O)',
     barhint_brushSize  : 'Brush size. (+/-)',
-    barhint_viewLayer  : 'View layer list. Shift+Minus/Plus to move between layers.',
-    barhint_viewGlyph  : 'View glyph list.',
+    //barhint_viewLayer  : 'View layer list. Shift+Minus/Plus to move between layers.',
+    //barhint_viewGlyph  : 'View glyph list.',
 
     barhint_AddLayer : 'Add top layer',
     barhint_DelLayer : 'Delete currnet layer',

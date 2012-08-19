@@ -30,7 +30,7 @@ if (!window.$) document.write('<script src="../html/res/jquery.js"></sc'+'ript>'
   <td id='debug' onclick='this.innerHTML=""'></td>
 </tr></table>
 
-<div id='toolbox'>
+<div id='toolbox' class='floatbox'>
   <!-- Icons from "Medical Icons Set Icon Pack" by Centigrade (freeware) http://findicons.com/pack/2286/free_medical_icons_set -->
   <div class='tool' onclick='arena.event.newMapOnClick(event)'   onmouseover='arena.ui.hint("tool|barhint_NewMap")'> <img src='../html/res/img/cmd_new.png' width='21' > </div>
   <div class='tool' onclick='arena.event.exportOnClick(event)'   onmouseover='arena.ui.hint("tool|barhint_ImportExport")'> <img src='../html/res/img/cmd_export.png' width='21' > </div>
@@ -38,15 +38,8 @@ if (!window.$) document.write('<script src="../html/res/jquery.js"></sc'+'ript>'
 
   <!-- Icons from GIMP GPL -->
   <div id='cmd_Text' class='tool' onclick='arena.ui.promptTextBrush()' onmouseover='arena.ui.hint("tool|barhint_MapInput")'>  </div>
-  <div id='cmd_Foreground' onclick='arena.event.setForegroundOnClick(event)' onmouseover='arena.event.submenuOnHover(event,"palette");arena.ui.hint("tool|barhint_Foreground")' onmouseout='arena.event.submenuOnExit(event);'></div>
-  <div id='cmd_Background' onclick='arena.event.setBackgroundOnClick(event)' onmouseover='arena.event.submenuOnHover(event,"palette");arena.ui.hint("tool|barhint_Background")' onmouseout='arena.event.submenuOnExit(event);' style='display:none'></div>
-  <table id='palette'><tbody><tr>
-    <!--td class="palette" onmouseover='arena.event.submenuOnHover(event,"palette");' onmouseout='arena.event.submenuOnExit(event);'><img
-      onclick="arena.event.paletteOnClick(event,'reverse')" ondblclick="if(!event.detail)arena.event.paletteOnClick(event,'reverse')" onmouseover="arena.ui.hint('tool|barhint_ReverseColour')"
-      src='../html/res/img/colour_reverse.gif'></td>
-    <td class="palette" onmouseover='arena.event.submenuOnHover(event,"palette");' onmouseout='arena.event.submenuOnExit(event);'><img
-      onclick="arena.event.paletteOnClick(event,null)" ondblclick="if(!event.detail)arena.event.paletteOnClick(event,'none')" onmouseover="arena.ui.hint('tool|barhint_NoColour')"
-      src='../html/res/img/colour_none.gif'></td-->
+  <div id='cmd_Foreground' onclick='arena.event.setForegroundOnClick(event)' onmouseover='arena.event.submenuOnHover(event,"hover_palette");arena.ui.hint("tool|barhint_Foreground")' onmouseout='arena.event.submenuOnExit(event);'></div>
+  <table id='hover_palette'><tbody><tr>
   </tr></tbody></table>
   <div class='tool' id='cmd_Sync'        onclick='arena.event.syncOnClick(event)' onmouseover='arena.ui.hint("tool|barhint_Sync")' > <img src='../html/res/img/cmd_sync.png'> </div>
 
@@ -62,24 +55,27 @@ if (!window.$) document.write('<script src="../html/res/jquery.js"></sc'+'ript>'
   <div class='tool' id='cmd_ToolBrush'   onclick='arena.tools.setTool(arena.tools.Brush)'   onmouseover='arena.ui.hint("tool|barhint_toolBrush")'  > <img src='../html/res/img/tool_brush.png'> </div>
   <div class='tool' id='cmd_ToolEraser'  onclick='arena.tools.setTool(arena.tools.Eraser)'   onmouseover='arena.ui.hint("tool|barhint_toolEraser")'  > <img src='../html/res/img/tool_eraser.png'> </div>
 
+  <hr>
+  
   <div class='tool' id='cmd_ToolBrush1'  onclick='arena.map.tool.brush(event,1)' onmouseover='arena.ui.hint("tool|barhint_brushSize")'>.</div>
   <div class='tool' id='cmd_ToolBrush2'  onclick='arena.map.tool.brush(event,2)' onmouseover='arena.ui.hint("tool|barhint_brushSize")' >..</div>
   <div class='tool' id='cmd_ToolBrush3'  onclick='arena.map.tool.brush(event,3)' onmouseover='arena.ui.hint("tool|barhint_brushSize")' >...</div>
-
-  <div class='tool' id='cmd_ViewLayer'   onclick='arena.event.viewLayerOnClick(event)'      onmouseover='arena.ui.hint("tool|barhint_viewLayer")'  > <img src='../html/res/img/view_layers.png'> </div>
-  <div class='tool' id='cmd_ViewGlyph'   onclick='arena.event.viewGlyphOnClick(event)'      onmouseover='arena.ui.hint("tool|barhint_viewGlyph")'  > <img src='../html/res/img/view_glyphs.png'> </div>
+  <div id='palette'></div><br>
+  
   <hr>
-  <div id='layer'>
+  
+  <div id='glyph'></div><br>
+</div>
+
+<div id='layer' class='floatbox'>
     <div class='tool' onclick='arena.event.addLayerOnClick(event)'  onmouseover='arena.ui.hint("tool|barhint_AddLayer")' >+</div>
     <div class='tool' onclick='arena.event.delLayerOnClick(event)'  onmouseover='arena.ui.hint("tool|barhint_DelLayer")' >-</div>
     <div class='tool' onclick='arena.event.upLayerOnClick(event)'   onmouseover='arena.ui.hint("tool|barhint_LayerUp")'  >^</div>
     <div class='tool' onclick='arena.event.downLayerOnClick(event)' onmouseover='arena.ui.hint("tool|barhint_LayerDown")'>v</div>
-  </div>
-  <div id='glyph' style='display:none'></div><br>
 </div>
 
 <!--script>
-(function(){
+(function(){ /* Can't make it load at beginning */
   var lang = 'en';
   try {
     var l = navigator.language;
@@ -104,8 +100,8 @@ if (!window.$) document.write('<script src="../html/res/jquery.js"></sc'+'ript>'
 <script src='../html/res/commands.js?ver=[var.out.app_version]'></script>
 <script src='../html/res/io.js?ver=[var.out.app_version]'></script>
 <script>
-(function(){
-  if (!window.arena || !arena.lang || !arena.ui || !arena.map || !arena.tools || !arena.commands || !arena.io) {
+(function(){ "strict mode";
+  if (!window.arena || !arena.lang || !arena.ui || !arena.map || !arena.tools || !arena.commands || !arena.io || !arena.sharing ) {
     var str = "[var.lang.err_IncompleteLoad]";
     if (str.substring(0,1) == "[")
       str = "Cannot load. Check that browsers is up to date and refresh.";
@@ -126,8 +122,8 @@ if (!window.$) document.write('<script src="../html/res/jquery.js"></sc'+'ript>'
 
 <table id='dialog_container'><tr><td>
 
-<div id='dialog_sync'>
-<h2>Sharing</h2>
+<div id='dialog_sync' onkeydown='arena.event.dialogKeyDown(event)'>
+<h2 id='titleSharing'>Sharing</h2>
 
 <div id='map_list'>
   <input type='button' value='Share this map' id='btn_Share_Tab' onclick='arena.event.btnShareTabClick(event)' /><br><br>
@@ -135,8 +131,8 @@ if (!window.$) document.write('<script src="../html/res/jquery.js"></sc'+'ript>'
   <ul id='lst_map'>
   </ul>
   <br>
-  <input type='button' value='Refresh' onclick='arena.ui.refreshMapList()' />
-  <input type='button' value='Cancel' onclick='arena.ui.hideDialog("sync")' /><br><br>
+  <input type='button' id='btnRefresh' value='Refresh' onclick='arena.ui.refreshMapList()' />
+  <input type='button' class='cancel'  value='Cancel' onclick='arena.ui.hideDialog("sync")' /><br><br>
 </div>
 
 <div id='share_form'>
@@ -155,16 +151,16 @@ if (!window.$) document.write('<script src="../html/res/jquery.js"></sc'+'ript>'
     <input type='text' value='' id='txt_viewer_password'>
   </tr><tr><td colspan='2'>
     <br>
-    <input type='button' value='Share' id='btn_Share' onclick='arena.event.btnShareClick(event)'> &nbsp;
-    <input type='button' value='Stop'  id='btn_Stop'  onclick='arena.event.btnStopClick(event)'> &nbsp;
-    <input type='button' value='Cancel' onclick='arena.ui.hideDialog("sync")'>
+    <input type='button' id='btnShare'  value='Share' id='btn_Share' onclick='arena.event.btnShareClick(event)'> &nbsp;
+    <input type='button' id='btnStop'   value='Stop'  id='btn_Stop'  onclick='arena.event.btnStopClick(event)'> &nbsp;
+    <input type='button' class='cancel' value='Cancel' onclick='arena.ui.hideDialog("sync")'>
   </td></tr></table>
 </div>
 
 </div>
 
-<div id='dialog_export'>
-  <table><tr><th> <h2>Import</h2> </th><th colspan='2'> <h2>Export</h2> </th></tr>
+<div id='dialog_export' onkeydown='arena.event.dialogKeyDown(event)'>
+  <table><tr><th> <h2>Import</h2> </th><th colspan='2'> <h2 id='titleExport'>Export</h2> </th></tr>
   <tr><td>
   <label onmouseover='arena.ui.hint("tool|dlghint_ImportJson")'><input type='radio' name='opt_export' id='dlg_in_json'> Json </label>
   </td><td>
@@ -178,31 +174,31 @@ if (!window.$) document.write('<script src="../html/res/jquery.js"></sc'+'ript>'
   <label onmouseover='arena.ui.hint("tool|dlghint_CopyJson")'><input type='radio' name='opt_export' id='dlg_ex_json'> Plain Json </label><br>
   <label onmouseover='arena.ui.hint("tool|dlghint_CopyJsonZip")'><input type='radio' name='opt_export' id='dlg_ex_json_zip'> Json </label><br>
   </td></tr></table>
-  <input type='button' value='Go' id='btn_export' onclick='arena.event.dlgExportClick(event)'> &nbsp;
-  <input type='button' value='Cancel' onclick='arena.ui.hideDialog("export")'>
+  <input type='button' id='btnGo'     value='Go' id='btn_export' onclick='arena.event.dlgExportClick(event)'> &nbsp;
+  <input type='button' class='cancel' value='Cancel' onclick='arena.ui.hideDialog("export")'>
 </div>
 
-<div id='dialog_saveload'>
-  <h2>Save / Load</h2>
+<div id='dialog_saveload' onkeydown='arena.event.dialogKeyDown(event)'>
+  <h2 id='titleSaveLoad'>Save / Load</h2>
   New Save: <input id='saveInput' type='text' value=''>
+  <input type='button' id='btnSave' value='Save' onclick='arena.event.btnSaveMapClick(event)'>
   <hr>
   Load
   <div id="saveList">
   </div>
   <br><br>
-  <input type='button' value='Save' onclick='arena.event.btnSaveMapClick(event)'>
-  <input type='button' value='Load' onclick='arena.event.btnLoadMapClick(event)'>
-  <input type='button' value='Cancel' onclick='arena.ui.hideDialog("saveload")'>
-  <input type='button' value='Delete' onclick='arena.event.btnDeleteSaveClick(event)'>
+  <input type='button' id='btnLoad' value='Load' onclick='arena.event.btnLoadMapClick(event)'>
+  <input type='button' id='btnDelete' value='Delete' onclick='arena.event.btnDeleteSaveClick(event)'>
+  <input type='button' class='cancel' value='Cancel' onclick='arena.ui.hideDialog("saveload")'>
 </div>
 
-<div id='dialog_text'>
-  <h2>Data</h2>
+<div id='dialog_text' onkeydown='arena.event.dialogKeyDown(event)'>
+  <h2 id='titleData'>Data</h2>
   <p id='text_instruction'>arena.lang.io.CopyInstruction</p>
   <textarea id='text_data' rows='10' cols='40' onkeyup='arena.event.dlgTextChanged(event, this.value)'>
   </textarea>
   <br><br>
-  <input type='button' value='Cancel' onclick='arena.ui.hideDialog("text")'>
+  <input class='cancel' type='button' value='Cancel' onclick='arena.ui.hideDialog("text")'>
 </div>
 
 </td></tr></table>
@@ -211,11 +207,11 @@ if (!window.$) document.write('<script src="../html/res/jquery.js"></sc'+'ript>'
 <script src='../html/res/rawinflate.js'></script>
 <script src='../html/res/rawdeflate.js'></script>
 <script src='../html/res/base64.js'></script>
-<script>
+<script>"strict mode";
   if ( arena && arena.io ) arena.io.autoLoad();
 </script>
 <!--script src='http://jsonip.appspot.com/?callback=getip'></script-->
-<script>
+<script>"strict mode";
 if (location.host && location.host != "localhost") {
   var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
   document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js'%3E%3C/script%3E"));

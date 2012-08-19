@@ -12,7 +12,7 @@ $config = array(
 if ( file_exists('config.php') ) include('config.php');
 
 $out = array(
-  'app_version' => '20111203',
+  'app_version' => '20120819',
   'language' => 'en',
   'title' => 'Map1',
 );

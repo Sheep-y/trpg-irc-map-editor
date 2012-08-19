@@ -372,6 +372,16 @@ arena.io = {
 
 
   /************************** Export **********************************/
+  
+  normaliseSize : function ( txt ) {
+     // Make sure txt takes up two character's space
+     if ( txt.length === 1 ) {
+       if ( txt.charCodeAt(0) < 128 ) return ' '+txt;
+     } else if ( txt.length === 0 ) {
+       return '  ';
+     }
+     return txt;
+  },
 
   /** Export in zipped format */
   exportToURL : function (map, area) {
@@ -433,13 +443,14 @@ arena.io = {
           lastForeground = frgd;
           lastBackground = bkgd;
         } else if (frgd != lastForeground && txt) {
+          // Has foreground. Double check that we have text to colour with
           var trimmed = txt.replace(/^\s+/, ''); // kill spaces
           if (trimmed) {
             result += '\u0003' + cMap[frgd];
             lastForeground = frgd;
           }
         }
-        result += txt;
+        result += this.normaliseSize(txt);
       }
       // Remove end of line empty cell. Background may not show, disabled.
       // result = result.replace(/((\x03?\d+)?\s*)+$/, '');
@@ -470,7 +481,7 @@ arena.io = {
             lastForeground = frgd;
           }
         }
-        result += cell.text;
+        result += this.normaliseSize(txt);
       }
       result += '\n';
     }
@@ -514,8 +525,9 @@ arena.io = {
     // Export part
     var result = '', cells = map.cells;
     for (var y = minY; y <= maxY; y++) { var row = cells[y];
-      for (var x = minX; x <= maxX; x++)
-        result += row[x].text;
+      for (var x = minX; x <= maxX; x++) {
+        result += this.normaliseSize(row[x].text);
+      }
       result += '\n';
     }
     result = result.slice(0, -1); // Kill trailing space

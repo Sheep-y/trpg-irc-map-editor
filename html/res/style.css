@@ -1,8 +1,10 @@
-body {
-	padding: 1ex;
-	padding-left: 78px;
-	padding-top: 36px;
+html {
 	background-color: #888;
+}
+
+body {
+   /* top right bottom left */
+	padding: 36px 98px 1ex 78px;
 }
 
 table {
@@ -36,6 +38,7 @@ input {
 	cursor: crosshair;
 	cursor: cell; */
 	font-family: monospace;
+   margin-right: 98px
 }
 
 #map td { /* Default cell */
@@ -49,19 +52,19 @@ input {
 	overflow: hidden;
 	text-align: center;
 	vertical-align: middle;
-	border: 1px solid #EEE;
+	border: 1px solid #F0F0F0;
 }
 
 /***************** Floating boxes **********************/
 
-#toolbox, #statusbar {
+.floatbox, #statusbar {
 	position: fixed;
 	background-color: #DDD;
 	opacity: 0.9;
 	border: 2px ridge #DDD;
 }
 
-#toolbox:hover, #statusbar:hover {
+.floatbox:hover, #statusbar:hover {
 	opacity: 1;
 	border: 2px outset #DDD;
 	z-index: 1;
@@ -74,38 +77,38 @@ input {
 	cursor: default;
 }
 
-#toolbox div {
+.floatbox div {
 	border: 1px solid #DDD;
 	text-shadow: #444 1px 1px 2px;
 	text-align: center;
 	float: left;
 }
 
-#toolbox .tool {
+.floatbox .tool {
 	border: 1px solid #DDD;
 	width: 22px;
 	height: 22px;
 }
 
-#toolbox .tool:hover, #toolbox .layer:hover {
+.floatbox .tool:hover, .floatbox .layer:hover {
 	border: 1px solid #444;
 	background-color: #EEE;
 }
 
-#toolbox .active {
+.floatbox .active {
 	border: 1px solid #444;
 }
 
-#toolbox .tool.attention {
+.floatbox .tool.attention {
 	border: 1px solid red;
 }
 
-#toolbox .disabled {
+.floatbox .disabled {
 	opacity: 0.2;
 	-moz-opacity: 0.2;
 }
 
-#toolbox hr {
+.floatbox hr {
 	clear: both;
 	border: 0 none transparent;
 	border-top: 2px ridge #DDD;
@@ -152,14 +155,14 @@ input {
 	text-align: left;
 }
 */
-#toolbox #palette {
+#toolbox #hover_palette {
 	position: fixed;
 	left: 46px;
 	top: 42px;
 	width: 200px;
 	display: none;
 }
-#toolbox #palette td, #toolbox #palette img {
+#toolbox #hover_palette td {
 	height: 25px;
 	width: 18px;
 	vertical-align:bottom;
@@ -167,30 +170,41 @@ input {
 	color: #444;
 }
 
-#toolbox #layer {
+#layer { /* Right-floating layer box */
 	height: auto;
 	font-size: smaller;
-	border: 0px none transparent;
+	right: 4px;
+	top: 4px;
+	width: 96px;
+	cursor: default;
 }
 
-#toolbox #layer .tool {
+#layer .tool {
 	width: 16px;
 	height: 18px;
 }
 
-#toolbox .layer {
-	width: 72px;
+#layer .layer {
+	width: 92px;
 	text-align: left;
 	overflow: hidden;
+   clear: left;
 }
 
-#toolbox .layer.active {
+#layer .layer.active {
 	color: blue;
 }
 
-#toolbox .layer.hidden {
+#layer .layer.hidden {
 	color: #888;
 	/* text-decoration: line-through; */
+}
+
+#palette .palette {
+  width: 16px;
+  height: 14px;
+  font-size: 8pt;
+  color: #808080;
 }
 
 #toolbox #glyph {
@@ -240,6 +254,10 @@ input {
 
 
 /********************** Dialog styles **************************************/
+input.default { /* Default button */
+	font-weight: bold;
+}
+
 #mask {
 	position: fixed;
 	left: 0;
