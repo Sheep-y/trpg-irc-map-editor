@@ -6,6 +6,7 @@
 <script src='http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js'></script>
 <script>
 if (!window.$) document.write('<script src="../html/res/jquery.js"></sc'+'ript>');
+window.arena = {};
 </script>
 </head><body
   onmousedown='arena.event.documentMouseUpDown(event)'
@@ -18,15 +19,13 @@ if (!window.$) document.write('<script src="../html/res/jquery.js"></sc'+'ript>'
 <table id='map'><tbody><tr><td style='width: auto; max-width: none; font-size:x-large; padding:2em 4em'>Please wait a few seconds.</td><tr></tbody></table>
 
 <table id='statusbar' unselectable="on"><tr>
-  <td id='hint' colspan='6'>
-  <b>Requires <a href="http://www.microsoft.com/windows/internet-explorer/default.aspx">IE 8</a>, <a href="http://www.mozilla.com/firefox/">Firefox</a> 3, or <a href="http://www.opera.com/">Opera</a> 9</b>. <a href="http://www.apple.com/safari/">Safari</a> 4 and <a href="http://www.google.com/chrome/">Chrome</a> 1 works partially.
-  </td>
+  <td id='hint' colspan='6'></td>
 </tr><tr>
   <td id='current_foreground'></td>
   <td id='current_background'></td>
   <td id='coordinate_status'>X:-- Y:--</td>
   <!--td id='dimension_status'>[--x--]</td-->
-  <td id='status'>[var.lang.welcome_status; htmlconv=no]</td>
+  <td id='status'></td>
   <td id='debug' onclick='this.innerHTML=""'></td>
 </tr></table>
 
@@ -68,54 +67,55 @@ if (!window.$) document.write('<script src="../html/res/jquery.js"></sc'+'ript>'
 </div>
 
 <div id='layer' class='floatbox'>
+    <center><b>Layers</b></center>
     <div class='tool' onclick='arena.event.addLayerOnClick(event)'  onmouseover='arena.ui.hint("tool|barhint_AddLayer")' >+</div>
     <div class='tool' onclick='arena.event.delLayerOnClick(event)'  onmouseover='arena.ui.hint("tool|barhint_DelLayer")' >-</div>
     <div class='tool' onclick='arena.event.upLayerOnClick(event)'   onmouseover='arena.ui.hint("tool|barhint_LayerUp")'  >^</div>
     <div class='tool' onclick='arena.event.downLayerOnClick(event)' onmouseover='arena.ui.hint("tool|barhint_LayerDown")'>v</div>
 </div>
 
-<!--script>
-(function(){ /* Can't make it load at beginning */
-  var lang = 'en';
-  try {
-    var l = navigator.language;
-    if ( l ) {
-      var l = /(?:^|;)(en|zh)(?=-|$|;)/.exec( navigator.language );
-      if ( l ) lang = l[0];
-    }
-  } catch (err) {
-  }
-  var e = document.createElement('script');
-  e.src = '../html/res/lang/'+lang+'.js?ver=[var.out.app_version]';
-  alert('pause');
-  document.body.insertBefore( e, document.getElementById('firstScript') );
-  window.arena = {};
-})()
-</script-->
 <script src='../html/res/lang/en.js?ver=[var.out.app_version]'></script>
-<script src='../html/res/lang/[var.out.language].js?ver=[var.out.app_version]'></script>
+<script src='../html/res/lang/zh.js?ver=[var.out.app_version]'></script>
+<script>(function(){ "strict mode";
+   if ( arena.lang ) {
+      /** Tried to dynamically insert but always loaded after existing scripts, 
+       * we need the error messages to load before them, so just load all languages first. */
+      var lang = location.search.match( /[?&]lang=(\w+)($|&)/ );
+      if ( lang ) {
+         lang = lang[1];
+      } else {
+         lang = navigator.language || navigator.userLanguage;
+      }
+      if ( lang &&lang.match( /^zh(-.+)?$/ ) ) {
+         arena.lang = arena.lang.zh;
+      } else {
+         arena.lang = arena.lang.en;
+      }
+      document.getElementById('hint').innerHTML = arena.lang.ui.initial;
+   }
+})()</script>
 <script src='../html/res/model.js?ver=[var.out.app_version]'></script>
 <script src='../html/res/ui.js?ver=[var.out.app_version]'></script>
 <script src='../html/res/tools.js?ver=[var.out.app_version]'></script>
 <script src='../html/res/commands.js?ver=[var.out.app_version]'></script>
 <script src='../html/res/io.js?ver=[var.out.app_version]'></script>
-<script>
-(function(){ "strict mode";
-  if (!window.arena || !arena.lang || !arena.ui || !arena.map || !arena.tools || !arena.commands || !arena.io || !arena.sharing ) {
-    var str = "[var.lang.err_IncompleteLoad]";
-    if (str.substring(0,1) == "[")
-      str = "Cannot load. Check that browsers is up to date and refresh.";
-  	document.getElementById('hint').innerHTML = str;
-  } else {
-    arena.ui.createColourPalette();
-    arena.ui.createGlyphs();
-    arena.reset();
-    arena.ui.updateButtons();
-  }
-  document.close();
-})();
-</script><noscript>
+<script>(function(){ "strict mode";
+   if (!window.arena || !arena.lang || !arena.ui || !arena.map || !arena.tools || !arena.commands || !arena.io || !arena.sharing ) {
+  	   document.getElementById('hint').innerHTML = 
+         arena && arena.lang && arena.lang && arena.lang.error && arena.lang.error.IncompleteLoad 
+         ? arena.lang.error.IncompleteLoad
+         : "Cannot load. Check that browsers is up to date and refresh.";
+   } else {
+      // All modules loaded, setup map.
+      arena.ui.createColourPalette();
+      arena.ui.createGlyphs();
+      arena.reset();
+      arena.ui.updateButtons();
+   }
+   document.close();
+})();</script><noscript>
 <p>Please enable JavaScript.</p>
+<p>請啓用 JavaScript.</p>
 </noscript>
 
 <div id='mask'></div>
@@ -207,19 +207,18 @@ if (!window.$) document.write('<script src="../html/res/jquery.js"></sc'+'ript>'
 <script src='../html/res/rawinflate.js'></script>
 <script src='../html/res/rawdeflate.js'></script>
 <script src='../html/res/base64.js'></script>
-<script>"strict mode";
-  if ( arena && arena.io ) arena.io.autoLoad();
-</script>
 <!--script src='http://jsonip.appspot.com/?callback=getip'></script-->
 <script>"strict mode";
-if (location.host && location.host != "localhost") {
-  var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
-  document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js'%3E%3C/script%3E"));
-}
-try {
-  var pageTracker = _gat._getTracker("UA-9070778-1");
-  pageTracker._trackPageview();
-} catch(err) {}
-document.close()</script>
+   if ( arena && arena.io ) arena.io.autoLoad();
+   if ( location.host && location.host != "localhost" ) {
+     var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+     document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js'%3E%3C/script%3E"));
+   }
+   try {
+     var pageTracker = _gat._getTracker("UA-9070778-1");
+     pageTracker._trackPageview();
+   } catch(err) {}
+   document.close()
+</script>
 
 </body></html>

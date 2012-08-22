@@ -12,9 +12,7 @@ $config = array(
 if ( file_exists('config.php') ) include('config.php');
 
 $out = array(
-  'app_version' => '20120819',
-  'language' => 'en',
-  'title' => 'Map1',
+  'app_version' => '20120822',
 );
 
 function escJS( $str ) {
@@ -224,17 +222,11 @@ function unshare_map() {
  * @param $name Template name without path and extension.
  */
 function template_load($name) {
-  global $tbs, $out;
-  if (!isset($tbs)) {
-    include('tbs/tbs_class_php5.php');
-    $tbs = new clsTinyButStrong();
-    // TODO: Set gzip compression on
-  }
-  if ($name) {
-    $tbs->LoadTemplate("html/$name.html");
-    $tbs->Source = str_replace('../html/', 'html/', $tbs->Source);
-  }
-  return $tbs;
+  global $out;
+  $result = file_get_contents("html/$name.html");
+  $result = str_replace('../html/', 'html/', $result);
+  $result = str_replace('[var.out.app_version]', $out['app_version'], $result);
+  return $result;
 }
 
 ?>

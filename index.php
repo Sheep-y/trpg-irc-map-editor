@@ -2,8 +2,6 @@
 
 require('php/arena.php');
 
-require('php/lang/en.php');
-
 $action = empty( $_REQUEST['ajax'] ) ? '' : strtolower( $_REQUEST['ajax'] );
 
 header('Content-Type', 
@@ -25,8 +23,7 @@ if ( $action == 'sync' ) {
 
 } else {
   /* Load and display map */
-  $tbs = template_load('map_template');
-  $tbs->Show();
+  echo template_load('map_template');
 }
 
 ?>

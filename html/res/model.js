@@ -96,17 +96,15 @@ arena.reset = function() {
   //for (var l = map.layers.length-1; l >= 0; l--)
   //  map.layers[l].cells = [];
   arena.map.recreate(w, h);
-  arena.map.addLayer(new arena.Layer('Terrain' ));
-  arena.map.addLayer(new arena.Layer('Effect'  ));
-  arena.map.addLayer(new arena.Layer('Object'  ));
-  arena.map.addLayer(new arena.Layer('Creature'));
-  arena.map.addLayer(new arena.Layer('Overlay' ));
+  for ( var i in arena.lang.layers ) {
+    arena.map.addLayer(new arena.Layer( arena.lang.layers[i] ));
+  }
   arena.ui.updateLayers();
   arena.ui.setText('');
   arena.ui.setForeground(arena.map.background_fill.foreground);
   arena.ui.setBackground(arena.map.background_fill.background);
   arena.commands.resetUndo();
-  arena.tools.Crop.sx = null; // arena.tools.Crop.sy = arena.tools.Crop.ex = arena.tools.Crop.ey = null;    
+  arena.tools.Crop.sx = null; // arena.tools.Crop.sy = arena.tools.Crop.ex = arena.tools.Crop.ey = null;
   arena.map.setModified( false );
 }
 
@@ -249,7 +247,7 @@ arena.map = { /** Map object. Store background, size, name, etc. */
       for ( var y = 0; y < this.height; y++ )
         for ( var x = 0; x < this.width; x++ )
           this.repaintCell(x, y);
-	},
+        },
 
   // Update text, foreground, and background of a cell from layers
   repaintCell : function(x, y) {
@@ -441,11 +439,13 @@ arena.LayerCell.prototype = {
     }
   },
   setIf: function(text, foreground, background) {
+    /* For object syntax, unused after adding incremental text
     if (text && typeof(text) != "string") {
       background = text.background;
       foreground = text.foreground;
       text = text.text;
     }
+    */
     if (background) this.background = background;
     if (foreground) this.foreground = foreground;
     if (text) this.text = text;

@@ -6,10 +6,11 @@ TODO
 * Chinese localisation
 
 == 2012-08: Bug fix and usability enhancements ==
-2012-08-19: Add fixed palette
-2012-08-18: Export would left pad single ASCII characters in a cell
-2012-08-15: Move layer box to the right
-2012-08-08: Fix dropper bug preventing other tools from being selected
+2012-08-22: Add text auto-increment. Map data is trimmed before save/export. Amend Chinese Localisation.
+2012-08-19: Add fixed palette.
+2012-08-18: Export would left pad single ASCII characters in a cell.
+2012-08-15: Move layer box to the right.
+2012-08-08: Fix dropper bug preventing other tools from being selected.
 
 == 2011-12: Server side implementation and usabiliy ==
 2011-12-08: Fix typo breaking client sync. Fix webkit export compatibility.

@@ -143,6 +143,7 @@ arena.io = {
 
   /** Get save data of this map */
   getSaveData : function(map) {
+    for ( var i in map.layers ) map.layers[i].trim();
     return {
       id: 'sheepy.arena.20101025.', // data structure version, shouldn't change unless structure change.
       data: {
@@ -372,7 +373,7 @@ arena.io = {
 
 
   /************************** Export **********************************/
-  
+
   normaliseSize : function ( txt ) {
      // Make sure txt takes up two character's space
      if ( txt.length === 1 ) {

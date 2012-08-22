@@ -140,8 +140,8 @@ arena.event = {
         var b = $( '#dialog_' + arena.event.mapDialogMode ).find('input:button:enabled');
         if ( b.length <= 0 ) return;
         b = b[0];
-        if ( b.onclick ) b.onclick(evt);        
-      }                    
+        if ( b.onclick ) b.onclick(evt);
+      }
       break;
     }
   },
@@ -203,8 +203,8 @@ arena.event = {
         msg = arena.lang.io.CopyInstruction,
         crop = function( func ) {
           arena.ui.hideDialog ( 'export' );
-          arena.tools.Crop.activate ( function(){ arena.ui.copyText ( arena.io[func](arena.map, area()) , msg ); }); 
-        }; 
+          arena.tools.Crop.activate ( function(){ arena.ui.copyText ( arena.io[func](arena.map, area()) , msg ); });
+        };
     if ($('#dlg_ex_url')[0].checked)
       arena.ui.copyText ( arena.io.exportToURL(arena.map, area()) , msg );
     else if ($('#dlg_ex_txt')[0].checked)
@@ -380,9 +380,11 @@ arena.event = {
         }
         break;
 
+      /* Once used to avoid focus lost, no longer necessary
       case 9: // Tab
-        arena.event.eatEvent(evt);
+        if ( !evt.ctrlKey && !evt.altKey ) arena.event.eatEvent(evt);
         break;
+      */
 
       default:
         switch (evt.keyCode) {
@@ -516,7 +518,7 @@ arena.event = {
 
       default:
         arena.map.tool.key(evt);
-        //if (console) console.log(evt.keyCode);
+        //if (window.console) console.log(evt.keyCode);
       }
     }
     if (evt.keyCode < 32) // Update cursor for control characters - Shift, Ctrl, Alt, etc.
@@ -674,7 +676,7 @@ arena.ui = {
       td.textContent = c;
       tr.appendChild(td);
       if (i++ % 2 != 0) tbody.appendChild(tr);
-      
+
       // Create fixed palette
       var div = document.createElement('div');
       div.className = 'palette tool';
@@ -683,7 +685,7 @@ arena.ui = {
       div.setAttribute('onmouseover', 'arena.ui.hint("tool|barhint_Colour")');
       div.setAttribute('style', 'background-color:'+colour);
       div.textContent = c;
-      p.appendChild(div);      
+      p.appendChild(div);
     }
   },
 
@@ -747,7 +749,8 @@ arena.ui = {
   },
 
   setText : function (text) {
-    $('#cmd_Text').html( arena.map.text = text );
+    arena.map.text = text;
+    $('#cmd_Text').html( text.replace( /\+\+$/, '' ) );
   },
 
   setForeground : function (colour) {
@@ -837,7 +840,7 @@ arena.ui = {
         b1.value = 'Delete';
         //b1.addEventListener ( 'click', (function(id){ return function(){
         //    arena.event.btnDeleteMapClick(id) } })(id), false );
-        b1.onclick = (function(id){ return function(){ arena.event.btnDeleteMapClick(id) } })(id); 
+        b1.onclick = (function(id){ return function(){ arena.event.btnDeleteMapClick(id) } })(id);
         b2.value = 'View';
         //b2.addEventListener ( 'click', (function(id){ return function(){
         //    arena.event.btnSyncMapClick(id) } })(id), false );

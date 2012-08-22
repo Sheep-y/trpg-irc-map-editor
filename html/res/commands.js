@@ -204,16 +204,52 @@ arena.commands.SetMask.prototype = {
 }
 
 arena.commands.SetCell.prototype = {
+  text: undefined,
+  foreground: undefined,
+  background: undefined,
+  lastText: undefined,
   redo : function() {
+    var text = this.text, txt;
+    if ( text && ( txt = text.match( /^.*?([a-zA-Z0-9]+).*?\+\+$/ ) ) ) {
+      txt = txt[1];
+      var overflow = false;
+      function incChar( chr ) {
+         overflow = true;
+         if ( chr === '9' ) return '0';
+         if ( chr === 'z' ) return 'a';
+         if ( chr === 'Z' ) return 'A';
+         overflow = false;
+         return String.fromCharCode( chr.charCodeAt(0) + 1 );
+      }
+      var newTxt = txt.split("");
+      var pos = txt.length-1;
+      // Increase alpha from the end, cascading to front
+      newTxt[pos] = incChar( newTxt[pos] );
+      while ( overflow && pos > 0 ) {
+        --pos;
+        newTxt[pos] = incChar( newTxt[pos] );
+      }
+      // If overflowing from one character to two, allow it
+      if ( overflow && text.length === 3 )
+        newTxt.unshift( newTxt[0] === '0' ? '1' : ( newTxt[0] === 'A' ? 'A' : 'a' ) );
+      // Update text
+      arena.ui.setText( text.replace( txt, newTxt.join("") ) );
+      this.lastText = text;
+      text = text.replace( /\+\+$/, '' );
+    }
+
     var l = this.coList.length;
     var undoData = this.undoData ? null : [];
     for (var i = 0; i < l; i++) {
+      // Get coordinate list and undo data
       var m = this.coList[i];
       var orig = this.layer.get(m[0], m[1]);
       if (undoData)
         undoData.push( orig ? orig.clone({}) : null );
+      // Get and set cell
       var c = orig ? orig : this.layer.createCell(m[0], m[1]);
-      c.setIf(this);
+      c.setIf( text, this.foreground, this.background );
+      // Process text
     }
     if (undoData) // Don't double set because consolidated coordinate list may overlap
       this.undoData = undoData;
@@ -232,6 +268,7 @@ arena.commands.SetCell.prototype = {
       }
     }
     arena.map.repaint(this.coList);
+    if ( this.lastText ) arena.ui.setText( this.lastText );
   },
   consolidate : function(newCmd) {
     if (newCmd.className != this.className

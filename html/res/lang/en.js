@@ -1,8 +1,8 @@
 /********************** JavaScript Arena, english language resource *****************************/
 
-window.arena = {};
+if ( ! arena.lang ) arena.lang = {};
 
-arena.lang = {
+arena.lang.en = {
 
   tool : {
     usehint_text     : '[Text] Drag: Draw text in colour.  Shift: Draw text and background.',
@@ -14,21 +14,18 @@ arena.lang = {
     usehint_dropper  : '[Dropper] Click: Get text and foreground colour.  Shift: text and background.',
 
     barhint_NewMap  : 'Create a new map. Will discard existing map.',
-    barhint_ImportExport  : 'Export map in various text formats, or import from exported Json data.',
+    barhint_ImportExport  : 'Export/Import map.  Long press Ctrl to export with last config.',
     barhint_SaveLoad: 'Save / load map locally in browser',
     barhint_rotateClock : 'Rotate whole map clockwise 90 degree. Ctrl: Anti-clockwise.',
     //barhint_Layer   : 'Click to select layer to draw. Top layer show first.',
     //barhint_UsingLayer : 'You are drawing on this layer.',
     barhint_Foreground : 'Drawing in this foreground colour. Click to fill current mask.',
-    //barhint_Background : 'Drawing in this background colour. Click to fill current mask.',
     barhint_Sync       : 'Sync map to viewers. Double click to setup sharing.',
-    barhint_MapInput   : 'Brush text for text tool. Click or press Enter to set text.',
+    barhint_MapInput   : 'Brush text for text tool. Click or press Enter to set text. End text with \'++\' to auto increment text.',
     barhint_Colour     : 'Click to set foreground, Ctrl/Shift+Click to fill foreground/background of selected area.',
-    //barhint_NoColour : 'No colour : Use lower layer\'s colour.',
-    //barhint_ReverseColour : 'Reverse colour : Reverse lower layer\'s colour.',
     barhint_Undo       : 'Undo last command (Ctrl+Z)',
     barhint_Redo       : 'Redo next command (Ctrl+Y)',
-    barhint_Layer      : 'Click to work with this layer. Double-click to toggle visibility.',
+    barhint_Layer      : 'Click to work with this layer. Double-click to toggle visibility. Shift+Minus/Plus to change layer.',
     barhint_toolText   : 'Text tool, draw text on current layer. (T) Press Enter to set text before draw.',
     barhint_toolBrush  : 'Brush tool, paint background on current layer. (B)',
     barhint_toolEraser : 'Eraser tool, erase stuff from curent layer. (E)',
@@ -36,13 +33,11 @@ arena.lang = {
     barhint_toolMove   : 'Move tool, move similiar area. (M)',
     barhint_toolDropper: 'Dropper tool, get colours and text of current cell. (O)',
     barhint_brushSize  : 'Brush size. (+/-)',
-    //barhint_viewLayer  : 'View layer list. Shift+Minus/Plus to move between layers.',
-    //barhint_viewGlyph  : 'View glyph list.',
 
-    barhint_AddLayer : 'Add top layer',
-    barhint_DelLayer : 'Delete currnet layer',
-    barhint_LayerUp  : 'Move currnet layer up',
-    barhint_LayerDown : 'Move currnet layer down',
+    barhint_AddLayer : 'Add new layer.',
+    barhint_DelLayer : 'Delete currnet layer.',
+    barhint_LayerUp  : 'Move currnet layer up.',
+    barhint_LayerDown : 'Move currnet layer down.',
     barhint_Glyph  : 'Click to set brush text, Ctrl+Click to draw text in current mask.',
 
     dlghint_TextPrompt : 'Enter text to draw:',
@@ -60,9 +55,13 @@ arena.lang = {
     dlghint_CopyJson : 'Export in JSON. Layers are preserved, suitable for long-term map storage.',
   },
 
+  ui: {
+    initial: '<b>Requires <a href="http://www.microsoft.com/windows/internet-explorer/default.aspx">IE 8+</a>, Latest <a href="http://www.mozilla.com/firefox/">Firefox</a>, or latest <a href="http://www.opera.com/">Opera</a></b>. <a href="http://www.apple.com/safari/">Safari</a> and <a href="http://www.google.com/chrome/">Chrome</a> may fails to save/load. <a href="http://goddessfantasy.net/sheepy/arena/archive/arena.2012-08-19.7z">Download Source</a>.',
+  },
+
   command : {
-    undo : "Undo %s",
-    redo : "Redo %s",
+    undo : "Undo %s.",
+    redo : "Redo %s.",
 
     name_SetMask : 'Set Mask',
     name_SetCell : 'Set',
@@ -96,20 +95,23 @@ arena.lang = {
   },
 
   error : {
+    // Not all modules are loaded
+    IncompleteLoad: 'Cannot load. Check that browsers is up to date, clear cache, and then refresh.',
+
     // Drawing error
     NoMask : 'Where should I draw? Please select an area first.',
 
     // Sync error
-    TitleEmpty : 'Title must not be empty',
-    AdminEmpty : 'Master password must not be empty',
-    AdminViewerSame : 'Master password must not be same with viewer password',
-    TitleExists : 'A shared map with same title already exists',
+    TitleEmpty : 'Title must not be empty.',
+    AdminEmpty : 'Master password must not be empty.',
+    AdminViewerSame : 'Master password must not be same with viewer password.',
+    TitleExists : 'A shared map with same title already exists.',
     MalformedData : 'Malformed data.',
 
     // S/L error
-    NoHost : 'Save/load unavailable (Host not found). Blame HTML5 spec.',
+    NoHost : 'Save/load unavailable (Host not found).',
     NoLocalStorage : 'No LocalStorage facility. Please upgrade browser or enable offline storage.',
-    SaveNotFound : 'Cannot find saved map',
+    SaveNotFound : 'Cannot find saved map.',
 
     // I/O error
     CannotRestore : 'Cannot restore map.',
@@ -118,7 +120,13 @@ arena.lang = {
     NoDeflate : 'Cannot load zip library. Please reload.',
   },
 
-
+  layers : [
+    'Terrain',
+    'Effects',
+    'Objects',
+    'Creatures',
+    'Overlay',
+  ],
 
   palette : { /** Colour palettle. Same as mIRC. */
   /*
