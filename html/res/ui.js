@@ -872,7 +872,7 @@ arena.ui = {
   stopSharing : function () {
     /* Update sharing status */
     if ( arena.sharing.timer ) {
-      clearInterval( arena.sharing.timer );
+      clearTimeout( arena.sharing.timer );
       arena.sharing.timer = 0;
     }
     arena.sharing.mapId = 0;
@@ -884,7 +884,7 @@ arena.ui = {
     $('#txt_map_title')[0].disabled = '';
     $('#txt_admin_password')[0].disabled = '';
     $('#txt_viewer_password')[0].disabled = '';
-    $('#btn_Share')[0].disabled = '';
+    $('#btnShare')[0].disabled = '';
     $('#lnk_share').html( arena.lang.tool.dlghint_ShareStatic )[0].href = arena.io.exportToURL( arena.map );
   },
 

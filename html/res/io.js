@@ -88,7 +88,7 @@ arena.io = {
   /******************************** ajax ******************************/
   ajax : function(param, header, success, fail) {
     var ajax = new XMLHttpRequest();
-    ajax.open('POST', window.location.href);
+    ajax.open('POST', window.location.pathname);
     ajax.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
     if (header) {
       for (var tag in header)
@@ -593,7 +593,7 @@ arena.io = {
   },
 
   /** Synchronise map from server */
-  syncFromServer : function ( id, password, success ) {
+  syncFromServer : function ( id, password, success, unmodified ) {
     if ( id === undefined ) id = arena.sharing.mapId; // Bug from firefox
     if ( navigator.onLine === false || id <= 0 ) return;
     if ( password === undefined ) password = arena.sharing.password;
@@ -618,8 +618,11 @@ arena.io = {
       arena.ui.setOutOfSync( false );
       if ( success ) success( result );
     }, function( result ) {
+      // If not unmodified, stop sharing
       if ( result !== null )
         arena.ui.stopSharing();
+      else
+        if ( unmodified ) unmodified();
     });
   },
 
@@ -637,8 +640,10 @@ arena.io = {
       $('#txt_map_title').val( arena.map.name );
       $('#txt_viewer_password').val( password );
       arena.ui.disableSharing();
-      arena.sharing.timer = setInterval ( function() {
-        arena.io.syncFromServer( id, password ) }, 3000 );
+      arena.sharing.timer = setTimeout ( function syncEvent() {
+        function retime() { arena.sharing.timer = setTimeout ( syncEvent, 6000 ); }
+        arena.io.syncFromServer( id, password, retime, retime );
+      }, 6000 );
       if ( success ) success( result );
     });
   },

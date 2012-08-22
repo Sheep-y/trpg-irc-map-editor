@@ -585,7 +585,7 @@ arena.Cell.prototype = {
   repaintCellText : function() {
     var text = this.text;
     if (this.lastText != text) {
-      this.td.innerHTML = text;
+      this.td.textContent = text;
       this.lastText = text;
     }
   },

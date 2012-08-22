@@ -6,7 +6,7 @@ TODO
 * Chinese localisation
 
 == 2012-08: Bug fix and usability enhancements ==
-2012-08-22: Add text auto-increment. Map data is trimmed before save/export. Amend Chinese Localisation.
+2012-08-22: Add text auto-increment. Map data is trimmed before save/export. Amend Chinese Localisation. Fix IE 9 sync. Sync would wait until last syn completes.
 2012-08-19: Add fixed palette.
 2012-08-18: Export would left pad single ASCII characters in a cell.
 2012-08-15: Move layer box to the right.
