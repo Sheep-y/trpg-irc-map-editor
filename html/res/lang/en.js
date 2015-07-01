@@ -56,7 +56,7 @@ arena.lang.en = {
   },
 
   ui: {
-    initial: '<b>Requires <a href="http://www.microsoft.com/windows/internet-explorer/default.aspx">IE 8+</a>, Latest <a href="http://www.mozilla.com/firefox/">Firefox</a>, or latest <a href="http://www.opera.com/">Opera</a></b>. <a href="http://www.apple.com/safari/">Safari</a> and <a href="http://www.google.com/chrome/">Chrome</a> may fails to save/load. <a href="http://goddessfantasy.net/sheepy/arena/archive/arena.2012-08-19.7z">Download Source</a>.',
+    initial: '<b>Requires <a href="http://www.microsoft.com/windows/internet-explorer/default.aspx">IE 8+</a>, Latest <a href="http://www.mozilla.com/firefox/">Firefox</a>, or latest <a href="http://www.opera.com/">Opera</a></b>. <a href="http://www.apple.com/safari/">Safari</a> and <a href="http://www.google.com/chrome/">Chrome</a> may fails to save/load. <a href="https://github.com/Sheep-y/trpg-irc-map-editor/">Home page</a>.',
   },
 
   command : {

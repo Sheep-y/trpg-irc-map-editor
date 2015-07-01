@@ -56,7 +56,7 @@ arena.lang.zh = {
   },
 
   ui: {
-    initial: '<b>需求 <a href="http://www.microsoft.com/windows/internet-explorer/default.aspx">IE 8+</a>，最新版<a href="http://www.mozilla.com/firefox/">火狐</a>，或最新版<a href="http://www.opera.com/">Opera</a></b>。<a href="http://www.apple.com/safari/">Safari</a>和<a href="http://www.google.com/chrome/">Chrome</a>可能不能儲存讀取。<a href="http://goddessfantasy.net/sheepy/arena/archive/arena.2012-08-19.7z">下載源碼</a>。',
+    initial: '<b>需求 <a href="http://www.microsoft.com/windows/internet-explorer/default.aspx">IE 8+</a>，最新版<a href="http://www.mozilla.com/firefox/">火狐</a>，或最新版<a href="http://www.opera.com/">Opera</a></b>。<a href="http://www.apple.com/safari/">Safari</a>和<a href="http://www.google.com/chrome/">Chrome</a>可能不能儲存讀取。<a href="https://github.com/Sheep-y/trpg-irc-map-editor/">首頁</a>。',
   },
 
   command : {

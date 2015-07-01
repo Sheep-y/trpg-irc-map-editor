@@ -70,15 +70,16 @@ arena.tools = {
       , sx = x
       , sy = y
       , newMask = []
-      , txt = layer.getA(x,y,'text');
+      , txt = layer.getA(x,y,'text')
+      , clr = layer.getA(x,y,'foreground');
     if (!selectAll) { // Select all similiar text
       // Check left
       --x;
-      while (x >= 0 && layer.getA(x,y,'text') == txt) --x;
+      while (x >= 0 && layer.getA(x,y,'text') === txt && layer.getA(x,y,'foreground') === clr ) --x;
       var left = x + 1;
       // Check right
       x = sx + 1;
-      while (x < map.width && layer.getA(x, y, 'text') == txt) ++x;
+      while (x < map.width && layer.getA(x, y, 'text') === txt && layer.getA(x,y,'foreground') === clr ) ++x;
       var right = x - 1;
       // Prepare to recur seek bordering text
       var thisrow = [], flaggedCells = [];
@@ -93,7 +94,7 @@ arena.tools = {
     } else { // Select all same text on layer
       for (y = 0; y < map.height; y++) {
         for (x = 0; x < map.width; x++) {
-          if (layer.getA(x, y, 'text') == txt)
+          if (layer.getA(x, y, 'text') === txt && layer.getA(x,y,'foreground') === clr)
             newMask.push([x,y]);
         }
       }
@@ -787,7 +788,7 @@ arena.tools.Crop = {
                 dy = y - this.my;
             sx += dx;
             sy += dy;
-            ex += dx; 
+            ex += dx;
             ey += dy;
         }
         if ( sx < 0 ) sx = 0;
@@ -816,12 +817,12 @@ arena.tools.Crop = {
         if (this.sx < this.ex-2 ) {
           this.sx++;
           this.ex--;
-        } 
+        }
         if (this.sy < this.ey-2 ) {
           this.sy++;
           this.ey--;
         }
-        this.draw(evt); 
+        this.draw(evt);
         return arena.event.eatEvent(evt);
 
       //} else if ( evt.keyCode == 27 ) { // Escape
@@ -831,7 +832,7 @@ arena.tools.Crop = {
       }
     },
     cursor : function(evt, x, y) {
-      var type = this.movingArea ? this.movingArea : this.checkBorder(x,y);  
+      var type = this.movingArea ? this.movingArea : this.checkBorder(x,y);
       switch ( type ) {
         case 'topleft'    : return 'nw-resize';
         case 'top'        : return 'n-resize';
@@ -839,8 +840,8 @@ arena.tools.Crop = {
         case 'right'      : return 'e-resize';
         case 'bottomright': return 'se-resize';
         case 'bottom'     : return 's-resize';
-        case 'bottomleft' : return 'sw-resize'; 
-        case 'left'       : return 'w-resize'; 
+        case 'bottomleft' : return 'sw-resize';
+        case 'left'       : return 'w-resize';
         case 'area' : return 'move';
         default : return 'default';
       };
