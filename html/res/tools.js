@@ -526,7 +526,7 @@ arena.tools.Mask = {
 // Move tool, used to move stuffs.
 arena.tools.Move = {
     movingArea : null,
-    //usingExistingMask : false,
+    useExistingMask : false,
     //clearMask : false,
     movingMask : null,
     startX : 0,
@@ -569,11 +569,11 @@ arena.tools.Move = {
     },
     getMoveArea : function(x, y) {
       if (!this.layer) this.layer = arena.map.layer;
-      //this.usingExistingMask = false;
-      //if (arena.map.cells[y][x].masked) {
-      //  this.usingExistingMask = true;
-      //  return arena.map.masked;
-      //} else
+      this.useExistingMask = false;
+      if (arena.map.cells[y][x].masked) {
+        this.useExistingMask = true;
+        return arena.map.masked;
+      } else
         if (!this.layer.getA(x, y, 'text'))
           return [];
       else
@@ -581,12 +581,13 @@ arena.tools.Move = {
     },
     up     : function(evt, x, y) {
       if (this.movingArea) {
-        if (x != this.startX || y != this.startY) {
+        if (x !== this.startX || y !== this.startY) {
           arena.commands.run(
-            new arena.commands.MoveArea(this.movingArea, x-this.startX, y-this.startY, this.layer, evt.ctrlKey, false));
+            new arena.commands.MoveArea(this.movingArea, x-this.startX, y-this.startY, this.layer, evt.ctrlKey, this.useExistingMask));
         }
         arena.map.setMarked([]);
         this.movingArea = null;
+        this.useExistingMask = false;
       }
     },
     dbclick: arena.empty,
