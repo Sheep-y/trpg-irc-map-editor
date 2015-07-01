@@ -264,7 +264,7 @@ arena.commands.SetCell.prototype = {
       if (!orig) {
         this.layer.set(m[0], m[1], null)
       } else {
-        this.layer.createCell(m[0], m[1]).setIf(orig);
+        this.layer.createCell(m[0], m[1]).set(orig.text, orig.foreground, orig.background);
       }
     }
     arena.map.repaint(this.coList);
