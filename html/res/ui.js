@@ -828,6 +828,7 @@ arena.ui = {
       try {
         result = JSON.parse(result.responseText.substr(3));
       } catch (e) {
+        console.error( e );
         ul.appendChild ( document.createTextNode( arena.lang.error.MalformedData ) );
         return;
       }

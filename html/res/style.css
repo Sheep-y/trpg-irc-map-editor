@@ -292,11 +292,17 @@ input.default { /* Default button */
 	max-width: 400px;
 	background-color: #DDD;
 	border: 2px ridge #DDD;
+	box-shadow: 0px 0px 20px #FCF;
 	display: none;
 }
 
 #dialog_sync > div {
 	margin: 0 auto;
+}
+
+#dialog_sync #map_list ul {
+	max-height: 50vh;
+	overflow: auto;
 }
 
 #dialog_sync #map_list ul li {
@@ -330,4 +336,9 @@ input.default { /* Default button */
 
 #dialog_export td:first-child {
 	border-right: 1px solid black;
+}
+
+#dialog_saveload #saveList {
+	max-height: 50vh;
+	overflow: auto;
 }

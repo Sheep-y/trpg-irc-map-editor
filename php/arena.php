@@ -12,7 +12,7 @@ $config = array(
 if ( file_exists('config.php') ) include('config.php');
 
 $out = array(
-  'app_version' => '20120822',
+  'app_version' => '20160713',
 );
 
 function escJS( $str ) {
@@ -20,7 +20,7 @@ function escJS( $str ) {
   $str = str_replace("\r", "\\r", $str);
   $str = str_replace("\n", "\\n", $str);
   $str = str_replace('"', '\\"', $str);
-  $str = str_replace("'", "\\'", $str);
+  //$str = str_replace("'", "\\'", $str); // JSON does not escape '
   return $str;
 }
 
